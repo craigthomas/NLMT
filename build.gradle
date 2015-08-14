@@ -1,0 +1,28 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+
+version = '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'main/java'
+        }
+    }
+    test {
+        java {
+            srcDir 'main/test'
+        }
+    }
+}
+
+
+dependencies {
+    compile 'org.slf4j:slf4j-api:1.7.5'
+    compile 'org.apache.commons:commons-lang3:3.4'
+    testCompile 'junit:junit:4.11'
+}
