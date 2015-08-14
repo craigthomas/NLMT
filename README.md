@@ -1,7 +1,7 @@
 # Natural Language Modeling Toolkit (NLMT)
 
-[![Build Status](https://travis-ci.org/craigthomas/Chip8Java.svg?branch=master)](https://travis-ci.org/craigthomas/Chip8Java) 
-[![Coverage Status](http://coveralls.io/repos/craigthomas/Chip8Java/badge.svg?branch=master)](http://coveralls.io/r/craigthomas/Chip8Java?branch=master) 
+[![Build Status](https://travis-ci.org/craigthomas/NLMT.svg?branch=master)](https://travis-ci.org/craigthomas/NLMT) 
+[![Coverage Status](http://coveralls.io/repos/craigthomas/NLMT/badge.svg?branch=master)](http://coveralls.io/r/craigthomas/NLMT?branch=master) 
 [![Apache 2 License](https://img.shields.io/badge/license-apache_2-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.txt)
 
 ## What is it?
