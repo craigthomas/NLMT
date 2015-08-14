@@ -1,5 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'idea'
+apply plugin: 'jacoco'
+apply plugin: 'com.github.kt3k.coveralls'
 
 version = '1.0'
 
@@ -20,9 +22,25 @@ sourceSets {
     }
 }
 
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.0.1'
+    }
+}
 
 dependencies {
     compile 'org.slf4j:slf4j-api:1.7.5'
     compile 'org.apache.commons:commons-lang3:3.4'
     testCompile 'junit:junit:4.11'
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
 }
