@@ -95,6 +95,9 @@ public class Document
      * @param topicIndex the topic to assign
      */
     public void setTopicForWord(int wordIndex, int topicIndex) {
+        if ((wordIndex > wordArray.length - 1) || (wordIndex < 0)) {
+            throw new IllegalArgumentException("wordIndex must be >= 0 or <= " + (wordArray.length - 1));
+        }
         topicArray[wordIndex] = topicIndex;
     }
 }

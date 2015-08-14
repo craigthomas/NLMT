@@ -78,4 +78,43 @@ public class DocumentTest {
         int [] expectedTopicArrayArray = {-1, -1, -1};
         assertThat(document.getTopicArray(), is(equalTo(expectedTopicArrayArray)));
     }
+
+    @Test
+    public void testTopicArraySetSingleCorrectly() {
+        String [] words = {"the", "cat", "sat"};
+        document.readDocument(Arrays.asList(words));
+        document.setTopicForWord(0, 1);
+        int [] expectedTopicArrayArray = {1, -1, -1};
+        assertThat(document.getTopicArray(), is(equalTo(expectedTopicArrayArray)));
+    }
+
+    @Test
+    public void testTopicArraySetAllCorrectly() {
+        String [] words = {"the", "cat", "sat"};
+        document.readDocument(Arrays.asList(words));
+        document.setTopicForWord(0, 1);
+        document.setTopicForWord(1, 2);
+        document.setTopicForWord(2, 3);
+        int [] expectedTopicArrayArray = {1, 2, 3};
+        assertThat(document.getTopicArray(), is(equalTo(expectedTopicArrayArray)));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testSetTopicOnNegativeWordIndexThrowsException() {
+        String [] words = {"the", "cat", "sat"};
+        document.readDocument(Arrays.asList(words));
+        document.setTopicForWord(-1, 1);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testSetTopicOnWordIndexTooLargeThrowsException() {
+        String [] words = {"the", "cat", "sat"};
+        document.readDocument(Arrays.asList(words));
+        document.setTopicForWord(3, 1);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testSetTopicOnNoDocumentThrowsException() {
+        document.setTopicForWord(0, 1);
+    }
 }
