@@ -27,48 +27,52 @@ public class LDAModel
 {
     // The number of topics to produce, topicIndex will range from
     // 0 to numTopics
-    private int numTopics;
+    protected int numTopics;
 
     // The alpha smoothing parameter
-    private double alpha;
+    protected double alpha;
 
     // The beta smoothing parameter
-    private double beta;
+    protected double beta;
 
     // Keeps track of how many documents have been assigned to a topic
     // topicDocumentCount[topicIndex][documentIndex]
-    private int [][] topicDocumentCount;
+    protected int [][] topicDocumentCount;
 
     // Keeps track of how many of each topic has been assigned to a word
     // wordTopicCount[wordIndexInVocab][topicIndex]
-    private int [][] wordTopicCount;
+    protected int [][] wordTopicCount;
 
     // Keeps track of the total number of words assigned to a topic
     // topicTotals[topicIndex]. This prevents us from having to loop
     // through the wordTopicCount to calculate the totals for each
     // topic
-    private int [] topicTotals;
+    protected int [] topicTotals;
 
     // Keeps track of what topics have been assigned to the word in a document,
     // associates each word with an index giving us wordIndexInDoc. The
     // documentIndex will range from 0 to the total number of documents
-    private Document [] documents;
+    protected Document [] documents;
 
     // Associates a word with a specific number, giving us wordIndexInVocab
-    private Vocabulary vocabulary;
+    protected Vocabulary vocabulary;
 
     // Used to produce random numbers
     private Random random;
 
     public LDAModel(int numTopics) {
-        this(numTopics, 50/numTopics, 0.1);
+        this(numTopics, 0, 0);
     }
 
     public LDAModel(int numTopics, double alpha, double beta) {
-        this.alpha = alpha;
-        this.beta = beta;
+        if (numTopics <= 0) {
+            throw new IllegalArgumentException("numTopics must be > 0");
+        }
+        this.alpha = (alpha == 0.0) ? 50.0/numTopics : alpha;
+        this.beta = (beta == 0.0) ? 0.1 : beta;
         this.numTopics = numTopics;
         vocabulary = new Vocabulary();
+        documents = new Document[0];
         random = new Random();
     }
 
