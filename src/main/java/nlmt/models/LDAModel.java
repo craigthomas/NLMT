@@ -68,7 +68,13 @@ public class LDAModel
         if (numTopics <= 0) {
             throw new IllegalArgumentException("numTopics must be > 0");
         }
-        this.alpha = (alpha == 0.0) ? 50.0/numTopics : alpha;
+        if (alpha < 0) {
+            throw new IllegalArgumentException("alpha must be > 0");
+        }
+        if (beta < 0) {
+            throw new IllegalArgumentException("beta must be > 0");
+        }
+        this.alpha = (alpha == 0.0) ? 0.5 : alpha;
         this.beta = (beta == 0.0) ? 0.1 : beta;
         this.numTopics = numTopics;
         vocabulary = new Vocabulary();
@@ -125,7 +131,7 @@ public class LDAModel
      */
     public double getTopicProbability(int documentIndex, int wordIndexInVocab, int topicIndex) {
         double result = wordTopicCount[wordIndexInVocab][topicIndex] + beta;
-        result /= (topicTotals[topicIndex] * beta);
+        result /= (topicTotals[topicIndex] + (topicTotals[topicIndex] * beta));
         result *= (topicDocumentCount[topicIndex][documentIndex] + alpha);
         return result;
     }
@@ -138,7 +144,7 @@ public class LDAModel
      * @param wordIndexInVocab the word number in the vocabulary
      * @return the best topic number
      */
-    public int getNewTopic(int documentIndex, int wordIndexInVocab) {
+    protected int getNewTopic(int documentIndex, int wordIndexInVocab) {
         int bestTopic = -1;
         double bestProbability = -99999;
         for (int topicIndex = 0; topicIndex < numTopics; topicIndex++) {
@@ -163,7 +169,7 @@ public class LDAModel
      * @param wordIndexInDoc the document word number to update
      * @param topicIndex the topic number to update
      */
-    public void removeTopicFromWord(int documentIndex, int wordIndexInVocab, int wordIndexInDoc, int topicIndex) {
+    protected void removeTopicFromWord(int documentIndex, int wordIndexInVocab, int wordIndexInDoc, int topicIndex) {
         documents[documentIndex].setTopicForWord(wordIndexInDoc, -1);
         topicDocumentCount[topicIndex][documentIndex]--;
         wordTopicCount[wordIndexInVocab][topicIndex]--;
@@ -182,7 +188,7 @@ public class LDAModel
      * @param wordIndexInDoc the document word number to update
      * @param topicIndex the topic number to update
      */
-    public void addTopicToWord(int documentIndex, int wordIndexInVocab, int wordIndexInDoc, int topicIndex) {
+    protected void addTopicToWord(int documentIndex, int wordIndexInVocab, int wordIndexInDoc, int topicIndex) {
         documents[documentIndex].setTopicForWord(wordIndexInDoc, topicIndex);
         topicDocumentCount[topicIndex][documentIndex]++;
         wordTopicCount[wordIndexInVocab][topicIndex]++;

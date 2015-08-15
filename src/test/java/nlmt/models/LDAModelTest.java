@@ -55,13 +55,23 @@ public class LDAModelTest {
     @Test
     public void testAlphaSetToZeroAutoSetsAlpha() {
         ldaModel = new LDAModel(2, 0, 0);
-        assertThat(ldaModel.alpha, is(equalTo(25.0)));
+        assertThat(ldaModel.alpha, is(equalTo(0.5)));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testAlphaSetToNegativeNumberThrowsException() {
+        ldaModel = new LDAModel(2, -1, 0);
     }
 
     @Test
     public void testBetaSetToZeroAutoSetsBeta() {
         ldaModel = new LDAModel(2, 0, 0);
         assertThat(ldaModel.beta, is(equalTo(0.1)));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testBetaSetToNegativeNumberThrowsException() {
+        ldaModel = new LDAModel(2, 0, -1);
     }
 
     @Test
@@ -95,5 +105,109 @@ public class LDAModelTest {
         assertThat(ldaModel.documents[0].getTopicArray(), is(not(equalTo(expectedTopics1))));
         assertThat(ldaModel.documents[1].getTopicArray(), is(not(equalTo(expectedTopics2))));
         assertThat(ldaModel.documents[2].getTopicArray(), is(not(equalTo(expectedTopics3))));
+    }
+
+    @Test
+    public void testAddTopicToWordWorksCorrectly() {
+        ldaModel = new LDAModel(5);
+        ldaModel.readDocuments(documents);
+        ldaModel.initialize();
+
+        int currentTopicDocumentCount = ldaModel.topicDocumentCount[0][0];
+        int currentWordTopicCount = ldaModel.wordTopicCount[0][0];
+        int currentTopicTotals = ldaModel.topicTotals[0];
+
+        ldaModel.addTopicToWord(0, 0, 0, 0);
+
+        assertThat(ldaModel.documents[0].getTopicArray()[0], is(equalTo(0)));
+        assertThat(ldaModel.topicDocumentCount[0][0], is(equalTo(currentTopicDocumentCount + 1)));
+        assertThat(ldaModel.wordTopicCount[0][0], is(equalTo(currentWordTopicCount + 1)));
+        assertThat(ldaModel.topicTotals[0], is(equalTo(currentTopicTotals + 1)));
+    }
+
+    @Test
+    public void testRemoveTopicFromWordWorksCorrectly() {
+        ldaModel = new LDAModel(5);
+        ldaModel.readDocuments(documents);
+        ldaModel.initialize();
+
+        int currentTopicDocumentCount = ldaModel.topicDocumentCount[0][0];
+        int currentWordTopicCount = ldaModel.wordTopicCount[0][0];
+        int currentTopicTotals = ldaModel.topicTotals[0];
+
+        ldaModel.removeTopicFromWord(0, 0, 0, 0);
+
+        assertThat(ldaModel.documents[0].getTopicArray()[0], is(equalTo(-1)));
+        assertThat(ldaModel.topicDocumentCount[0][0], is(equalTo(currentTopicDocumentCount - 1)));
+        assertThat(ldaModel.wordTopicCount[0][0], is(equalTo(currentWordTopicCount - 1)));
+        assertThat(ldaModel.topicTotals[0], is(equalTo(currentTopicTotals - 1)));
+    }
+
+    @Test
+    public void testGetTopicProbabilityWorksCorrectlySimpleCase() {
+        ldaModel = new LDAModel(2);
+        documents.clear();
+        documents.add(Arrays.asList(document1));
+        ldaModel.readDocuments(documents);
+        ldaModel.initialize();
+
+        ldaModel.topicDocumentCount[0][0] = 0;
+        ldaModel.topicDocumentCount[1][0] = 0;
+
+        ldaModel.wordTopicCount[0][0] = 0;
+        ldaModel.wordTopicCount[0][1] = 0;
+        ldaModel.wordTopicCount[1][0] = 0;
+        ldaModel.wordTopicCount[1][1] = 0;
+        ldaModel.wordTopicCount[2][0] = 0;
+        ldaModel.wordTopicCount[2][1] = 0;
+        ldaModel.wordTopicCount[3][0] = 0;
+        ldaModel.wordTopicCount[3][1] = 0;
+        ldaModel.wordTopicCount[4][0] = 0;
+        ldaModel.wordTopicCount[4][1] = 0;
+
+        ldaModel.topicTotals[0] = 0;
+        ldaModel.topicTotals[1] = 0;
+
+        ldaModel.addTopicToWord(0, 0, 0, 0);
+        ldaModel.addTopicToWord(0, 1, 1, 0);
+        ldaModel.addTopicToWord(0, 2, 2, 0);
+        ldaModel.addTopicToWord(0, 3, 3, 1);
+        ldaModel.addTopicToWord(0, 4, 4, 1);
+
+        assertThat(ldaModel.getTopicProbability(0, 0, 0), is(equalTo(1.1666666666666667)));
+    }
+
+    @Test
+    public void testGetBestTopicWorksCorrectlySimpleCase() {
+        ldaModel = new LDAModel(2);
+        documents.clear();
+        documents.add(Arrays.asList(document1));
+        ldaModel.readDocuments(documents);
+        ldaModel.initialize();
+
+        ldaModel.topicDocumentCount[0][0] = 0;
+        ldaModel.topicDocumentCount[1][0] = 0;
+
+        ldaModel.wordTopicCount[0][0] = 0;
+        ldaModel.wordTopicCount[0][1] = 0;
+        ldaModel.wordTopicCount[1][0] = 0;
+        ldaModel.wordTopicCount[1][1] = 0;
+        ldaModel.wordTopicCount[2][0] = 0;
+        ldaModel.wordTopicCount[2][1] = 0;
+        ldaModel.wordTopicCount[3][0] = 0;
+        ldaModel.wordTopicCount[3][1] = 0;
+        ldaModel.wordTopicCount[4][0] = 0;
+        ldaModel.wordTopicCount[4][1] = 0;
+
+        ldaModel.topicTotals[0] = 0;
+        ldaModel.topicTotals[1] = 0;
+
+        ldaModel.addTopicToWord(0, 0, 0, 0);
+        ldaModel.addTopicToWord(0, 1, 1, 0);
+        ldaModel.addTopicToWord(0, 2, 2, 0);
+        ldaModel.addTopicToWord(0, 3, 3, 1);
+        ldaModel.addTopicToWord(0, 4, 4, 1);
+
+        assertThat(ldaModel.getNewTopic(0, 0), is(equalTo(0)));
     }
 }
