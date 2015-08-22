@@ -15,9 +15,7 @@
  */
 package nlmt.samplers;
 
-import java.util.Arrays;
 import java.util.Random;
-import java.util.logging.Logger;
 
 /**
  * Randomly choose from a set of samples. Each sample has a weight associated
@@ -39,7 +37,6 @@ import java.util.logging.Logger;
  */
 public class RandomSampler
 {
-    private final static Logger LOGGER = Logger.getLogger(RandomSampler.class.getName());
     private double [] weights;
     private double total;
     private int size;
@@ -94,7 +91,6 @@ public class RandomSampler
      * @return the index of the sample corresponding to the random choice
      */
     public int sample() {
-        LOGGER.info("weights = " + Arrays.toString(weights));
         if (total == 0.0) {
             return random.nextInt(size - 1);
         }
