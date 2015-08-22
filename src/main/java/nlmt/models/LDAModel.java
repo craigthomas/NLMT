@@ -15,10 +15,11 @@
  */
 package nlmt.models;
 
+import nlmt.datatypes.BoundedPriorityQueue;
 import nlmt.samplers.RandomSampler;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Simple implementation of Latent Dirichlet Allocation using Gibbs
@@ -216,6 +217,21 @@ public class LDAModel
     }
 
     /**
+     * Returns the top <code>numWords</code> that best describe the topic.
+     *
+     * @param topicIndex the topic to scan
+     * @param numWords the number of words to return
+     * @return an List of Strings that are the words that describe the topic
+     */
+    public List<String> getTopWordsForTopic(int topicIndex, int numWords) {
+        BoundedPriorityQueue<Integer> priorityQueue = new BoundedPriorityQueue<>(numWords);
+        for (int wordIndex = 0; wordIndex < vocabulary.size(); wordIndex++) {
+            priorityQueue.add(wordTopicCount[wordIndex][topicIndex], wordIndex);
+        }
+        return priorityQueue.getElements().stream().map(vocabulary::getWordFromIndex).collect(Collectors.toList());
+    }
+
+    /**
      * Returns the list of words that describe each topic. The index into
      * the returned list is the topic number. For example, the second
      * index (index 1) is the second topic.
@@ -226,17 +242,7 @@ public class LDAModel
     public List<List<String>> getTopics(int numWords) {
         List<List<String>> result = new ArrayList<>();
         for (int topic = 0; topic < numTopics; topic++) {
-            List<String> words = new ArrayList<>();
-            PriorityQueue<Pair<Integer, Integer>> maxQueue = new PriorityQueue<>(numWords, (object1, object2) ->
-                    ((object1.getLeft() < object2.getLeft()) ? 1 : ((object1.getLeft() > object2.getLeft()) ? -1 : 0)));
-            for (int wordIndex = 0; wordIndex < vocabulary.size(); wordIndex++) {
-                maxQueue.add(Pair.of(wordTopicCount[wordIndex][topic], wordIndex));
-            }
-            while (maxQueue.size() > 0) {
-                Pair<Integer, Integer> pair = maxQueue.remove();
-                words.add(vocabulary.getWordFromIndex(pair.getRight()));
-            }
-            result.add(words);
+            result.add(getTopWordsForTopic(topic, numWords));
         }
         return result;
     }
