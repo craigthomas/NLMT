@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/craigthomas/NLMT.svg?branch=master)](https://travis-ci.org/craigthomas/NLMT) 
 [![Coverage Status](http://coveralls.io/repos/craigthomas/NLMT/badge.svg?branch=master)](http://coveralls.io/r/craigthomas/NLMT?branch=master) 
+[![Dependency Status](https://www.versioneye.com/user/projects/55d83bc18d9c4b001b000008/badge.svg)](https://www.versioneye.com/user/projects/55d83bc18d9c4b001b000008)
 [![Apache 2 License](https://img.shields.io/badge/license-apache_2-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.txt)
 
 ## What is it?
