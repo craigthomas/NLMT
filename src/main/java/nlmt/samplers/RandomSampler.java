@@ -1,0 +1,109 @@
+/**
+ * Copyright 2015 Craig Thomas
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package nlmt.samplers;
+
+import java.util.Arrays;
+import java.util.Random;
+import java.util.logging.Logger;
+
+/**
+ * Randomly choose from a set of samples. Each sample has a weight associated
+ * with it that represents the mass of the sample. The sampler works by
+ * collecting all of the weights. When <code>sample()</code> is called,
+ * it chooses a random number between 0 and the total sum of all the
+ * weights. It returns the index of the sample that the randomly chosen
+ * number falls between.
+ *
+ * For example, assume that the sampler was given the weights [1.2, 0.5, 0.1].
+ * The total sum of all the weights is 1.8. It would then draw a random number
+ * between 0 and 1.8 and compare it to the following values:
+ *
+ * Sample 1 - index 0 - must be > 0.0 and <= 1.2
+ * Sample 2 - index 1 - must be > 1.2 and <= 1.7
+ * Sample 3 - index 2 - must be > 1.7 and <= 1.8
+ *
+ * If the random value drawn was 1.543, then index 1 would be returned.
+ */
+public class RandomSampler
+{
+    private final static Logger LOGGER = Logger.getLogger(RandomSampler.class.getName());
+    private double [] weights;
+    private double total;
+    private int size;
+    private int currentSample;
+    private Random random;
+
+    public RandomSampler(int size) {
+        if (size < 1) {
+            throw new IllegalArgumentException("size must be >= 1");
+        }
+        this.size = size + 1;
+        weights = new double[this.size];
+        weights[0] = 0.0;
+        total = 0.0;
+        currentSample = 1;
+        random = new Random();
+    }
+
+    /**
+     * Returns the total number of samples.
+     *
+     * @return the total number of samples
+     */
+    public int getSize() {
+        return size - 1;
+    }
+
+    /**
+     * Adds a sample to the sampler. If adding a sample would exceed the
+     * total size allocated, the sample is silently dropped.
+     *
+     * @param weight the weight of the sample to add
+     */
+    public void addSample(double weight) {
+        if (weight < 0.0) {
+            throw new IllegalArgumentException("weight must be >= 0.0");
+        }
+        if (currentSample == size) {
+            return;
+        }
+        weights[currentSample] = weight + total;
+        total += weight;
+        currentSample++;
+    }
+
+    /**
+     * Choose a random number between 0 and the total sum of all the
+     * weights. Return the index of the sample that the randomly chosen
+     * number falls between. If all the weights are 0, choose an index
+     * randomly.
+     *
+     * @return the index of the sample corresponding to the random choice
+     */
+    public int sample() {
+        LOGGER.info("weights = " + Arrays.toString(weights));
+        if (total == 0.0) {
+            return random.nextInt(size - 1);
+        }
+        double value = total * random.nextDouble();
+        for (int i = 1; i < size - 1; i++) {
+            if (value > weights[i - 1] && value <= weights[i]) {
+                return i - 1;
+            }
+        }
+        return size - 2;
+    }
+}

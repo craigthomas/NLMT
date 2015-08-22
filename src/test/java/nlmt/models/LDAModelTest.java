@@ -174,7 +174,7 @@ public class LDAModelTest {
         ldaModel.addTopicToWord(0, 3, 3, 1);
         ldaModel.addTopicToWord(0, 4, 4, 1);
 
-        assertThat(ldaModel.getTopicProbability(0, 0, 0), is(equalTo(1.1666666666666667)));
+        assertThat(ldaModel.getTopicWeight(0, 0, 0), is(equalTo(1.1666666666666667)));
     }
 
     @Test
@@ -205,9 +205,10 @@ public class LDAModelTest {
         ldaModel.addTopicToWord(0, 0, 0, 0);
         ldaModel.addTopicToWord(0, 1, 1, 0);
         ldaModel.addTopicToWord(0, 2, 2, 0);
-        ldaModel.addTopicToWord(0, 3, 3, 1);
-        ldaModel.addTopicToWord(0, 4, 4, 1);
+        ldaModel.addTopicToWord(0, 3, 3, 0);
+        ldaModel.addTopicToWord(0, 4, 4, 0);
 
+        System.out.println(ldaModel.getTopicWeight(0, 0, 0));
         assertThat(ldaModel.getNewTopic(0, 0), is(equalTo(0)));
     }
 }

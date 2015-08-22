@@ -15,6 +15,7 @@
  */
 package nlmt.models;
 
+import nlmt.samplers.RandomSampler;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
@@ -120,18 +121,20 @@ public class LDAModel
     }
 
     /**
-     * Calculates p(topicIndex). In other words, given the topic counts for each word, the
-     * topic counts for each document, calculate the probability that this word should belong
-     * to the specified topic. This is the sampling part of the Gibbs Sampler.
+     * Given the topic counts for each word, the topic counts for each document,
+     * calculate the mass associated with this word and topic combination.
      *
      * @param documentIndex the document number
      * @param wordIndexInVocab the word number in the vocabulary
      * @param topicIndex the topic number
-     * @return the probability that the word should be in the topicIndex
+     * @return the mass belonging to the word
      */
-    public double getTopicProbability(int documentIndex, int wordIndexInVocab, int topicIndex) {
+    public double getTopicWeight(int documentIndex, int wordIndexInVocab, int topicIndex) {
         double result = wordTopicCount[wordIndexInVocab][topicIndex] + beta;
         result /= (topicTotals[topicIndex] + (topicTotals[topicIndex] * beta));
+        if (Double.isInfinite(result)) {
+            return 0.0;
+        }
         result *= (topicDocumentCount[topicIndex][documentIndex] + alpha);
         return result;
     }
@@ -145,16 +148,11 @@ public class LDAModel
      * @return the best topic number
      */
     protected int getNewTopic(int documentIndex, int wordIndexInVocab) {
-        int bestTopic = -1;
-        double bestProbability = -99999;
+        RandomSampler sampler = new RandomSampler(numTopics);
         for (int topicIndex = 0; topicIndex < numTopics; topicIndex++) {
-            double probability = getTopicProbability(documentIndex, wordIndexInVocab, topicIndex);
-            if (probability > bestProbability) {
-                bestProbability = probability;
-                bestTopic = topicIndex;
-            }
+            sampler.addSample(getTopicWeight(documentIndex, wordIndexInVocab, topicIndex));
         }
-        return bestTopic;
+        return sampler.sample();
     }
 
     /**
