@@ -224,6 +224,12 @@ public class LDAModel
      * @return an List of Strings that are the words that describe the topic
      */
     public List<String> getTopWordsForTopic(int topicIndex, int numWords) {
+        if (topicIndex >= numTopics  || topicIndex < 0) {
+            throw new IllegalArgumentException("topicIndex must be >= 0 and < numTopics");
+        }
+        if (numWords <= 0) {
+            throw new IllegalArgumentException("numWords must be > 0");
+        }
         BoundedPriorityQueue<Integer> priorityQueue = new BoundedPriorityQueue<>(numWords);
         for (int wordIndex = 0; wordIndex < vocabulary.size(); wordIndex++) {
             priorityQueue.add(wordTopicCount[wordIndex][topicIndex], wordIndex);

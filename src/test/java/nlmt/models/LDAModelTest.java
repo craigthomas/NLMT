@@ -214,6 +214,54 @@ public class LDAModelTest {
         assertThat(ldaModel.getNewTopic(0, 0), is(equalTo(0)));
     }
 
+    @Test(expected=IllegalArgumentException.class)
+    public void testGetTopWordsForTopicThrowsExceptionOnInvalidTopic() {
+        ldaModel = new LDAModel(2);
+        documents.clear();
+        documents.add(Arrays.asList(longDocument));
+        ldaModel.readDocuments(documents);
+        ldaModel.initialize();
+
+        ldaModel.wordTopicCount[0][0] = 12;
+        ldaModel.wordTopicCount[0][1] = 4;
+        ldaModel.wordTopicCount[1][0] = 8;
+        ldaModel.wordTopicCount[1][1] = 10;
+        ldaModel.wordTopicCount[2][0] = 1;
+        ldaModel.wordTopicCount[2][1] = 1;
+        ldaModel.wordTopicCount[3][0] = 13;
+        ldaModel.wordTopicCount[3][1] = 8;
+        ldaModel.wordTopicCount[4][0] = 9;
+        ldaModel.wordTopicCount[4][1] = 5;
+        ldaModel.wordTopicCount[5][0] = 3;
+        ldaModel.wordTopicCount[5][1] = 7;
+
+        ldaModel.getTopWordsForTopic(10, 5);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testGetTopWordsForTopicThrowsExceptionOnNegativeNumWords() {
+        ldaModel = new LDAModel(2);
+        documents.clear();
+        documents.add(Arrays.asList(longDocument));
+        ldaModel.readDocuments(documents);
+        ldaModel.initialize();
+
+        ldaModel.wordTopicCount[0][0] = 12;
+        ldaModel.wordTopicCount[0][1] = 4;
+        ldaModel.wordTopicCount[1][0] = 8;
+        ldaModel.wordTopicCount[1][1] = 10;
+        ldaModel.wordTopicCount[2][0] = 1;
+        ldaModel.wordTopicCount[2][1] = 1;
+        ldaModel.wordTopicCount[3][0] = 13;
+        ldaModel.wordTopicCount[3][1] = 8;
+        ldaModel.wordTopicCount[4][0] = 9;
+        ldaModel.wordTopicCount[4][1] = 5;
+        ldaModel.wordTopicCount[5][0] = 3;
+        ldaModel.wordTopicCount[5][1] = 7;
+
+        ldaModel.getTopWordsForTopic(0, -5);
+    }
+
     @Test
     public void testGetTopWordsForTopicReturnsBestWords() {
         ldaModel = new LDAModel(2);
@@ -240,5 +288,67 @@ public class LDAModelTest {
         expected.add("once");
         expected.add("there");
         assertThat(ldaModel.getTopWordsForTopic(0, 3), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testGetTopicsWorksCorrectly() {
+        ldaModel = new LDAModel(2);
+        documents.clear();
+        documents.add(Arrays.asList(longDocument));
+        ldaModel.readDocuments(documents);
+        ldaModel.initialize();
+
+        ldaModel.wordTopicCount[0][0] = 12;
+        ldaModel.wordTopicCount[0][1] = 4;
+        ldaModel.wordTopicCount[1][0] = 8;
+        ldaModel.wordTopicCount[1][1] = 10;
+        ldaModel.wordTopicCount[2][0] = 1;
+        ldaModel.wordTopicCount[2][1] = 1;
+        ldaModel.wordTopicCount[3][0] = 13;
+        ldaModel.wordTopicCount[3][1] = 8;
+        ldaModel.wordTopicCount[4][0] = 9;
+        ldaModel.wordTopicCount[4][1] = 5;
+        ldaModel.wordTopicCount[5][0] = 3;
+        ldaModel.wordTopicCount[5][1] = 7;
+
+        List<String> expectedTopic0 = new ArrayList<>();
+        expectedTopic0.add("time");
+        expectedTopic0.add("once");
+        expectedTopic0.add("there");
+
+        List<String> expectedTopic1 = new ArrayList<>();
+        expectedTopic1.add("upon");
+        expectedTopic1.add("time");
+        expectedTopic1.add("lived");
+
+        List<List<String>> expected = new ArrayList<>();
+        expected.add(expectedTopic0);
+        expected.add(expectedTopic1);
+
+        assertThat(ldaModel.getTopics(3), is(equalTo(expected)));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testGetTopicsThrowsExceptionOnInvalidNumWords() {
+        ldaModel = new LDAModel(2);
+        documents.clear();
+        documents.add(Arrays.asList(longDocument));
+        ldaModel.readDocuments(documents);
+        ldaModel.initialize();
+
+        ldaModel.wordTopicCount[0][0] = 12;
+        ldaModel.wordTopicCount[0][1] = 4;
+        ldaModel.wordTopicCount[1][0] = 8;
+        ldaModel.wordTopicCount[1][1] = 10;
+        ldaModel.wordTopicCount[2][0] = 1;
+        ldaModel.wordTopicCount[2][1] = 1;
+        ldaModel.wordTopicCount[3][0] = 13;
+        ldaModel.wordTopicCount[3][1] = 8;
+        ldaModel.wordTopicCount[4][0] = 9;
+        ldaModel.wordTopicCount[4][1] = 5;
+        ldaModel.wordTopicCount[5][0] = 3;
+        ldaModel.wordTopicCount[5][1] = 7;
+
+        ldaModel.getTopics(0);
     }
 }
