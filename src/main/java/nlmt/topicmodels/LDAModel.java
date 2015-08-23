@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nlmt.models;
+package nlmt.topicmodels;
 
 import nlmt.datatypes.BoundedPriorityQueue;
 import nlmt.samplers.RandomSampler;
