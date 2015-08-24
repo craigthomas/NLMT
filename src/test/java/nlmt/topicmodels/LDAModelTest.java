@@ -208,7 +208,6 @@ public class LDAModelTest {
         ldaModel.addTopicToWord(0, 3, 3, 0);
         ldaModel.addTopicToWord(0, 4, 4, 0);
 
-        System.out.println(ldaModel.getTopicWeight(0, 0, 0));
         assertThat(ldaModel.getNewTopic(0, 0), is(equalTo(0)));
     }
 
