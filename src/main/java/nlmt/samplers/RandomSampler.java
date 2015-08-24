@@ -102,4 +102,14 @@ public class RandomSampler
         }
         return size - 2;
     }
+
+    /**
+     * Clear out the samples.
+     */
+    public void clear() {
+        weights = new double[this.size];
+        weights[0] = 0.0;
+        total = 0.0;
+        currentSample = 1;
+    }
 }

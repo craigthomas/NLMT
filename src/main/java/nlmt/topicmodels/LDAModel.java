@@ -62,6 +62,8 @@ public class LDAModel
     // Used to produce random numbers
     private Random random;
 
+    private RandomSampler randomSampler;
+
     public LDAModel(int numTopics) {
         this(numTopics, 0, 0);
     }
@@ -82,6 +84,7 @@ public class LDAModel
         vocabulary = new Vocabulary();
         documents = new Document[0];
         random = new Random();
+        randomSampler = new RandomSampler(numTopics);
     }
 
     /**
@@ -131,13 +134,12 @@ public class LDAModel
      * @return the mass belonging to the word
      */
     public double getTopicWeight(int documentIndex, int wordIndexInVocab, int topicIndex) {
-        double result = wordTopicCount[wordIndexInVocab][topicIndex] + beta;
-        result /= (topicTotals[topicIndex] + (topicTotals[topicIndex] * beta));
-        if (Double.isInfinite(result)) {
+        double denominator = topicTotals[topicIndex] + (topicTotals[topicIndex] * beta);
+        if (denominator == 0.0) {
             return 0.0;
         }
-        result *= (topicDocumentCount[topicIndex][documentIndex] + alpha);
-        return result;
+        return ((wordTopicCount[wordIndexInVocab][topicIndex] + beta) / denominator) *
+                (topicDocumentCount[topicIndex][documentIndex] + alpha);
     }
 
     /**
@@ -149,11 +151,12 @@ public class LDAModel
      * @return the best topic number
      */
     protected int getNewTopic(int documentIndex, int wordIndexInVocab) {
-        RandomSampler sampler = new RandomSampler(numTopics);
+        randomSampler.clear();
         for (int topicIndex = 0; topicIndex < numTopics; topicIndex++) {
-            sampler.addSample(getTopicWeight(documentIndex, wordIndexInVocab, topicIndex));
+            double weight = getTopicWeight(documentIndex, wordIndexInVocab, topicIndex);
+            randomSampler.addSample(weight);
         }
-        return sampler.sample();
+        return randomSampler.sample();
     }
 
     /**
