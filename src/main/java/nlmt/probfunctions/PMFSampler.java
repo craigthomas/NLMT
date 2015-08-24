@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nlmt.samplers;
+package nlmt.probfunctions;
 
 import java.util.Random;
 
 /**
- * Randomly choose from a set of samples. Each sample has a weight associated
+ * Sample a probability mass function. Each sample has a weight associated
  * with it that represents the mass of the sample. The sampler works by
  * collecting all of the weights. When <code>sample()</code> is called,
  * it chooses a random number between 0 and the total sum of all the
@@ -35,7 +35,7 @@ import java.util.Random;
  *
  * If the random value drawn was 1.543, then index 1 would be returned.
  */
-public class RandomSampler
+public class PMFSampler
 {
     private double [] weights;
     private double total;
@@ -43,7 +43,7 @@ public class RandomSampler
     private int currentSample;
     private Random random;
 
-    public RandomSampler(int size) {
+    public PMFSampler(int size) {
         if (size < 1) {
             throw new IllegalArgumentException("size must be >= 1");
         }
@@ -70,7 +70,7 @@ public class RandomSampler
      *
      * @param weight the weight of the sample to add
      */
-    public void addSample(double weight) {
+    public void add(double weight) {
         if (weight < 0.0) {
             throw new IllegalArgumentException("weight must be >= 0.0");
         }
@@ -111,5 +111,20 @@ public class RandomSampler
         weights[0] = 0.0;
         total = 0.0;
         currentSample = 1;
+    }
+
+    /**
+     * Returns an array containing the probabilities for each
+     * item in the PMF. The probabilities are scaled such that
+     * they range from 0 to 1.
+     *
+     * @return the array of probabilities
+     */
+    public double [] getProbabilities() {
+        double [] result = new double[size - 1];
+        for (int i = 1; i < size; i++) {
+            result[i - 1] = (weights[i] - weights[i - 1]) / total;
+        }
+        return result;
     }
 }

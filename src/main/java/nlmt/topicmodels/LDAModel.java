@@ -16,7 +16,7 @@
 package nlmt.topicmodels;
 
 import nlmt.datatypes.BoundedPriorityQueue;
-import nlmt.samplers.RandomSampler;
+import nlmt.probfunctions.PMFSampler;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -62,7 +62,8 @@ public class LDAModel
     // Used to produce random numbers
     private Random random;
 
-    private RandomSampler randomSampler;
+    // Used to sampler from a probability mass function
+    private PMFSampler pmfSampler;
 
     public LDAModel(int numTopics) {
         this(numTopics, 0, 0);
@@ -84,7 +85,7 @@ public class LDAModel
         vocabulary = new Vocabulary();
         documents = new Document[0];
         random = new Random();
-        randomSampler = new RandomSampler(numTopics);
+        pmfSampler = new PMFSampler(numTopics);
     }
 
     /**
@@ -151,12 +152,12 @@ public class LDAModel
      * @return the best topic number
      */
     protected int getNewTopic(int documentIndex, int wordIndexInVocab) {
-        randomSampler.clear();
+        pmfSampler.clear();
         for (int topicIndex = 0; topicIndex < numTopics; topicIndex++) {
             double weight = getTopicWeight(documentIndex, wordIndexInVocab, topicIndex);
-            randomSampler.addSample(weight);
+            pmfSampler.add(weight);
         }
-        return randomSampler.sample();
+        return pmfSampler.sample();
     }
 
     /**
