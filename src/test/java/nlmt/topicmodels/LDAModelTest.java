@@ -487,4 +487,31 @@ public class LDAModelTest {
         }
         return documents;
     }
+
+    @Test
+    public void testGetTopicMixtureForDocumentWorksCorrectly() {
+        ldaModel = new LDAModel(3, 0, 0.1);
+        documents.clear();
+        documents.add(Arrays.asList(longDocument));
+        ldaModel.readDocuments(documents);
+        ldaModel.initialize();
+
+        ldaModel.topicDocumentCount[0][0] = 4;
+        ldaModel.topicDocumentCount[1][0] = 9;
+        ldaModel.topicDocumentCount[2][0] = 2;
+
+        double [] expected = {0.2727272727272727, 0.5757575757575758, 0.15151515151515152};
+
+        assertThat(ldaModel.getTopicMixtureForDocument(0), is(equalTo(expected)));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testGetTopicMixtureInvalidDocumentThrowsException() {
+        ldaModel = new LDAModel(3, 0, 0.1);
+        documents.clear();
+        documents.add(Arrays.asList(longDocument));
+        ldaModel.readDocuments(documents);
+        ldaModel.initialize();
+        ldaModel.getTopicMixtureForDocument(10);
+    }
 }

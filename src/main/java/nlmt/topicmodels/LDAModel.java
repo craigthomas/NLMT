@@ -74,10 +74,10 @@ public class LDAModel
             throw new IllegalArgumentException("numTopics must be > 0");
         }
         if (alpha < 0) {
-            throw new IllegalArgumentException("alpha must be > 0");
+            throw new IllegalArgumentException("alpha must be >= 0");
         }
         if (beta < 0) {
-            throw new IllegalArgumentException("beta must be > 0");
+            throw new IllegalArgumentException("beta must be >= 0");
         }
         this.alpha = (alpha == 0.0) ? 0.5 : alpha;
         this.beta = (beta == 0.0) ? 0.1 : beta;
@@ -255,5 +255,23 @@ public class LDAModel
             result.add(getTopWordsForTopic(topic, numWords));
         }
         return result;
+    }
+
+    /**
+     * Returns the mixture of topics for the specified document. The array indices
+     * represent the topic numbers.
+     *
+     * @param documentIndex the index of the document to check
+     * @return the mixture of topics for the document
+     */
+    public double [] getTopicMixtureForDocument(int documentIndex) {
+        if (documentIndex < 0 || documentIndex >= documents.length) {
+            throw new IllegalArgumentException("documentIndex must be >= 0 and < number of documents");
+        }
+        PMFSampler documentPMFSampler = new PMFSampler(numTopics);
+        for (int topicIndex = 0; topicIndex < numTopics; topicIndex++) {
+            documentPMFSampler.add((((double)topicDocumentCount[topicIndex][documentIndex]) + alpha));
+        }
+        return documentPMFSampler.getProbabilities();
     }
 }
