@@ -18,9 +18,7 @@ package nlmt.topicmodels;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -291,6 +289,48 @@ public class LDAModelTest {
     }
 
     @Test
+    public void testGetTopWordsForTopicMoreWordsThanVocabReturnsAll() {
+        ldaModel = new LDAModel(2);
+        documents.clear();
+        documents.add(Arrays.asList(longDocument));
+        ldaModel.readDocuments(documents);
+        ldaModel.initialize();
+
+        // once
+        ldaModel.wordTopicCount[0][0] = 12;
+        ldaModel.wordTopicCount[0][1] = 4;
+        // upon
+        ldaModel.wordTopicCount[1][0] = 8;
+        ldaModel.wordTopicCount[1][1] = 10;
+        // a
+        ldaModel.wordTopicCount[2][0] = 1;
+        ldaModel.wordTopicCount[2][1] = 1;
+        // time
+        ldaModel.wordTopicCount[3][0] = 13;
+        ldaModel.wordTopicCount[3][1] = 8;
+        // there
+        ldaModel.wordTopicCount[4][0] = 9;
+        ldaModel.wordTopicCount[4][1] = 5;
+        // lived
+        ldaModel.wordTopicCount[5][0] = 3;
+        ldaModel.wordTopicCount[5][1] = 7;
+        // dragon
+        ldaModel.wordTopicCount[6][0] = 4;
+        ldaModel.wordTopicCount[6][1] = 7;
+
+        List<String> expected = new ArrayList<>();
+        expected.add("time");
+        expected.add("once");
+        expected.add("there");
+        expected.add("upon");
+        expected.add("dragon");
+        expected.add("lived");
+        expected.add("a");
+
+        assertThat(ldaModel.getTopWordsForTopic(0, 20), is(equalTo(expected)));
+    }
+
+    @Test
     public void testGetTopicsWorksCorrectly() {
         ldaModel = new LDAModel(2);
         documents.clear();
@@ -350,5 +390,102 @@ public class LDAModelTest {
         ldaModel.wordTopicCount[5][1] = 7;
 
         ldaModel.getTopics(0);
+    }
+
+    @Test
+    public void testDoGibbsSampling() {
+        ldaModel = new LDAModel(10, 1.0, 0.1);
+        ldaModel.readDocuments(generateTestDocuments());
+        ldaModel.doGibbsSampling(200);
+
+        String [] expectedTopic0 = {"aa", "ab", "ac", "ad", "ae"};
+        String [] expectedTopic1 = {"ba", "bb", "bc", "bd", "be"};
+        String [] expectedTopic2 = {"ca", "cb", "cc", "cd", "ce"};
+        String [] expectedTopic3 = {"da", "db", "dc", "dd", "de"};
+        String [] expectedTopic4 = {"ea", "eb", "ec", "ed", "ee"};
+        String [] expectedTopic5 = {"aa", "ba", "ca", "da", "ea"};
+        String [] expectedTopic6 = {"ab", "bb", "cb", "db", "eb"};
+        String [] expectedTopic7 = {"ac", "bc", "cc", "dc", "ec"};
+        String [] expectedTopic8 = {"ad", "bd", "cd", "dd", "ed"};
+        String [] expectedTopic9 = {"ae", "be", "ce", "de", "ee"};
+
+        Set<String> expectedSet0 = new HashSet<>(Arrays.asList(expectedTopic0));
+        Set<String> expectedSet1 = new HashSet<>(Arrays.asList(expectedTopic1));
+        Set<String> expectedSet2 = new HashSet<>(Arrays.asList(expectedTopic2));
+        Set<String> expectedSet3 = new HashSet<>(Arrays.asList(expectedTopic3));
+        Set<String> expectedSet4 = new HashSet<>(Arrays.asList(expectedTopic4));
+        Set<String> expectedSet5 = new HashSet<>(Arrays.asList(expectedTopic5));
+        Set<String> expectedSet6 = new HashSet<>(Arrays.asList(expectedTopic6));
+        Set<String> expectedSet7 = new HashSet<>(Arrays.asList(expectedTopic7));
+        Set<String> expectedSet8 = new HashSet<>(Arrays.asList(expectedTopic8));
+        Set<String> expectedSet9 = new HashSet<>(Arrays.asList(expectedTopic9));
+
+        boolean [] seen = new boolean[10];
+
+        List<List<String>> result = ldaModel.getTopics(5);
+        assertThat(result.size(), is(equalTo(10)));
+
+        for (List<String> resultList : result) {
+            Set<String> resultSet = new HashSet<>(resultList);
+            seen[0] = (resultSet.contains(expectedSet0)) || seen[0];
+            seen[1] = (resultSet.contains(expectedSet1)) || seen[1];
+            seen[2] = (resultSet.contains(expectedSet2)) || seen[2];
+            seen[3] = (resultSet.contains(expectedSet3)) || seen[3];
+            seen[4] = (resultSet.contains(expectedSet4)) || seen[4];
+            seen[5] = (resultSet.contains(expectedSet5)) || seen[5];
+            seen[6] = (resultSet.contains(expectedSet6)) || seen[6];
+            seen[7] = (resultSet.contains(expectedSet7)) || seen[7];
+            seen[8] = (resultSet.contains(expectedSet8)) || seen[8];
+            seen[9] = (resultSet.contains(expectedSet9)) || seen[9];
+        }
+
+        boolean [] expected = {true, true, true, true, true, true, true, true, true};
+        assertThat(expected, is(equalTo(expected)));
+    }
+
+    /**
+     * Constructs a test document as described in:
+     *
+     * Griffiths, T. L. & Steyvers, M. (2004). Finding scientific topics.
+     * Proceedings of the National Academy of Sciences, 101, 5228-5235.
+     * http://psiexp.ss.uci.edu/research/papers/sciencetopics.pdf
+     *
+     * Sample randomly 20 times from among the 10 different topics. Each
+     * topic has 5 words in them. The total vocabulary size is 25 words.
+     * If you imagine each word records the column and row
+     * (e.g. "ca" means column "c", row "a"), then you can see the topics
+     * form horizontal and vertical stripes, as described in the scientific
+     * paper. Any LDA model should be able to recover the topics in roughly
+     * 500 iterations.
+     *
+     * @return a list of documents for testing
+     */
+    public List<List<String>> generateTestDocuments() {
+        Random random = new Random();
+        String [][] topics = {
+                {"aa", "ab", "ac", "ad", "ae"},
+                {"ba", "bb", "bc", "bd", "be"},
+                {"ca", "cb", "cc", "cd", "ce"},
+                {"da", "db", "dc", "dd", "de"},
+                {"ea", "eb", "ec", "ed", "ee"},
+
+                {"aa", "ba", "ca", "da", "ea"},
+                {"ab", "bb", "cb", "db", "eb"},
+                {"ac", "bc", "cc", "dc", "ec"},
+                {"ad", "bd", "cd", "dd", "ed"},
+                {"ae", "be", "ce", "de", "ee"}
+        };
+
+        List<List<String>> documents = new ArrayList<>();
+        for (int document_num = 0; document_num < 2000; document_num++) {
+            List<String> document = new ArrayList<>();
+            for (int counter = 0; counter < 20; counter++) {
+                for (String word : topics[random.nextInt(10)]) {
+                    document.add(word);
+                }
+            }
+            documents.add(document);
+        }
+        return documents;
     }
 }
