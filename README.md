@@ -21,12 +21,16 @@ within minutes.
 Recover topics that appear in a collection of documents. To extract 10 topics from a
 list of documents (each document is a list of strings), over 1000 iterations:
 
-    LDAModel model = new LDAModel(10);
-    model.readDocuments(documentList);
-    model.doGibbsSampling(1000);
+```java
+LDAModel model = new LDAModel(10);
+model.readDocuments(documentList);
+model.doGibbsSampling(1000);
+```
     
 To get the top 5 words that describe each topic:
 
-    List<List<String>> topics = model.getTopics(5);
-    System.out.println("Top 5 words for the first topic: " + topics.get(0));
+```java
+List<List<String>> topics = model.getTopics(5);
+System.out.println("Top 5 words for the first topic: " + topics.get(0));
+```
 
