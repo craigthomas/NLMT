@@ -35,6 +35,9 @@ public class LDAModelTest {
     private String [] document3 = {"the", "dog", "chased", "the", "cat"};
     private String [] longDocument = {"once", "upon", "a", "time", "there", "lived",
                                         "a", "dragon"};
+    private String [] topic1 = {"1", "1", "1", "1", "1"};
+    private String [] topic2 = {"2", "2", "2", "2", "2"};
+
 
     private LDAModel ldaModel;
     private List<List<String>> documents;
@@ -479,9 +482,7 @@ public class LDAModelTest {
         for (int document_num = 0; document_num < 2000; document_num++) {
             List<String> document = new ArrayList<>();
             for (int counter = 0; counter < 20; counter++) {
-                for (String word : topics[random.nextInt(10)]) {
-                    document.add(word);
-                }
+                Collections.addAll(document, topics[random.nextInt(10)]);
             }
             documents.add(document);
         }
@@ -537,5 +538,48 @@ public class LDAModelTest {
         noGlobalWords.add("world");
         double [] expected = {0.0, 0.0, 0.0};
         assertThat(ldaModel.inference(noGlobalWords, 100), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testInferenceDocumentDistributedEquallyBetweenTwoTopics() {
+        ldaModel = new LDAModel(2, 1.0, 0.1);
+        documents.clear();
+        documents.add(Arrays.asList(topic1));
+        documents.add(Arrays.asList(topic2));
+        ldaModel.readDocuments(documents);
+        ldaModel.doGibbsSampling(100);
+
+        List<String> twoWords = new ArrayList<>();
+        twoWords.add("1");
+        twoWords.add("2");
+        double [] expected = {0.5, 0.5};
+        assertThat(ldaModel.inference(twoWords, 100), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testInferenceDocumentAllOneTopic() {
+        ldaModel = new LDAModel(2, 1.0, 0.1);
+        documents.clear();
+        documents.add(Arrays.asList(topic1));
+        documents.add(Arrays.asList(topic1));
+        documents.add(Arrays.asList(topic1));
+        documents.add(Arrays.asList(topic1));
+        documents.add(Arrays.asList(topic1));
+        documents.add(Arrays.asList(topic1));
+        documents.add(Arrays.asList(topic2));
+        ldaModel.readDocuments(documents);
+        ldaModel.doGibbsSampling(200);
+
+        List<String> twoWords = new ArrayList<>();
+        twoWords.add("1");
+        twoWords.add("1");
+        twoWords.add("1");
+
+        List<List<String>> topWords = ldaModel.getTopics(1);
+        double [] expected = {1.0, 0.0};
+        if (topWords.get(1).get(0).equals("1")) {
+            expected = new double[] {0.0, 1.0};
+        }
+        assertThat(ldaModel.inference(twoWords, 100), is(equalTo(expected)));
     }
 }
