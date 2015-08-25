@@ -293,6 +293,11 @@ public class LDAModel
      * @return an array of topic distributions
      */
     public double [] inference(List<String> document, int numIterations) {
+        // If the document is empty, then the topic distributions are empty
+        if (document.size() == 0) {
+            return new double[numTopics];
+        }
+
         Vocabulary newVocabulary = new Vocabulary();
         Document newDocument = new Document(newVocabulary);
         newDocument.readDocument(document);
@@ -303,27 +308,36 @@ public class LDAModel
 
         // Randomly assign topics to the words in the document
         for (int wordIndex = 0; wordIndex < words.length; wordIndex++) {
-            int newTopic = random.nextInt(numTopics);
-            localTopicDocumentCount[newTopic]++;
-            newDocument.setTopicForWord(wordIndex, random.nextInt(numTopics));
+            newDocument.setTopicForWord(wordIndex, -1);
         }
 
         // Loop and perform Gibbs Sampling, but clamp the global word and topic counts
         for (int iteration = 0; iteration < numIterations; iteration++) {
+            int [] topics = newDocument.getTopicArray();
             for (int wordIndexInDoc = 0; wordIndexInDoc < words.length; wordIndexInDoc++) {
-                newDocument.setTopicForWord(wordIndexInDoc, -1);
+                if (topics[wordIndexInDoc] != -1) {
+                    localTopicDocumentCount[topics[wordIndexInDoc]]--;
+                    newDocument.setTopicForWord(wordIndexInDoc, -1);
+                }
                 if (vocabulary.contains(rawWords[wordIndexInDoc])) {
                     int newTopic = getNewTopic(words[wordIndexInDoc], localTopicDocumentCount);
                     newDocument.setTopicForWord(wordIndexInDoc, newTopic);
+                    localTopicDocumentCount[newTopic]++;
                 }
             }
         }
 
         // Figure out what the distribution of topics should be
         PMFSampler documentPMFSampler = new PMFSampler(numTopics);
+        boolean allEmpty = true;
         for (int topicIndex = 0; topicIndex < numTopics; topicIndex++) {
-            documentPMFSampler.add((((double)localTopicDocumentCount[topicIndex]) + alpha));
+            if (localTopicDocumentCount[topicIndex] <= 0) {
+                documentPMFSampler.add(0.0);
+            } else {
+                documentPMFSampler.add((((double) localTopicDocumentCount[topicIndex]) + alpha));
+                allEmpty = false;
+            }
         }
-        return documentPMFSampler.getProbabilities();
+        return (allEmpty) ? new double[numTopics] : documentPMFSampler.getProbabilities();
     }
 }

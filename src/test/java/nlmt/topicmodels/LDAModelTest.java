@@ -514,4 +514,28 @@ public class LDAModelTest {
         ldaModel.initialize();
         ldaModel.getTopicMixtureForDocument(10);
     }
+
+    @Test
+    public void testInferenceOnEmptyDocumentReturnsEmptyProbabilities() {
+        ldaModel = new LDAModel(3);
+        ldaModel.readDocuments(documents);
+        ldaModel.doGibbsSampling(100);
+
+        List<String> emptyDocument = new ArrayList<>();
+        double [] expected = {0.0, 0.0, 0.0};
+        assertThat(ldaModel.inference(emptyDocument, 100), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testInferenceDocumentHasNoWordsMatchingGlobalVocabulary() {
+        ldaModel = new LDAModel(3);
+        ldaModel.readDocuments(documents);
+        ldaModel.doGibbsSampling(100);
+
+        List<String> noGlobalWords = new ArrayList<>();
+        noGlobalWords.add("hello");
+        noGlobalWords.add("world");
+        double [] expected = {0.0, 0.0, 0.0};
+        assertThat(ldaModel.inference(noGlobalWords, 100), is(equalTo(expected)));
+    }
 }
