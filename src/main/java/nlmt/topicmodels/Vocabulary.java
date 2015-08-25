@@ -80,6 +80,10 @@ public class Vocabulary {
         return -1;
     }
 
+    public boolean contains(String word) {
+        return wordIndexMap.containsKey(word);
+    }
+
     /**
      * Bumps the nextIndex counter up by 1.
      */

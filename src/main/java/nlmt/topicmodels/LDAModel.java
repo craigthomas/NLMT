@@ -38,8 +38,8 @@ public class LDAModel
     protected double beta;
 
     // Keeps track of how many documents have been assigned to a topic
-    // topicDocumentCount[topicIndex][documentIndex]
-    protected int [][] topicDocumentCount;
+    // topicDocumentCount[documentIndex][topicIndex]
+    protected int [][] documentTopicCount;
 
     // Keeps track of how many of each topic has been assigned to a word
     // wordTopicCount[wordIndexInVocab][topicIndex]
@@ -112,7 +112,7 @@ public class LDAModel
      */
     public void initialize() {
         int totalDocs = documents.length;
-        topicDocumentCount = new int[numTopics][totalDocs];
+        documentTopicCount = new int[totalDocs][numTopics];
         wordTopicCount = new int[vocabulary.size()][numTopics];
         topicTotals = new int[numTopics];
 
@@ -126,35 +126,35 @@ public class LDAModel
     }
 
     /**
-     * Given the topic counts for each word, the topic counts for each document,
+     * Given the topic counts for each word, the topic count for the specified document,
      * calculate the mass associated with this word and topic combination.
-     *
-     * @param documentIndex the document number
+
+     * @param topicDocumentCount the topic composition of the document
      * @param wordIndexInVocab the word number in the vocabulary
      * @param topicIndex the topic number
      * @return the mass belonging to the word
      */
-    public double getTopicWeight(int documentIndex, int wordIndexInVocab, int topicIndex) {
+    protected double getTopicWeight(int topicDocumentCount, int wordIndexInVocab, int topicIndex) {
         double denominator = topicTotals[topicIndex] + (topicTotals[topicIndex] * beta);
         if (denominator == 0.0) {
             return 0.0;
         }
         return ((wordTopicCount[wordIndexInVocab][topicIndex] + beta) / denominator) *
-                (topicDocumentCount[topicIndex][documentIndex] + alpha);
+                (topicDocumentCount + alpha);
     }
 
     /**
-     * Determines what topic the word should belong to given the document and the
-     * word in the vocabulary.
+     * Determines what topic the word should belong to given the current topic counts
+     * in the specified document.
      *
-     * @param documentIndex the document number
-     * @param wordIndexInVocab the word number in the vocabulary
-     * @return the best topic number
+     * @param wordIndexInVocab the word in the vocabulary to check
+     * @param topicCounts the topic totals for the document
+     * @return the new topic
      */
-    protected int getNewTopic(int documentIndex, int wordIndexInVocab) {
+    protected int getNewTopic(int wordIndexInVocab, int [] topicCounts) {
         pmfSampler.clear();
         for (int topicIndex = 0; topicIndex < numTopics; topicIndex++) {
-            double weight = getTopicWeight(documentIndex, wordIndexInVocab, topicIndex);
+            double weight = getTopicWeight(topicCounts[topicIndex], wordIndexInVocab, topicIndex);
             pmfSampler.add(weight);
         }
         return pmfSampler.sample();
@@ -174,7 +174,7 @@ public class LDAModel
      */
     protected void removeTopicFromWord(int documentIndex, int wordIndexInVocab, int wordIndexInDoc, int topicIndex) {
         documents[documentIndex].setTopicForWord(wordIndexInDoc, -1);
-        topicDocumentCount[topicIndex][documentIndex]--;
+        documentTopicCount[documentIndex][topicIndex]--;
         wordTopicCount[wordIndexInVocab][topicIndex]--;
         topicTotals[topicIndex]--;
     }
@@ -193,7 +193,7 @@ public class LDAModel
      */
     protected void addTopicToWord(int documentIndex, int wordIndexInVocab, int wordIndexInDoc, int topicIndex) {
         documents[documentIndex].setTopicForWord(wordIndexInDoc, topicIndex);
-        topicDocumentCount[topicIndex][documentIndex]++;
+        documentTopicCount[documentIndex][topicIndex]++;
         wordTopicCount[wordIndexInVocab][topicIndex]++;
         topicTotals[topicIndex]++;
     }
@@ -213,7 +213,7 @@ public class LDAModel
                 int [] topics = documents[documentIndex].getTopicArray();
                 for (int wordIndexInDoc = 0; wordIndexInDoc < words.length; wordIndexInDoc++) {
                     removeTopicFromWord(documentIndex, words[wordIndexInDoc], wordIndexInDoc, topics[wordIndexInDoc]);
-                    int newTopic = getNewTopic(documentIndex, words[wordIndexInDoc]);
+                    int newTopic = getNewTopic(words[wordIndexInDoc], documentTopicCount[documentIndex]);
                     addTopicToWord(documentIndex, words[wordIndexInDoc], wordIndexInDoc, newTopic);
                 }
             }
@@ -270,7 +270,42 @@ public class LDAModel
         }
         PMFSampler documentPMFSampler = new PMFSampler(numTopics);
         for (int topicIndex = 0; topicIndex < numTopics; topicIndex++) {
-            documentPMFSampler.add((((double)topicDocumentCount[topicIndex][documentIndex]) + alpha));
+            documentPMFSampler.add((((double)documentTopicCount[documentIndex][topicIndex]) + alpha));
+        }
+        return documentPMFSampler.getProbabilities();
+    }
+
+    public double [] inference(List<String> document, int numIterations) {
+        Vocabulary newVocabulary = new Vocabulary();
+        Document newDocument = new Document(newVocabulary);
+        newDocument.readDocument(document);
+
+        int [] localTopicDocumentCount = new int[numTopics];
+        String [] rawWords = newDocument.getRawWords();
+        int [] words = newDocument.getWordArray();
+
+        // Randomly assign topics to the words in the document
+        for (int wordIndex = 0; wordIndex < words.length; wordIndex++) {
+            int newTopic = random.nextInt(numTopics);
+            localTopicDocumentCount[newTopic]++;
+            newDocument.setTopicForWord(wordIndex, random.nextInt(numTopics));
+        }
+
+        // Loop and perform Gibbs Sampling, but clamp the global word and topic counts
+        for (int iteration = 0; iteration < numIterations; iteration++) {
+            for (int wordIndexInDoc = 0; wordIndexInDoc < words.length; wordIndexInDoc++) {
+                newDocument.setTopicForWord(wordIndexInDoc, -1);
+                if (vocabulary.contains(rawWords[wordIndexInDoc])) {
+                    int newTopic = getNewTopic(words[wordIndexInDoc], localTopicDocumentCount);
+                    newDocument.setTopicForWord(wordIndexInDoc, newTopic);
+                }
+            }
+        }
+
+        // Figure out what the distribution of topics are
+        PMFSampler documentPMFSampler = new PMFSampler(numTopics);
+        for (int topicIndex = 0; topicIndex < numTopics; topicIndex++) {
+            documentPMFSampler.add((((double)localTopicDocumentCount[topicIndex]) + alpha));
         }
         return documentPMFSampler.getProbabilities();
     }

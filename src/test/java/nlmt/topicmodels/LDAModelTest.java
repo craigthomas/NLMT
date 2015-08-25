@@ -113,14 +113,14 @@ public class LDAModelTest {
         ldaModel.readDocuments(documents);
         ldaModel.initialize();
 
-        int currentTopicDocumentCount = ldaModel.topicDocumentCount[0][0];
+        int currentDocumentTopicCount = ldaModel.documentTopicCount[0][0];
         int currentWordTopicCount = ldaModel.wordTopicCount[0][0];
         int currentTopicTotals = ldaModel.topicTotals[0];
 
         ldaModel.addTopicToWord(0, 0, 0, 0);
 
         assertThat(ldaModel.documents[0].getTopicArray()[0], is(equalTo(0)));
-        assertThat(ldaModel.topicDocumentCount[0][0], is(equalTo(currentTopicDocumentCount + 1)));
+        assertThat(ldaModel.documentTopicCount[0][0], is(equalTo(currentDocumentTopicCount + 1)));
         assertThat(ldaModel.wordTopicCount[0][0], is(equalTo(currentWordTopicCount + 1)));
         assertThat(ldaModel.topicTotals[0], is(equalTo(currentTopicTotals + 1)));
     }
@@ -131,28 +131,28 @@ public class LDAModelTest {
         ldaModel.readDocuments(documents);
         ldaModel.initialize();
 
-        int currentTopicDocumentCount = ldaModel.topicDocumentCount[0][0];
+        int currentDocumentTopicCount = ldaModel.documentTopicCount[0][0];
         int currentWordTopicCount = ldaModel.wordTopicCount[0][0];
         int currentTopicTotals = ldaModel.topicTotals[0];
 
         ldaModel.removeTopicFromWord(0, 0, 0, 0);
 
         assertThat(ldaModel.documents[0].getTopicArray()[0], is(equalTo(-1)));
-        assertThat(ldaModel.topicDocumentCount[0][0], is(equalTo(currentTopicDocumentCount - 1)));
+        assertThat(ldaModel.documentTopicCount[0][0], is(equalTo(currentDocumentTopicCount - 1)));
         assertThat(ldaModel.wordTopicCount[0][0], is(equalTo(currentWordTopicCount - 1)));
         assertThat(ldaModel.topicTotals[0], is(equalTo(currentTopicTotals - 1)));
     }
 
     @Test
-    public void testGetTopicProbabilityWorksCorrectlySimpleCase() {
+    public void testGetTopicWeightWorksCorrectlySimpleCase() {
         ldaModel = new LDAModel(2);
         documents.clear();
         documents.add(Arrays.asList(document1));
         ldaModel.readDocuments(documents);
         ldaModel.initialize();
 
-        ldaModel.topicDocumentCount[0][0] = 0;
-        ldaModel.topicDocumentCount[1][0] = 0;
+        ldaModel.documentTopicCount[0][0] = 0;
+        ldaModel.documentTopicCount[0][1] = 0;
 
         ldaModel.wordTopicCount[0][0] = 0;
         ldaModel.wordTopicCount[0][1] = 0;
@@ -174,7 +174,7 @@ public class LDAModelTest {
         ldaModel.addTopicToWord(0, 3, 3, 1);
         ldaModel.addTopicToWord(0, 4, 4, 1);
 
-        assertThat(ldaModel.getTopicWeight(0, 0, 0), is(equalTo(1.1666666666666667)));
+        assertThat(ldaModel.getTopicWeight(ldaModel.documentTopicCount[0][0], 0, 0), is(equalTo(1.1666666666666667)));
     }
 
     @Test
@@ -185,8 +185,8 @@ public class LDAModelTest {
         ldaModel.readDocuments(documents);
         ldaModel.initialize();
 
-        ldaModel.topicDocumentCount[0][0] = 0;
-        ldaModel.topicDocumentCount[1][0] = 0;
+        ldaModel.documentTopicCount[0][0] = 0;
+        ldaModel.documentTopicCount[0][1] = 0;
 
         ldaModel.wordTopicCount[0][0] = 0;
         ldaModel.wordTopicCount[0][1] = 0;
@@ -208,7 +208,7 @@ public class LDAModelTest {
         ldaModel.addTopicToWord(0, 3, 3, 0);
         ldaModel.addTopicToWord(0, 4, 4, 0);
 
-        assertThat(ldaModel.getNewTopic(0, 0), is(equalTo(0)));
+        assertThat(ldaModel.getNewTopic(0, ldaModel.documentTopicCount[0]), is(equalTo(0)));
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -496,9 +496,9 @@ public class LDAModelTest {
         ldaModel.readDocuments(documents);
         ldaModel.initialize();
 
-        ldaModel.topicDocumentCount[0][0] = 4;
-        ldaModel.topicDocumentCount[1][0] = 9;
-        ldaModel.topicDocumentCount[2][0] = 2;
+        ldaModel.documentTopicCount[0][0] = 4;
+        ldaModel.documentTopicCount[0][1] = 9;
+        ldaModel.documentTopicCount[0][2] = 2;
 
         double [] expected = {0.2727272727272727, 0.5757575757575758, 0.15151515151515152};
 
