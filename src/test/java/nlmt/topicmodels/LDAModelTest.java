@@ -539,47 +539,4 @@ public class LDAModelTest {
         double [] expected = {0.0, 0.0, 0.0};
         assertThat(ldaModel.inference(noGlobalWords, 100), is(equalTo(expected)));
     }
-
-    @Test
-    public void testInferenceDocumentDistributedEquallyBetweenTwoTopics() {
-        ldaModel = new LDAModel(2, 1.0, 0.1);
-        documents.clear();
-        documents.add(Arrays.asList(topic1));
-        documents.add(Arrays.asList(topic2));
-        ldaModel.readDocuments(documents);
-        ldaModel.doGibbsSampling(100);
-
-        List<String> twoWords = new ArrayList<>();
-        twoWords.add("1");
-        twoWords.add("2");
-        double [] expected = {0.5, 0.5};
-        assertThat(ldaModel.inference(twoWords, 100), is(equalTo(expected)));
-    }
-
-    @Test
-    public void testInferenceDocumentAllOneTopic() {
-        ldaModel = new LDAModel(2, 1.0, 0.1);
-        documents.clear();
-        documents.add(Arrays.asList(topic1));
-        documents.add(Arrays.asList(topic1));
-        documents.add(Arrays.asList(topic1));
-        documents.add(Arrays.asList(topic1));
-        documents.add(Arrays.asList(topic1));
-        documents.add(Arrays.asList(topic1));
-        documents.add(Arrays.asList(topic2));
-        ldaModel.readDocuments(documents);
-        ldaModel.doGibbsSampling(200);
-
-        List<String> twoWords = new ArrayList<>();
-        twoWords.add("1");
-        twoWords.add("1");
-        twoWords.add("1");
-
-        List<List<String>> topWords = ldaModel.getTopics(1);
-        double [] expected = {1.0, 0.0};
-        if (topWords.get(1).get(0).equals("1")) {
-            expected = new double[] {0.0, 1.0};
-        }
-        assertThat(ldaModel.inference(twoWords, 100), is(equalTo(expected)));
-    }
 }
