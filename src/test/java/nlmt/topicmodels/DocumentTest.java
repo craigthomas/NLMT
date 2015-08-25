@@ -72,6 +72,13 @@ public class DocumentTest {
     }
 
     @Test
+    public void testGetRawWordsWorksCorrectly() {
+        String [] words = {"the", "cat", "sat"};
+        document.readDocument(Arrays.asList(words));
+        assertThat(document.getRawWords(), is(equalTo(words)));
+    }
+
+    @Test
     public void testTopicArrayAllNegativeOnesWhenDocumentRead() {
         String [] words = {"the", "cat", "sat"};
         document.readDocument(Arrays.asList(words));

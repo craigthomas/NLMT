@@ -275,6 +275,23 @@ public class LDAModel
         return documentPMFSampler.getProbabilities();
     }
 
+    /**
+     * Infer what the topic distribution should be for the given document.
+     * Returns an array representing the topics found within the document.
+     * For example, assuming there were 3 topics:
+     *
+     * result[0] = 0.87
+     * result[1] = 0.10
+     * result[2] = 0.03
+     *
+     * This means that the document is composed of 87% of topic 1,
+     * 10% of topic 2, and 3% of topic 3. Words that have not been seen before
+     * by the model are ignored when determining topic distributions.
+     *
+     * @param document the new document to infer
+     * @param numIterations the number of iterations to perform the inference on
+     * @return an array of topic distributions
+     */
     public double [] inference(List<String> document, int numIterations) {
         Vocabulary newVocabulary = new Vocabulary();
         Document newDocument = new Document(newVocabulary);
@@ -302,7 +319,7 @@ public class LDAModel
             }
         }
 
-        // Figure out what the distribution of topics are
+        // Figure out what the distribution of topics should be
         PMFSampler documentPMFSampler = new PMFSampler(numTopics);
         for (int topicIndex = 0; topicIndex < numTopics; topicIndex++) {
             documentPMFSampler.add((((double)localTopicDocumentCount[topicIndex]) + alpha));

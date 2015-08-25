@@ -38,14 +38,11 @@ public class Document
     // topic 3, and "sat" is assigned to topic 2
     private int [] topicArray;
 
-    private String [] rawWords;
-
     // The Vocabulary that provides the mapping from word
     // Strings to numbers
     private Vocabulary vocabulary;
 
     public Document(Vocabulary vocabulary) {
-        this.rawWords = new String[0];
         this.wordArray = new int[0];
         this.topicArray = new int[0];
         this.vocabulary = vocabulary;
@@ -61,10 +58,8 @@ public class Document
     public void readDocument(List<String> words) {
         wordArray = new int[words.size()];
         topicArray = new int[words.size()];
-        rawWords = new String[words.size()];
         int currentIndex = 0;
         for (String word : words) {
-            rawWords[currentIndex] = word;
             vocabulary.addWord(word);
             wordArray[currentIndex] = vocabulary.getIndexFromWord(word);
             topicArray[currentIndex] = -1;
@@ -83,8 +78,18 @@ public class Document
         return wordArray;
     }
 
+    /**
+     * Returns the original set of strings representing the document
+     * from the vocabulary.
+     *
+     * @return the original array of Strings
+     */
     public String [] getRawWords() {
-        return rawWords;
+        String [] result = new String[wordArray.length];
+        for (int wordIndex = 0; wordIndex < wordArray.length; wordIndex++) {
+            result[wordIndex] = vocabulary.getWordFromIndex(wordIndex);
+        }
+        return result;
     }
 
     /**

@@ -80,6 +80,13 @@ public class Vocabulary {
         return -1;
     }
 
+    /**
+     * Returns <code>true</code> if the Vocabulary contains the specified
+     * word.
+     *
+     * @param word the String word to check
+     * @return <code>true</code> if the word is in the Vocabulary
+     */
     public boolean contains(String word) {
         return wordIndexMap.containsKey(word);
     }

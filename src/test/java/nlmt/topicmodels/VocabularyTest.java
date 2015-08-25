@@ -67,6 +67,28 @@ public class VocabularyTest {
     }
 
     @Test
+    public void testContainsInEmptyVocabularyWorksCorrectly() {
+        assertThat(vocabulary.contains("not"), is(equalTo(false)));
+    }
+
+    @Test
+    public void testContainsInPopulatedVocabularyWorksCorrectly() {
+        vocabulary.addWord("some");
+        vocabulary.addWord("words");
+        assertThat(vocabulary.contains("some"), is(equalTo(true)));
+        assertThat(vocabulary.contains("words"), is(equalTo(true)));
+        assertThat(vocabulary.contains("not"), is(equalTo(false)));
+    }
+
+    @Test
+    public void testContainsCaseSensitive() {
+        vocabulary.addWord("some");
+        vocabulary.addWord("words");
+        assertThat(vocabulary.contains("SOME"), is(equalTo(false)));
+        assertThat(vocabulary.contains("WORDS"), is(equalTo(false)));
+    }
+
+    @Test
     public void testGetWordFromIndexReturnsEmptyOnNegativeIndex() {
         assertThat(vocabulary.getWordFromIndex(-100), is(equalTo("")));
     }
