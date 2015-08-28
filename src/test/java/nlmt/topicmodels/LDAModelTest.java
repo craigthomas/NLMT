@@ -573,6 +573,19 @@ public class LDAModelTest {
         }
 
         double [] probabilities = ldaModel.inference(unseenDocument, 100);
-        assertThat(probabilities[matchingTopicIndex] > 0.8, is(true));
+        assertThat(probabilities[matchingTopicIndex] > 0.7, is(true));
+    }
+
+    @Test
+    public void testInferenceNoWordsMatchGlobalVocabulary() {
+        ldaModel = new LDAModel(10, 1.0, 0.1);
+        ldaModel.readDocuments(generateTestDocuments());
+        ldaModel.doGibbsSampling(300);
+
+        String [] unseenWords = {"za", "zb", "zc", "zd", "ze"};
+        double [] expectedProbabilities = new double[10];
+
+        double [] probabilities = ldaModel.inference(Arrays.asList(unseenWords), 100);
+        assertThat(probabilities, is(equalTo(expectedProbabilities)));
     }
 }
