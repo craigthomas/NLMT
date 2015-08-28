@@ -16,6 +16,9 @@ within minutes.
 
 # Topic Modeling
 
+Topic models attempt to recover information regarding the set of latent topics that occur
+in a collection of documents. 
+
 ## Latent Dirichlet Allocation
 
 Recover topics that appear in a collection of documents. To extract 10 topics from a
@@ -32,5 +35,12 @@ To get the top 5 words that describe each topic:
 ```java
 List<List<String>> topics = model.getTopics(5);
 System.out.println("Top 5 words for the first topic: " + topics.get(0));
+```
+
+To get the topic distributions on an unseen document (a list of strings), over 100
+sample iterations:
+
+```java
+model.inference(unseenDocument, 100);
 ```
 
