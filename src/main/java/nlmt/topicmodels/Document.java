@@ -79,6 +79,20 @@ public class Document
     }
 
     /**
+     * Returns the original set of strings representing the document
+     * from the vocabulary.
+     *
+     * @return the original array of Strings
+     */
+    public String [] getRawWords() {
+        String [] result = new String[wordArray.length];
+        for (int wordIndex = 0; wordIndex < wordArray.length; wordIndex++) {
+            result[wordIndex] = vocabulary.getWordFromIndex(wordArray[wordIndex]);
+        }
+        return result;
+    }
+
+    /**
      * Returns what topic is assigned to each word. Each word is assigned
      * exactly one topic.
      *

@@ -72,6 +72,13 @@ public class DocumentTest {
     }
 
     @Test
+    public void testGetRawWordsWorksCorrectly() {
+        String [] words = {"the", "cat", "sat"};
+        document.readDocument(Arrays.asList(words));
+        assertThat(document.getRawWords(), is(equalTo(words)));
+    }
+
+    @Test
     public void testTopicArrayAllNegativeOnesWhenDocumentRead() {
         String [] words = {"the", "cat", "sat"};
         document.readDocument(Arrays.asList(words));
@@ -116,5 +123,15 @@ public class DocumentTest {
     @Test(expected=IllegalArgumentException.class)
     public void testSetTopicOnNoDocumentThrowsException() {
         document.setTopicForWord(0, 1);
+    }
+
+    @Test
+    public void testGetWordsOnDocumentAllSameWord() {
+        String [] words = {"the", "the", "the"};
+        int [] vocabList = {0, 0, 0};
+        document.readDocument(Arrays.asList(words));
+        assertThat(document.getWordArray().length, is(equalTo(3)));
+        assertThat(document.getWordArray(), is(equalTo(vocabList)));
+        assertThat(document.getRawWords(), is(equalTo(words)));
     }
 }

@@ -81,6 +81,17 @@ public class Vocabulary {
     }
 
     /**
+     * Returns <code>true</code> if the Vocabulary contains the specified
+     * word.
+     *
+     * @param word the String word to check
+     * @return <code>true</code> if the word is in the Vocabulary
+     */
+    public boolean contains(String word) {
+        return wordIndexMap.containsKey(word);
+    }
+
+    /**
      * Bumps the nextIndex counter up by 1.
      */
     private void incrementNextIndex() {
