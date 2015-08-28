@@ -87,7 +87,7 @@ public class Document
     public String [] getRawWords() {
         String [] result = new String[wordArray.length];
         for (int wordIndex = 0; wordIndex < wordArray.length; wordIndex++) {
-            result[wordIndex] = vocabulary.getWordFromIndex(wordIndex);
+            result[wordIndex] = vocabulary.getWordFromIndex(wordArray[wordIndex]);
         }
         return result;
     }

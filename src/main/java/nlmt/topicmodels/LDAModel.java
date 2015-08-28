@@ -19,7 +19,6 @@ import nlmt.datatypes.BoundedPriorityQueue;
 import nlmt.probfunctions.PMFSampler;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Simple implementation of Latent Dirichlet Allocation using Gibbs
@@ -238,7 +237,11 @@ public class LDAModel
         for (int wordIndex = 0; wordIndex < vocabulary.size(); wordIndex++) {
             priorityQueue.add(wordTopicCount[wordIndex][topicIndex], wordIndex);
         }
-        return priorityQueue.getElements().stream().map(vocabulary::getWordFromIndex).collect(Collectors.toList());
+        List<String> result = new ArrayList<>();
+        for (int vocabIndex : priorityQueue.getElements()) {
+            result.add(vocabulary.getWordFromIndex(vocabIndex));
+        }
+        return result;
     }
 
     /**
@@ -298,28 +301,28 @@ public class LDAModel
             return new double[numTopics];
         }
 
-        Vocabulary newVocabulary = new Vocabulary();
-        Document newDocument = new Document(newVocabulary);
+        Document newDocument = new Document(vocabulary);
         newDocument.readDocument(document);
-
         int [] localTopicDocumentCount = new int[numTopics];
-        String [] rawWords = newDocument.getRawWords();
         int [] words = newDocument.getWordArray();
 
-        // Randomly assign topics to the words in the document
+        // Randomly assign word to topic, checking to make sure the word is in the
+        // global vocabulary
         for (int wordIndex = 0; wordIndex < words.length; wordIndex++) {
-            newDocument.setTopicForWord(wordIndex, -1);
+            if (words[wordIndex] < wordTopicCount.length) {
+                int newTopic = random.nextInt(numTopics);
+                newDocument.setTopicForWord(wordIndex, newTopic);
+                localTopicDocumentCount[newTopic]++;
+            }
         }
 
-        // Loop and perform Gibbs Sampling, but clamp the global word and topic counts
+        // Loop and perform Gibbs Sampling, but do not update the global word and topic counts
         for (int iteration = 0; iteration < numIterations; iteration++) {
             int [] topics = newDocument.getTopicArray();
             for (int wordIndexInDoc = 0; wordIndexInDoc < words.length; wordIndexInDoc++) {
-                if (topics[wordIndexInDoc] != -1) {
+                if (words[wordIndexInDoc] < wordTopicCount.length) {
                     localTopicDocumentCount[topics[wordIndexInDoc]]--;
                     newDocument.setTopicForWord(wordIndexInDoc, -1);
-                }
-                if (vocabulary.contains(rawWords[wordIndexInDoc])) {
                     int newTopic = getNewTopic(words[wordIndexInDoc], localTopicDocumentCount);
                     newDocument.setTopicForWord(wordIndexInDoc, newTopic);
                     localTopicDocumentCount[newTopic]++;

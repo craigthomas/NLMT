@@ -429,16 +429,16 @@ public class LDAModelTest {
 
         for (List<String> resultList : result) {
             Set<String> resultSet = new HashSet<>(resultList);
-            seen[0] = (resultSet.contains(expectedSet0)) || seen[0];
-            seen[1] = (resultSet.contains(expectedSet1)) || seen[1];
-            seen[2] = (resultSet.contains(expectedSet2)) || seen[2];
-            seen[3] = (resultSet.contains(expectedSet3)) || seen[3];
-            seen[4] = (resultSet.contains(expectedSet4)) || seen[4];
-            seen[5] = (resultSet.contains(expectedSet5)) || seen[5];
-            seen[6] = (resultSet.contains(expectedSet6)) || seen[6];
-            seen[7] = (resultSet.contains(expectedSet7)) || seen[7];
-            seen[8] = (resultSet.contains(expectedSet8)) || seen[8];
-            seen[9] = (resultSet.contains(expectedSet9)) || seen[9];
+            seen[0] = (resultSet.equals(expectedSet0)) || seen[0];
+            seen[1] = (resultSet.equals(expectedSet1)) || seen[1];
+            seen[2] = (resultSet.equals(expectedSet2)) || seen[2];
+            seen[3] = (resultSet.equals(expectedSet3)) || seen[3];
+            seen[4] = (resultSet.equals(expectedSet4)) || seen[4];
+            seen[5] = (resultSet.equals(expectedSet5)) || seen[5];
+            seen[6] = (resultSet.equals(expectedSet6)) || seen[6];
+            seen[7] = (resultSet.equals(expectedSet7)) || seen[7];
+            seen[8] = (resultSet.equals(expectedSet8)) || seen[8];
+            seen[9] = (resultSet.equals(expectedSet9)) || seen[9];
         }
 
         boolean [] expected = {true, true, true, true, true, true, true, true, true};
@@ -538,5 +538,41 @@ public class LDAModelTest {
         noGlobalWords.add("world");
         double [] expected = {0.0, 0.0, 0.0};
         assertThat(ldaModel.inference(noGlobalWords, 100), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testInferenceOnUnseenDocument() {
+        ldaModel = new LDAModel(10, 1.0, 0.1);
+        ldaModel.readDocuments(generateTestDocuments());
+        ldaModel.doGibbsSampling(300);
+
+        String [] expectedTopic0 = {"aa", "ab", "ac", "ad", "ae"};
+        Set<String> expectedSet0 = new HashSet<>(Arrays.asList(expectedTopic0));
+
+        List<List<String>> result = ldaModel.getTopics(5);
+        assertThat(result.size(), is(equalTo(10)));
+
+        // We should see the topic with the words "aa", "ab", "ac", "ad", and "ae" in it
+        // if we don't then the model did not converge properly (check testDoGibbsSampling
+        // to see if there was an error introduced into the gibbs sampler code).
+        int matchingTopicIndex = -1;
+        for (int topicNum = 0; topicNum < 10; topicNum++) {
+            Set<String> resultSet = new HashSet<>(result.get(topicNum));
+            if (resultSet.equals(expectedSet0)) {
+                matchingTopicIndex = topicNum;
+            }
+        }
+        assertThat("Model failed to converge!", matchingTopicIndex, is(not(equalTo(-1))));
+
+        // Generate the new document
+        List<String> unseenDocument = new ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+            for (String word : expectedTopic0) {
+                unseenDocument.add(word);
+            }
+        }
+
+        double [] probabilities = ldaModel.inference(unseenDocument, 100);
+        assertThat(probabilities[matchingTopicIndex] > 0.8, is(true));
     }
 }
