@@ -15,6 +15,7 @@
  */
 package nlmt.topicmodels;
 
+import nlmt.datatypes.IdentifierObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,12 +31,12 @@ import static org.junit.Assert.assertThat;
  */
 public class DocumentTest {
 
-    private Vocabulary vocabulary;
+    private IdentifierObjectMapper<String> vocabulary;
     private Document document;
 
     @Before
     public void setUp() {
-        vocabulary = new Vocabulary();
+        vocabulary = new IdentifierObjectMapper<>();
         document = new Document(vocabulary);
     }
 
@@ -49,24 +50,24 @@ public class DocumentTest {
     public void testReadDocumentAddsWordsToVocabulary() {
         String [] words = {"the", "cat", "sat"};
         document.readDocument(Arrays.asList(words));
-        assertThat(vocabulary.getIndexFromWord("the"), is(not(equalTo(-1))));
-        assertThat(vocabulary.getIndexFromWord("cat"), is(not(equalTo(-1))));
-        assertThat(vocabulary.getIndexFromWord("sat"), is(not(equalTo(-1))));
-        int theIndex = vocabulary.getIndexFromWord("the");
-        int catIndex = vocabulary.getIndexFromWord("cat");
-        int satIndex = vocabulary.getIndexFromWord("sat");
-        assertThat(vocabulary.getWordFromIndex(theIndex), is(equalTo("the")));
-        assertThat(vocabulary.getWordFromIndex(catIndex), is(equalTo("cat")));
-        assertThat(vocabulary.getWordFromIndex(satIndex), is(equalTo("sat")));
+        assertThat(vocabulary.getIndexFromObject("the"), is(not(equalTo(-1))));
+        assertThat(vocabulary.getIndexFromObject("cat"), is(not(equalTo(-1))));
+        assertThat(vocabulary.getIndexFromObject("sat"), is(not(equalTo(-1))));
+        int theIndex = vocabulary.getIndexFromObject("the");
+        int catIndex = vocabulary.getIndexFromObject("cat");
+        int satIndex = vocabulary.getIndexFromObject("sat");
+        assertThat(vocabulary.getObjectFromIndex(theIndex), is(equalTo("the")));
+        assertThat(vocabulary.getObjectFromIndex(catIndex), is(equalTo("cat")));
+        assertThat(vocabulary.getObjectFromIndex(satIndex), is(equalTo("sat")));
     }
 
     @Test
     public void testReadDocumentAddsWordsToWordArray() {
         String [] words = {"the", "cat", "sat"};
         document.readDocument(Arrays.asList(words));
-        int theIndex = vocabulary.getIndexFromWord("the");
-        int catIndex = vocabulary.getIndexFromWord("cat");
-        int satIndex = vocabulary.getIndexFromWord("sat");
+        int theIndex = vocabulary.getIndexFromObject("the");
+        int catIndex = vocabulary.getIndexFromObject("cat");
+        int satIndex = vocabulary.getIndexFromObject("sat");
         int [] expectedWordArray = {theIndex, catIndex, satIndex};
         assertThat(document.getWordArray(), is(equalTo(expectedWordArray)));
     }

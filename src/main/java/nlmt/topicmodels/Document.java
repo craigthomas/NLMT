@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Craig Thomas
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 package nlmt.topicmodels;
+
+import nlmt.datatypes.IdentifierObjectMapper;
 
 import java.util.List;
 
@@ -40,9 +42,9 @@ public class Document
 
     // The Vocabulary that provides the mapping from word
     // Strings to numbers
-    private Vocabulary vocabulary;
+    private IdentifierObjectMapper<String> vocabulary;
 
-    public Document(Vocabulary vocabulary) {
+    public Document(IdentifierObjectMapper<String> vocabulary) {
         this.wordArray = new int[0];
         this.topicArray = new int[0];
         this.vocabulary = vocabulary;
@@ -52,16 +54,17 @@ public class Document
      * Each document is a List of Strings that represent the
      * words in the document. For each word, add it to the vocabulary,
      * and then add the vocabulary number assigned to the word to
-     * the wordArray for the document. Assign the topic for the
-     * @param words
+     * the wordArray for the document.
+     *
+     * @param words the list of words in the document
      */
     public void readDocument(List<String> words) {
         wordArray = new int[words.size()];
         topicArray = new int[words.size()];
         int currentIndex = 0;
         for (String word : words) {
-            vocabulary.addWord(word);
-            wordArray[currentIndex] = vocabulary.getIndexFromWord(word);
+            vocabulary.addObject(word);
+            wordArray[currentIndex] = vocabulary.getIndexFromObject(word);
             topicArray[currentIndex] = -1;
             currentIndex++;
         }
@@ -87,7 +90,7 @@ public class Document
     public String [] getRawWords() {
         String [] result = new String[wordArray.length];
         for (int wordIndex = 0; wordIndex < wordArray.length; wordIndex++) {
-            result[wordIndex] = vocabulary.getWordFromIndex(wordArray[wordIndex]);
+            result[wordIndex] = vocabulary.getObjectFromIndex(wordArray[wordIndex]);
         }
         return result;
     }

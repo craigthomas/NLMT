@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Craig Thomas
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,9 +16,11 @@
 package nlmt.topicmodels;
 
 import nlmt.datatypes.BoundedPriorityQueue;
+import nlmt.datatypes.IdentifierObjectMapper;
 import nlmt.probfunctions.PMFSampler;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Simple implementation of Latent Dirichlet Allocation using Gibbs
@@ -56,7 +58,7 @@ public class LDAModel
     protected Document [] documents;
 
     // Associates a word with a specific number, giving us wordIndexInVocab
-    protected Vocabulary vocabulary;
+    protected IdentifierObjectMapper<String> vocabulary;
 
     // Used to produce random numbers
     private Random random;
@@ -81,7 +83,7 @@ public class LDAModel
         this.alpha = (alpha == 0.0) ? 0.5 : alpha;
         this.beta = (beta == 0.0) ? 0.1 : beta;
         this.numTopics = numTopics;
-        vocabulary = new Vocabulary();
+        vocabulary = new IdentifierObjectMapper<>();
         documents = new Document[0];
         random = new Random();
         pmfSampler = new PMFSampler(numTopics);
@@ -237,11 +239,7 @@ public class LDAModel
         for (int wordIndex = 0; wordIndex < vocabulary.size(); wordIndex++) {
             priorityQueue.add(wordTopicCount[wordIndex][topicIndex], wordIndex);
         }
-        List<String> result = new ArrayList<>();
-        for (int vocabIndex : priorityQueue.getElements()) {
-            result.add(vocabulary.getWordFromIndex(vocabIndex));
-        }
-        return result;
+        return priorityQueue.getElements().stream().map(vocabulary::getObjectFromIndex).collect(Collectors.toList());
     }
 
     /**
