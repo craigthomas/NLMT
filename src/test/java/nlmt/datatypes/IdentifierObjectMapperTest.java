@@ -103,4 +103,20 @@ public class IdentifierObjectMapperTest {
         assertThat(mapper.getObjectFromIndex(0), is(equalTo("word")));
         assertThat(mapper.getObjectFromIndex(1), is(nullValue()));
     }
+
+    @Test
+    public void testAddObjectReturnsIndex() {
+        int index = mapper.addObject("word");
+        assertThat(mapper.getIndexFromObject("word"), is(equalTo(0)));
+        assertThat(index, is(equalTo(0)));
+    }
+
+    @Test
+    public void testAddObjectTwiceReturnsSameIndex() {
+        int index = mapper.addObject("word");
+        assertThat(mapper.getIndexFromObject("word"), is(equalTo(0)));
+        assertThat(index, is(equalTo(0)));
+        index = mapper.addObject("word");
+        assertThat(index, is(equalTo(0)));
+    }
 }

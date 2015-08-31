@@ -40,16 +40,21 @@ public class IdentifierObjectMapper<T> {
     }
 
     /**
-     * Adds an object to the mapper if it isn't already in it.
+     * Adds an object to the mapper if it isn't already in it. Returns the
+     * newly generated id for the object.
      *
      * @param object the object to add to the mapper
+     * @return the id of the object
      */
-    public void addObject(T object) {
+    public int addObject(T object) {
         if (!objectIndexMap.containsKey(object)) {
             objectIndexMap.put(object, nextIndex);
             indexObjectMap.put(nextIndex, object);
+            int result = nextIndex;
             incrementNextIndex();
+            return result;
         }
+        return objectIndexMap.get(object);
     }
 
     /**
