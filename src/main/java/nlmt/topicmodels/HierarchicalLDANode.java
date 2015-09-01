@@ -18,10 +18,7 @@ package nlmt.topicmodels;
 import nlmt.datatypes.IdentifierObjectMapper;
 import nlmt.probfunctions.PMFSampler;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Implements a node on the tree formed by the Nested Chinese Restaurant Problem.
@@ -52,6 +49,10 @@ public class HierarchicalLDANode
     // The mapper responsible for mapping nodes to indices
     private IdentifierObjectMapper<HierarchicalLDANode> nodeMapper;
 
+    private int totalWords;
+
+    private Map<Integer, Map<Integer, Integer>> documentWordCount;
+
     /**
      * Alternate constructor used to create a node with no parent. Nodes
      * without parents are considered to be root nodes.
@@ -78,6 +79,8 @@ public class HierarchicalLDANode
         documentsVisitingNode = new HashSet<>();
         numChildren = 0;
         id = nodeMapper.addObject(this);
+        documentWordCount = new HashMap<>();
+        totalWords = 0;
     }
 
     /**
@@ -197,5 +200,84 @@ public class HierarchicalLDANode
      */
     public int getId() {
         return id;
+    }
+
+    /**
+     * Returns the set of documents that have visited this node.
+     *
+     * @return the set of document indices that have visited the node
+     */
+    public Set<Integer> getDocumentsVisitingNode() {
+        return documentsVisitingNode;
+    }
+
+    public void addWord(int documentIndex, int wordIndexInVocab) {
+        if (documentWordCount.containsKey(documentIndex)) {
+            Map<Integer, Integer> wordMap = documentWordCount.get(documentIndex);
+            if (wordMap.containsKey(wordIndexInVocab)) {
+                int wordCount = wordMap.get(wordIndexInVocab);
+                wordMap.put(wordIndexInVocab, wordCount + 1);
+            } else {
+                wordMap.put(wordIndexInVocab, 1);
+            }
+        } else {
+            Map<Integer, Integer> wordMap = new HashMap<>();
+            wordMap.put(wordIndexInVocab, 1);
+            documentWordCount.put(documentIndex, wordMap);
+        }
+        totalWords++;
+    }
+
+    public void removeWord(int documentIndex, int wordIndexInVocab) {
+        if (documentWordCount.containsKey(documentIndex)) {
+            Map<Integer, Integer> wordMap = documentWordCount.get(documentIndex);
+            if (wordMap.containsKey(wordIndexInVocab)) {
+                int wordCount = wordMap.get(wordIndexInVocab);
+                wordCount--;
+                if (wordCount > 0) {
+                    wordMap.put(wordIndexInVocab, wordCount);
+                } else {
+                    wordMap.remove(wordIndexInVocab);
+                }
+                totalWords--;
+            }
+            if (wordMap.isEmpty()) {
+                documentWordCount.remove(documentIndex);
+            }
+        }
+    }
+
+    public int getWordCountForDocument(int documentIndex, int wordIndexInVocab) {
+        if (documentWordCount.containsKey(documentIndex)) {
+            Map<Integer, Integer> wordMap = documentWordCount.get(documentIndex);
+            if (wordMap.containsKey(wordIndexInVocab)) {
+                return wordMap.get(wordIndexInVocab);
+            }
+        }
+        return 0;
+    }
+
+    public int getWordCountAllDocuments(int wordIndexInVocab) {
+        int sum = 0;
+        for (int documentIndex : documentWordCount.keySet()) {
+            Map<Integer, Integer> wordMap = documentWordCount.get(documentIndex);
+            if (wordMap.containsKey(wordIndexInVocab)) {
+                sum += wordMap.get(wordIndexInVocab);
+            }
+        }
+        return sum;
+    }
+
+    public Set<Integer> getVocabularyPresent() {
+        Set<Integer> result = new HashSet<>();
+        for (int documentIndex : documentWordCount.keySet()) {
+            Map<Integer, Integer> wordMap = documentWordCount.get(documentIndex);
+            result.addAll(wordMap.keySet());
+        }
+        return result;
+    }
+
+    public int getTotalWordCount() {
+        return totalWords;
     }
 }
