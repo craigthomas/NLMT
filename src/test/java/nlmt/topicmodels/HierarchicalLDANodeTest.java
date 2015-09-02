@@ -228,4 +228,157 @@ public class HierarchicalLDANodeTest
         double [] actual = sampler.getProbabilities();
         assertThat(actual, is(expected));
     }
+
+    @Test
+    public void testGetDocumentsVisitingNodeIsEmptyOnInit() {
+        hierarchicalLDANode = new HierarchicalLDANode(0.5, 3, nodeMapper);
+        assertThat(hierarchicalLDANode.getDocumentsVisitingNode().isEmpty(), is(true));
+    }
+
+    @Test
+    public void testGetTotalWordCountIsEmptyOnInit() {
+        hierarchicalLDANode = new HierarchicalLDANode(0.5, 3, nodeMapper);
+        assertThat(hierarchicalLDANode.getTotalWordCount(), is(equalTo(0)));
+    }
+
+    @Test
+    public void testAddDocumentToNodeWorksCorrectly() {
+        hierarchicalLDANode = new HierarchicalLDANode(0.5, 3, nodeMapper);
+        hierarchicalLDANode.setVisited(0);
+        hierarchicalLDANode.setVisited(2);
+        Set<Integer> expected = new HashSet<>();
+        expected.add(0);
+        expected.add(2);
+        assertThat(hierarchicalLDANode.getDocumentsVisitingNode(), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testAddWordNoDocumentsWorksCorrectly() {
+        hierarchicalLDANode = new HierarchicalLDANode(0.5, 3, nodeMapper);
+        hierarchicalLDANode.addWord(0, 0);
+        assertThat(hierarchicalLDANode.getTotalWordCount(), is(equalTo(1)));
+        assertThat(hierarchicalLDANode.getWordCountAllDocuments(0), is(equalTo(1)));
+        assertThat(hierarchicalLDANode.getWordCountForDocument(0, 0), is(equalTo(1)));
+    }
+
+    @Test
+    public void testDoubleAddWordToDocumentsWorksCorrectly() {
+        hierarchicalLDANode = new HierarchicalLDANode(0.5, 3, nodeMapper);
+        hierarchicalLDANode.addWord(0, 0);
+        hierarchicalLDANode.addWord(0, 0);
+        assertThat(hierarchicalLDANode.getTotalWordCount(), is(equalTo(2)));
+        assertThat(hierarchicalLDANode.getWordCountAllDocuments(0), is(equalTo(2)));
+        assertThat(hierarchicalLDANode.getWordCountForDocument(0, 0), is(equalTo(2)));
+    }
+
+    @Test
+    public void testAddWordsMultipleDocumentsWorksCorrectly() {
+        hierarchicalLDANode = new HierarchicalLDANode(0.5, 3, nodeMapper);
+        hierarchicalLDANode.addWord(0, 0);
+        hierarchicalLDANode.addWord(0, 1);
+        hierarchicalLDANode.addWord(1, 2);
+        hierarchicalLDANode.addWord(1, 3);
+        assertThat(hierarchicalLDANode.getTotalWordCount(), is(equalTo(4)));
+        assertThat(hierarchicalLDANode.getWordCountAllDocuments(0), is(equalTo(1)));
+        assertThat(hierarchicalLDANode.getWordCountAllDocuments(1), is(equalTo(1)));
+        assertThat(hierarchicalLDANode.getWordCountAllDocuments(2), is(equalTo(1)));
+        assertThat(hierarchicalLDANode.getWordCountAllDocuments(3), is(equalTo(1)));
+        assertThat(hierarchicalLDANode.getWordCountForDocument(0, 0), is(equalTo(1)));
+        assertThat(hierarchicalLDANode.getWordCountForDocument(0, 1), is(equalTo(1)));
+        assertThat(hierarchicalLDANode.getWordCountForDocument(0, 2), is(equalTo(0)));
+        assertThat(hierarchicalLDANode.getWordCountForDocument(0, 3), is(equalTo(0)));
+        assertThat(hierarchicalLDANode.getWordCountForDocument(1, 0), is(equalTo(0)));
+        assertThat(hierarchicalLDANode.getWordCountForDocument(1, 1), is(equalTo(0)));
+        assertThat(hierarchicalLDANode.getWordCountForDocument(1, 2), is(equalTo(1)));
+        assertThat(hierarchicalLDANode.getWordCountForDocument(1, 3), is(equalTo(1)));
+    }
+
+    @Test
+    public void testRemoveWordNoDocumentsWorksCorrectly() {
+        hierarchicalLDANode = new HierarchicalLDANode(0.5, 3, nodeMapper);
+        hierarchicalLDANode.removeWord(0, 0);
+        assertThat(hierarchicalLDANode.getTotalWordCount(), is(equalTo(0)));
+        assertThat(hierarchicalLDANode.getWordCountAllDocuments(0), is(equalTo(0)));
+        assertThat(hierarchicalLDANode.getWordCountForDocument(0, 0), is(equalTo(0)));
+    }
+
+    @Test
+    public void testDoubleAddWordRemoveOneWorksCorrectly() {
+        hierarchicalLDANode = new HierarchicalLDANode(0.5, 3, nodeMapper);
+        hierarchicalLDANode.addWord(0, 0);
+        hierarchicalLDANode.addWord(0, 0);
+        hierarchicalLDANode.removeWord(0, 0);
+        assertThat(hierarchicalLDANode.getTotalWordCount(), is(equalTo(1)));
+        assertThat(hierarchicalLDANode.getWordCountAllDocuments(0), is(equalTo(1)));
+        assertThat(hierarchicalLDANode.getWordCountForDocument(0, 0), is(equalTo(1)));
+    }
+
+    @Test
+    public void testDoubleAddWordRemoveBothWorksCorrectly() {
+        hierarchicalLDANode = new HierarchicalLDANode(0.5, 3, nodeMapper);
+        hierarchicalLDANode.addWord(0, 0);
+        hierarchicalLDANode.addWord(0, 0);
+        hierarchicalLDANode.removeWord(0, 0);
+        hierarchicalLDANode.removeWord(0, 0);
+        assertThat(hierarchicalLDANode.getTotalWordCount(), is(equalTo(0)));
+        assertThat(hierarchicalLDANode.getWordCountAllDocuments(0), is(equalTo(0)));
+        assertThat(hierarchicalLDANode.getWordCountForDocument(0, 0), is(equalTo(0)));
+    }
+
+    @Test
+    public void testGetWordCountForDocumentIsZeroOnInvalidDocument() {
+        hierarchicalLDANode = new HierarchicalLDANode(0.5, 3, nodeMapper);
+        hierarchicalLDANode.addWord(0, 0);
+        assertThat(hierarchicalLDANode.getWordCountForDocument(1, 0), is(equalTo(0)));
+    }
+
+    @Test
+    public void testGetWordCountForDocumentIsZeroOnInvalidWord() {
+        hierarchicalLDANode = new HierarchicalLDANode(0.5, 3, nodeMapper);
+        hierarchicalLDANode.addWord(0, 0);
+        assertThat(hierarchicalLDANode.getWordCountForDocument(0, 1), is(equalTo(0)));
+    }
+
+    @Test
+    public void testGetWordCountForAllDocumentsIsZeroOnInvalidWord() {
+        hierarchicalLDANode = new HierarchicalLDANode(0.5, 3, nodeMapper);
+        hierarchicalLDANode.addWord(0, 0);
+        assertThat(hierarchicalLDANode.getWordCountAllDocuments(1), is(equalTo(0)));
+    }
+
+    @Test
+    public void testGetVocabularyPresentIsEmptyOnInit() {
+        hierarchicalLDANode = new HierarchicalLDANode(0.5, 3, nodeMapper);
+        assertThat(hierarchicalLDANode.getVocabularyPresent().isEmpty(), is(true));
+    }
+
+    @Test
+    public void testGetVocabularyPresentWorksCorrectly() {
+        hierarchicalLDANode = new HierarchicalLDANode(0.5, 3, nodeMapper);
+        hierarchicalLDANode.addWord(0, 0);
+        hierarchicalLDANode.addWord(0, 1);
+        hierarchicalLDANode.addWord(1, 2);
+        hierarchicalLDANode.addWord(1, 3);
+        Set<Integer> expected = new HashSet<>();
+        expected.add(0);
+        expected.add(1);
+        expected.add(2);
+        expected.add(3);
+        assertThat(hierarchicalLDANode.getVocabularyPresent(), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testGetVocabularyPresentWorksCorrectlyWithRemove() {
+        hierarchicalLDANode = new HierarchicalLDANode(0.5, 3, nodeMapper);
+        hierarchicalLDANode.addWord(0, 0);
+        hierarchicalLDANode.addWord(0, 1);
+        hierarchicalLDANode.addWord(1, 2);
+        hierarchicalLDANode.addWord(1, 3);
+        hierarchicalLDANode.removeWord(1, 2);
+        Set<Integer> expected = new HashSet<>();
+        expected.add(0);
+        expected.add(1);
+        expected.add(3);
+        assertThat(hierarchicalLDANode.getVocabularyPresent(), is(equalTo(expected)));
+    }
 }

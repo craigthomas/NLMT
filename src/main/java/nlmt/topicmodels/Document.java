@@ -17,6 +17,7 @@ package nlmt.topicmodels;
 
 import nlmt.datatypes.IdentifierObjectMapper;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -116,5 +117,9 @@ public class Document
             throw new IllegalArgumentException("wordIndex must be >= 0 or <= " + (wordArray.length - 1));
         }
         topicArray[wordIndex] = topicIndex;
+    }
+
+    public void clearTopics() {
+        Arrays.fill(topicArray, -1);
     }
 }

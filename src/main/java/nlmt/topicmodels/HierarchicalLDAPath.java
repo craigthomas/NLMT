@@ -15,6 +15,8 @@
  */
 package nlmt.topicmodels;
 
+import java.util.Set;
+
 /**
  * Represents a path through a Hierarchical LDA Tree.
  */
@@ -103,5 +105,38 @@ public class HierarchicalLDAPath
      */
     public boolean atMaxDepth() {
         return currentDepth == maxDepth;
+    }
+
+    /**
+     * Removes both the document and the words in the document from the path,
+     * excluding the root.
+     *
+     * @param documentIndex the index of the document to remove
+     * @param wordSet the set of words appearing in the document
+     */
+    public void removeDocumentAndWords(int documentIndex, Set<Integer> wordSet) {
+        for (int pathIndex = 1; pathIndex < maxDepth; pathIndex++) {
+            HierarchicalLDANode currentNode = getNode(pathIndex);
+            currentNode.removeVisited(documentIndex);
+            for (Integer word : wordSet) {
+                currentNode.removeWord(documentIndex, word);
+            }
+        }
+        clear();
+    }
+
+    /**
+     * Adds a word to the node at the specified level in the path.
+     *
+     * @param documentIndex the index of the document to add
+     * @param vocabularyIndex the vocabulary index of the word to add
+     * @param level the level of the node in the path
+     */
+    public void addWord(int documentIndex, int vocabularyIndex, int level) {
+        if (level >= maxDepth) {
+            throw new IllegalArgumentException("level must be < maxDepth");
+        }
+        nodes[level].setVisited(documentIndex);
+        nodes[level].addWord(documentIndex, vocabularyIndex);
     }
 }

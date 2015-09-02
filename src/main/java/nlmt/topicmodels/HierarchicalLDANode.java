@@ -49,8 +49,10 @@ public class HierarchicalLDANode
     // The mapper responsible for mapping nodes to indices
     private IdentifierObjectMapper<HierarchicalLDANode> nodeMapper;
 
+    // The total number of words used on this node
     private int totalWords;
 
+    // A map of documents to their words
     private Map<Integer, Map<Integer, Integer>> documentWordCount;
 
     /**
@@ -211,6 +213,12 @@ public class HierarchicalLDANode
         return documentsVisitingNode;
     }
 
+    /**
+     * Adds a word belonging to the specified document to the node.
+     *
+     * @param documentIndex the index of the document containing the word
+     * @param wordIndexInVocab the index in the vocabulary of the word to add
+     */
     public void addWord(int documentIndex, int wordIndexInVocab) {
         if (documentWordCount.containsKey(documentIndex)) {
             Map<Integer, Integer> wordMap = documentWordCount.get(documentIndex);
@@ -228,6 +236,12 @@ public class HierarchicalLDANode
         totalWords++;
     }
 
+    /**
+     * Removes a word belonging to the specified document from the node.
+     *
+     * @param documentIndex the index of the document
+     * @param wordIndexInVocab the index of the word in the vocabulary
+     */
     public void removeWord(int documentIndex, int wordIndexInVocab) {
         if (documentWordCount.containsKey(documentIndex)) {
             Map<Integer, Integer> wordMap = documentWordCount.get(documentIndex);
@@ -247,6 +261,14 @@ public class HierarchicalLDANode
         }
     }
 
+    /**
+     * Counts the total occurrences of the specified word belonging to the
+     * document.
+     *
+     * @param documentIndex the index of the document to check
+     * @param wordIndexInVocab the index in the vocabulary of the word
+     * @return the count of the word belonging to the document
+     */
     public int getWordCountForDocument(int documentIndex, int wordIndexInVocab) {
         if (documentWordCount.containsKey(documentIndex)) {
             Map<Integer, Integer> wordMap = documentWordCount.get(documentIndex);
@@ -257,6 +279,13 @@ public class HierarchicalLDANode
         return 0;
     }
 
+    /**
+     * Returns the total number of times the specified word appears in the
+     * node across all documents.
+     *
+     * @param wordIndexInVocab the index of the word in the vocabulary
+     * @return the total number of times the word occurs in the node
+     */
     public int getWordCountAllDocuments(int wordIndexInVocab) {
         int sum = 0;
         for (int documentIndex : documentWordCount.keySet()) {
@@ -268,6 +297,12 @@ public class HierarchicalLDANode
         return sum;
     }
 
+    /**
+     * Returns a Set containing all of the word vocabulary indexes in
+     * use on this node.
+     *
+     * @return the Set of all vocabulary terms used
+     */
     public Set<Integer> getVocabularyPresent() {
         Set<Integer> result = new HashSet<>();
         for (int documentIndex : documentWordCount.keySet()) {
@@ -277,6 +312,11 @@ public class HierarchicalLDANode
         return result;
     }
 
+    /**
+     * Returns the total number of word occurrences on this node.
+     *
+     * @return the total number of word occurrences
+     */
     public int getTotalWordCount() {
         return totalWords;
     }
