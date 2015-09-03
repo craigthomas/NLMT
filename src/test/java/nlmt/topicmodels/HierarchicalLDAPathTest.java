@@ -19,8 +19,12 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
+import nlmt.datatypes.IdentifierObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Test for the HierarchicalLDAPath class.
@@ -134,5 +138,54 @@ public class HierarchicalLDAPathTest
         hierarchicalLDAPath.clear();
         HierarchicalLDANode [] expected = {mockRootNode, null, null};
         assertThat(hierarchicalLDAPath.getNodes(), is(equalTo(expected)));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testAddWordAndDocumentThrowsExceptionOnNegativeLevel() {
+        hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
+        hierarchicalLDAPath.addWord(0, 0, -1);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testAddWordAndDocumentThrowsExceptionOnLevelGreaterThanCurrentDepth() {
+        hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
+        hierarchicalLDAPath.addWord(0, 0, 1);
+    }
+
+    @Test
+    public void testAddWordAndDocumentOnGoodPathWorksCorrectly() {
+        HierarchicalLDANode rootNode = new HierarchicalLDANode(0.5, 3, new IdentifierObjectMapper<>());
+        hierarchicalLDAPath = new HierarchicalLDAPath(rootNode, 3);
+        hierarchicalLDAPath.addWord(0, 0, 0);
+        Set<Integer> expected = new HashSet<>();
+        expected.add(0);
+        assertThat(rootNode.getDocumentsVisitingNode(), is(equalTo(expected)));
+        assertThat(rootNode.getTotalWordCount(), is(equalTo(1)));
+        assertThat(rootNode.getWordCountForDocument(0, 0), is(equalTo(1)));
+    }
+
+    @Test
+    public void testAddWordAndDocumentWorksCorrectly() {
+        hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
+        hierarchicalLDAPath.addNode(mockChildNode1);
+        hierarchicalLDAPath.addNode(mockChildNode2);
+        hierarchicalLDAPath.clear();
+        HierarchicalLDANode [] expected = {mockRootNode, null, null};
+        assertThat(hierarchicalLDAPath.getNodes(), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testRemoveWordAndDocumentWorksCorrectly() {
+        hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
+        HierarchicalLDANode node = new HierarchicalLDANode(0.5, 4, new IdentifierObjectMapper<>());
+        hierarchicalLDAPath.addNode(node);
+        node.addWord(0, 0);
+        Set<Integer> wordsToRemove = new HashSet<>();
+        wordsToRemove.add(0);
+        hierarchicalLDAPath.removeDocumentWordsAndClear(0, wordsToRemove);
+        HierarchicalLDANode [] expected = {mockRootNode, null, null};
+        assertThat(hierarchicalLDAPath.getNodes(), is(equalTo(expected)));
+        assertThat(node.getDocumentsVisitingNode(), is(equalTo(new HashSet<>())));
+        assertThat(node.getTotalWordCount(), is(0));
     }
 }

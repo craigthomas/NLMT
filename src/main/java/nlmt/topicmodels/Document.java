@@ -16,9 +16,12 @@
 package nlmt.topicmodels;
 
 import nlmt.datatypes.IdentifierObjectMapper;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The Document class performs two important functions. First,
@@ -119,7 +122,20 @@ public class Document
         topicArray[wordIndex] = topicIndex;
     }
 
+    /**
+     * Sets all of the topics to -1.
+     */
     public void clearTopics() {
         Arrays.fill(topicArray, -1);
+    }
+
+    /**
+     * Returns the set of all words used in the document.
+     *
+     * @return the set of all words
+     */
+    public Set<Integer> getWordSet() {
+        List<Integer> wordsInDoc = Arrays.asList(ArrayUtils.toObject(wordArray));
+        return new HashSet<>(wordsInDoc);
     }
 }

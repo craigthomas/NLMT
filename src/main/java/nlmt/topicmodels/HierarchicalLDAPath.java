@@ -114,8 +114,8 @@ public class HierarchicalLDAPath
      * @param documentIndex the index of the document to remove
      * @param wordSet the set of words appearing in the document
      */
-    public void removeDocumentAndWords(int documentIndex, Set<Integer> wordSet) {
-        for (int pathIndex = 1; pathIndex < maxDepth; pathIndex++) {
+    public void removeDocumentWordsAndClear(int documentIndex, Set<Integer> wordSet) {
+        for (int pathIndex = 1; pathIndex < currentDepth; pathIndex++) {
             HierarchicalLDANode currentNode = getNode(pathIndex);
             currentNode.removeVisited(documentIndex);
             for (Integer word : wordSet) {
@@ -133,8 +133,8 @@ public class HierarchicalLDAPath
      * @param level the level of the node in the path
      */
     public void addWord(int documentIndex, int vocabularyIndex, int level) {
-        if (level >= maxDepth) {
-            throw new IllegalArgumentException("level must be < maxDepth");
+        if (level < 0 || level > currentDepth - 1) {
+            throw new IllegalArgumentException("level must be >= 0 and <= current path length");
         }
         nodes[level].setVisited(documentIndex);
         nodes[level].addWord(documentIndex, vocabularyIndex);

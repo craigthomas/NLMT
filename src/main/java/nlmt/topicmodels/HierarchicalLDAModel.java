@@ -306,9 +306,7 @@ public class HierarchicalLDAModel
         for (int documentIndex = 0; documentIndex < totalDocs; documentIndex++) {
             // Deallocate the document and all its words from the current path
             HierarchicalLDAPath path = documentPaths[documentIndex];
-            List<Integer> wordsInDoc = Arrays.asList(ArrayUtils.toObject(documents[documentIndex].getWordArray()));
-            Set<Integer> wordSet = new HashSet<>(wordsInDoc);
-            path.removeDocumentAndWords(documentIndex, wordSet);
+            path.removeDocumentWordsAndClear(documentIndex, documents[documentIndex].getWordSet());
             documents[documentIndex].clearTopics();
 
             // Sample a new path for the document, generating new nodes if necessary

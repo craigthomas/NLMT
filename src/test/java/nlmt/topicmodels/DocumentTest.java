@@ -20,6 +20,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -134,5 +136,28 @@ public class DocumentTest {
         assertThat(document.getWordArray().length, is(equalTo(3)));
         assertThat(document.getWordArray(), is(equalTo(vocabList)));
         assertThat(document.getRawWords(), is(equalTo(words)));
+    }
+
+    @Test
+    public void testClearTopicsWorksCorrectly() {
+        String [] words = {"the", "cat", "sat"};
+        document.readDocument(Arrays.asList(words));
+        document.setTopicForWord(0, 1);
+        document.setTopicForWord(1, 2);
+        document.setTopicForWord(2, 3);
+        document.clearTopics();
+        int [] expectedTopicArrayArray = {-1, -1, -1};
+        assertThat(document.getTopicArray(), is(equalTo(expectedTopicArrayArray)));
+    }
+
+    @Test
+    public void testGetWordSetWorksCorrectly() {
+        String [] words = {"the", "cat", "sat"};
+        document.readDocument(Arrays.asList(words));
+        Set<Integer> expected = new HashSet<>();
+        expected.add(0);
+        expected.add(1);
+        expected.add(2);
+        assertThat(document.getWordSet(), is(equalTo(expected)));
     }
 }
