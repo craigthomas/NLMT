@@ -271,4 +271,57 @@ public class HierarchicalLDAModelTest {
         int selectedChild = hierarchicalLDAModel.getNewPathNode(0, rootNode);
         assertThat(selectedChild, is(equalTo(0)));
     }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testGetTopWordsForTopicThrowsExceptionOnInvalidTopic() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(documents);
+        hierarchicalLDAModel.initialize();
+        hierarchicalLDAModel.getTopWordsForTopic(200000, 5);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testGetTopWordsForTopicThrowsExceptionOnBadNumWords() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(documents);
+        hierarchicalLDAModel.initialize();
+        hierarchicalLDAModel.getTopWordsForTopic(0, 0);
+    }
+
+    @Test
+    public void testGetTopicsWorksCorrectly() {
+        IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(documents);
+        hierarchicalLDAModel.initialize();
+
+        HierarchicalLDANode testNode = new HierarchicalLDANode(HierarchicalLDAModel.DEFAULT_GAMMA, 3, nodeMapper);
+        hierarchicalLDAModel.nodeMapper = nodeMapper;
+
+        testNode.setVisited(0);
+        testNode.addWord(0, 0);
+        testNode.addWord(0, 0);
+        testNode.addWord(0, 0);
+        testNode.addWord(0, 0);
+        testNode.addWord(0, 0);
+        testNode.addWord(0, 1);
+        testNode.addWord(0, 1);
+        testNode.addWord(0, 1);
+        testNode.addWord(0, 1);
+        testNode.addWord(0, 2);
+        testNode.addWord(0, 2);
+        testNode.addWord(0, 2);
+        testNode.addWord(0, 3);
+        testNode.addWord(0, 3);
+
+        Map<Integer, List<String>> expected = new HashMap<>();
+        List<String> expectedWords = new ArrayList<>();
+        expectedWords.add("this");
+        expectedWords.add("is");
+        expectedWords.add("a");
+        expectedWords.add("test");
+        expected.put(0, expectedWords);
+
+        assertThat(hierarchicalLDAModel.getTopics(4, 1), is(equalTo(expected)));
+    }
 }

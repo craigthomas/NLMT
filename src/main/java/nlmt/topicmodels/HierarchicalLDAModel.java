@@ -15,11 +15,13 @@
  */
 package nlmt.topicmodels;
 
+import nlmt.datatypes.BoundedPriorityQueue;
 import nlmt.datatypes.IdentifierObjectMapper;
 import nlmt.probfunctions.PMFSampler;
 import org.apache.commons.math3.special.Gamma;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
@@ -340,12 +342,8 @@ public class HierarchicalLDAModel
         pmfSampler.clear();
         for (int topicIndex = 0; topicIndex < maxDepth; topicIndex++) {
             HierarchicalLDANode node = path.getNode(topicIndex);
-            if (node != null) {
-                double weight = getTopicWeight(documentIndex, wordIndexInVocab, node);
-                pmfSampler.add(weight);
-            } else {
-                pmfSampler.add(0.0);
-            }
+            double weight = getTopicWeight(documentIndex, wordIndexInVocab, node);
+            pmfSampler.add(weight);
         }
         return pmfSampler.sample();
     }
@@ -390,5 +388,48 @@ public class HierarchicalLDAModel
                 documents[documentIndex].setTopicForWord(wordIndex, path.getNode(newTopic).getId());
             }
         }
+    }
+
+    /**
+     * Returns the top <code>numWords</code> that best describe the topic.
+     *
+     * @param topicId the topic to scan
+     * @param numWords the number of words to return
+     * @return an List of Strings that are the words that describe the topic
+     */
+    public List<String> getTopWordsForTopic(int topicId, int numWords) {
+        if (!nodeMapper.containsIndex(topicId)) {
+            throw new IllegalArgumentException("topic does not exist");
+        }
+        if (numWords <= 0) {
+            throw new IllegalArgumentException("numWords must be > 0");
+        }
+        HierarchicalLDANode node = nodeMapper.getObjectFromIndex(topicId);
+        BoundedPriorityQueue<Integer> priorityQueue = new BoundedPriorityQueue<>(numWords);
+        for (int wordIndex = 0; wordIndex < vocabulary.size(); wordIndex++) {
+            priorityQueue.add(node.getWordCountAllDocuments(wordIndex), wordIndex);
+        }
+        return priorityQueue.getElements().stream().map(vocabulary::getObjectFromIndex).collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the list of words that describe each topic. The <code>minNumDocuments</code>
+     * parameter controls what topics are displayed. Topics must have the minimum number
+     * of documents specified within them to be considered a valid topic, otherwise they
+     * will not appear in the list.
+     *
+     * @param numWords the number of words to fetch
+     * @param minNumDocuments the minimum number of documents that must appear in the topic
+     * @return the List of topics, each with a List of Strings that are the words for that topic
+     */
+    public Map<Integer, List<String>> getTopics(int numWords, int minNumDocuments) {
+        Map<Integer, List<String>> topics = new HashMap<>();
+        for (int key : nodeMapper.getIndexKeys()) {
+            HierarchicalLDANode node = nodeMapper.getObjectFromIndex(key);
+            if (node.getDocumentsVisitingNode().size() >= minNumDocuments) {
+                topics.put(node.getId(), getTopWordsForTopic(node.getId(), numWords));
+            }
+        }
+        return topics;
     }
 }

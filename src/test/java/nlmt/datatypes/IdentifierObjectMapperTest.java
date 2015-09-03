@@ -18,6 +18,9 @@ package nlmt.datatypes;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.core.Is.is;
@@ -79,6 +82,36 @@ public class IdentifierObjectMapperTest {
         assertThat(mapper.contains("some"), is(equalTo(true)));
         assertThat(mapper.contains("words"), is(equalTo(true)));
         assertThat(mapper.contains("not"), is(equalTo(false)));
+    }
+
+    @Test
+    public void testContainsIndexInEmptyMapperWorksCorrectly() {
+        assertThat(mapper.containsIndex(0), is(equalTo(false)));
+    }
+
+    @Test
+    public void testContainsIndexInPopulatedMapperWorksCorrectly() {
+        mapper.addObject("some");
+        mapper.addObject("words");
+        assertThat(mapper.containsIndex(0), is(equalTo(true)));
+        assertThat(mapper.containsIndex(1), is(equalTo(true)));
+        assertThat(mapper.containsIndex(2), is(equalTo(false)));
+    }
+
+    @Test
+    public void testGetIndexKeysEmptyMapperWorksCorrectly() {
+        Set<Integer> expected = new HashSet<>();
+        assertThat(mapper.getIndexKeys(), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testGetIndexKeysPopulatedMapperWorksCorrectly() {
+        mapper.addObject("some");
+        mapper.addObject("words");
+        Set<Integer> expected = new HashSet<>();
+        expected.add(0);
+        expected.add(1);
+        assertThat(mapper.getIndexKeys(), is(equalTo(expected)));
     }
 
     @Test

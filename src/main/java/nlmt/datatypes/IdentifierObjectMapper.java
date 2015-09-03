@@ -17,6 +17,7 @@ package nlmt.datatypes;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The IdentifierObjectMapper associates a numeric identifier with a
@@ -97,6 +98,17 @@ public class IdentifierObjectMapper<T> {
     }
 
     /**
+     * Returns <code>true</code> if the mapper contains the specified
+     * index.
+     *
+     * @param index the index to check for
+     * @return <code>true</code> if the index is in the mapper
+     */
+    public boolean containsIndex(int index) {
+        return indexObjectMap.containsKey(index);
+    }
+
+    /**
      * Bumps the nextIndex counter up by 1.
      */
     private void incrementNextIndex() {
@@ -111,5 +123,14 @@ public class IdentifierObjectMapper<T> {
      */
     public int size() {
         return nextIndex;
+    }
+
+    /**
+     * Returns the set of keys for the mapper.
+     *
+     * @return the set of keys for the mapper
+     */
+    public Set<Integer> getIndexKeys() {
+        return indexObjectMap.keySet();
     }
 }
