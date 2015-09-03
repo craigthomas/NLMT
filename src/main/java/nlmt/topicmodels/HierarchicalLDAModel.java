@@ -97,10 +97,6 @@ public class HierarchicalLDAModel
         this(DEFAULT_MAX_DEPTH, DEFAULT_ALPHA, DEFAULT_GAMMA);
     }
 
-    public HierarchicalLDAModel(int maxDepth, double gamma) {
-        this(maxDepth, DEFAULT_ALPHA, gamma);
-    }
-
     public HierarchicalLDAModel(int maxDepth, double alpha, double gamma) {
         if (maxDepth <= 2) {
             throw new IllegalArgumentException("maxDepth must be > 2");
@@ -219,7 +215,7 @@ public class HierarchicalLDAModel
      * @param documentIndex the index of the document to consider
      * @param node the HierarchicalLDANode with the document
      * @param vocabulary the set of words occurring in the HierarchicalLDANode
-     * @return
+     * @return the log calculation
      */
     protected double getLogGammaEtaPlusWordsNotInDocument(int documentIndex, HierarchicalLDANode node, Set<Integer> vocabulary) {
         double result = etaSum;
@@ -240,7 +236,7 @@ public class HierarchicalLDAModel
      *
      * @param node the HierarchicalLDANode with the words
      * @param vocabulary the set of words occurring in the HierarchicalLDANode
-     * @return
+     * @return the log calculation
      */
     protected double getSumLogGammaAllWords(HierarchicalLDANode node, Set<Integer> vocabulary) {
         double result = 0.0;
@@ -258,7 +254,7 @@ public class HierarchicalLDAModel
      * word. Separated out for easier testing.
      *
      * @param node the HierarchicalLDANode with the words
-     * @return
+     * @return the log calculation
      */
     protected double getLogGammaEtaSumAllWords(HierarchicalLDANode node) {
         return log(Gamma.gamma(etaSum + node.getTotalWordCount()));
@@ -287,10 +283,12 @@ public class HierarchicalLDAModel
      * be used for the next path component. This effectively calculates the log
      * probability of the children along the path, taking into account the words
      * in the document, the words in the node, and the popularity of the node.
+     * Will return an index between 0 and the number of children + 1. The last
+     * index returned indicates that a new child node should be generated.
      *
      * @param documentIndex the index of the document to process
      * @param node the <code>HierarchicalLDANode</code> that is the parent
-     * @return
+     * @return the child number to use as the next path component
      */
     public int getNewPathNode(int documentIndex, HierarchicalLDANode node) {
         PMFSampler sampler = new PMFSampler(node.getNumChildren() + 1);
@@ -352,6 +350,18 @@ public class HierarchicalLDAModel
         return pmfSampler.sample();
     }
 
+    /**
+     * Loops for the specified number of iterations. For each document, removes
+     * the document from its current path, generates a new path through the tree,
+     * removes each word of the document from its old node, and then calculates what
+     * node in the new path the word should belong to. The result of Gibbs Sampling
+     * will be that every document has a path. Each node in the path represents a
+     * topic. Documents that share nodes are considered to be related to one another.
+     * Level 0 of every path corresponds to the root node, which all documents
+     * share.
+     *
+     * @param numIterations the number of times to perform Gibbs Sampling
+     */
     public void doGibbsSampling(int numIterations) {
         int totalDocs = documents.length;
 

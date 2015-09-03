@@ -16,7 +16,6 @@
 package nlmt.topicmodels;
 
 import nlmt.datatypes.IdentifierObjectMapper;
-import nlmt.probfunctions.PMFSampler;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,8 +34,6 @@ public class HierarchicalLDAModelTest {
     private String [] document1 = {"this", "is", "a", "test", "document"};
     private String [] document2 = {"the", "cat", "sat", "on", "the", "mat"};
     private String [] document3 = {"the", "dog", "chased", "the", "cat"};
-    private String [] longDocument = {"once", "upon", "a", "time", "there", "lived",
-                                        "a", "dragon"};
 
     private HierarchicalLDAModel hierarchicalLDAModel;
     private List<List<String>> documents;
@@ -52,8 +49,13 @@ public class HierarchicalLDAModelTest {
     }
 
     @Test(expected=IllegalArgumentException.class)
+    public void testMaxDepthThanTwoThrowsException() {
+        hierarchicalLDAModel = new HierarchicalLDAModel(1, HierarchicalLDAModel.DEFAULT_ALPHA, HierarchicalLDAModel.DEFAULT_GAMMA);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
     public void testGammaLessThanZeroThrowsException() {
-        hierarchicalLDAModel = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, -1.0);
+        hierarchicalLDAModel = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, HierarchicalLDAModel.DEFAULT_ALPHA, -1.0);
     }
 
     @Test(expected=IllegalArgumentException.class)
