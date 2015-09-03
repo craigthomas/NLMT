@@ -53,7 +53,9 @@ public class HierarchicalLDANode
     private int totalWords;
 
     // A map of documents to their words
-    private Map<Integer, Map<Integer, Integer>> documentWordCount;
+    private int [][] documentWordCountArray;
+    private int [] wordCounts;
+    private int vocabularySize;
 
     /**
      * Alternate constructor used to create a node with no parent. Nodes
@@ -62,11 +64,11 @@ public class HierarchicalLDANode
      * @param gamma the gamma parameter
      * @param totalDocuments the total number of documents that will be processed
      */
-    public HierarchicalLDANode(double gamma, int totalDocuments, IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
-        this(null, gamma, totalDocuments, nodeMapper);
+    public HierarchicalLDANode(double gamma, int totalDocuments, int vocabularySize, IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
+        this(null, gamma, totalDocuments, vocabularySize, nodeMapper);
     }
 
-    public HierarchicalLDANode(HierarchicalLDANode parent, double gamma, int totalDocuments, IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
+    public HierarchicalLDANode(HierarchicalLDANode parent, double gamma, int totalDocuments, int vocabularySize, IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
         if (totalDocuments < 0) {
             throw new IllegalArgumentException("totalDocuments must be > 0");
         }
@@ -75,14 +77,18 @@ public class HierarchicalLDANode
         }
         this.gamma = gamma;
         this.totalDocuments = totalDocuments;
+        this.vocabularySize = vocabularySize;
         this.parent = parent;
         this.nodeMapper = nodeMapper;
         children = new ArrayList<>();
         documentsVisitingNode = new HashSet<>();
         numChildren = 0;
         id = nodeMapper.addObject(this);
-        documentWordCount = new HashMap<>();
+        //documentWordCount = new HashMap<>();
         totalWords = 0;
+
+        documentWordCountArray  = new int[totalDocuments][vocabularySize];
+        wordCounts = new int [vocabularySize];
     }
 
     /**
@@ -91,7 +97,7 @@ public class HierarchicalLDANode
      * @return the newly spawned node
      */
     public HierarchicalLDANode spawnChild() {
-        HierarchicalLDANode child = new HierarchicalLDANode(this, gamma, totalDocuments, nodeMapper);
+        HierarchicalLDANode child = new HierarchicalLDANode(this, gamma, totalDocuments, vocabularySize, nodeMapper);
         children.add(child);
         numChildren++;
         return child;
@@ -220,19 +226,11 @@ public class HierarchicalLDANode
      * @param wordIndexInVocab the index in the vocabulary of the word to add
      */
     public void addWord(int documentIndex, int wordIndexInVocab) {
-        if (documentWordCount.containsKey(documentIndex)) {
-            Map<Integer, Integer> wordMap = documentWordCount.get(documentIndex);
-            if (wordMap.containsKey(wordIndexInVocab)) {
-                int wordCount = wordMap.get(wordIndexInVocab);
-                wordMap.put(wordIndexInVocab, wordCount + 1);
-            } else {
-                wordMap.put(wordIndexInVocab, 1);
-            }
-        } else {
-            Map<Integer, Integer> wordMap = new HashMap<>();
-            wordMap.put(wordIndexInVocab, 1);
-            documentWordCount.put(documentIndex, wordMap);
+        if (documentIndex > totalDocuments || wordIndexInVocab > vocabularySize) {
+            return;
         }
+        documentWordCountArray[documentIndex][wordIndexInVocab]++;
+        wordCounts[wordIndexInVocab]++;
         totalWords++;
     }
 
@@ -243,21 +241,21 @@ public class HierarchicalLDANode
      * @param wordIndexInVocab the index of the word in the vocabulary
      */
     public void removeWord(int documentIndex, int wordIndexInVocab) {
-        if (documentWordCount.containsKey(documentIndex)) {
-            Map<Integer, Integer> wordMap = documentWordCount.get(documentIndex);
-            if (wordMap.containsKey(wordIndexInVocab)) {
-                int wordCount = wordMap.get(wordIndexInVocab);
-                wordCount--;
-                if (wordCount > 0) {
-                    wordMap.put(wordIndexInVocab, wordCount);
-                } else {
-                    wordMap.remove(wordIndexInVocab);
-                }
-                totalWords--;
-            }
-            if (wordMap.isEmpty()) {
-                documentWordCount.remove(documentIndex);
-            }
+        if (documentIndex < 0 || documentIndex >= totalDocuments ||
+                wordIndexInVocab < 0 || wordIndexInVocab >= vocabularySize) {
+            return;
+        }
+        documentWordCountArray[documentIndex][wordIndexInVocab]--;
+        if (documentWordCountArray[documentIndex][wordIndexInVocab] < 0) {
+            documentWordCountArray[documentIndex][wordIndexInVocab] = 0;
+        }
+        wordCounts[wordIndexInVocab]--;
+        if (wordCounts[wordIndexInVocab] < 0) {
+            wordCounts[wordIndexInVocab] = 0;
+        }
+        totalWords--;
+        if (totalWords < 0) {
+            totalWords = 0;
         }
     }
 
@@ -270,13 +268,9 @@ public class HierarchicalLDANode
      * @return the count of the word belonging to the document
      */
     public int getWordCountForDocument(int documentIndex, int wordIndexInVocab) {
-        if (documentWordCount.containsKey(documentIndex)) {
-            Map<Integer, Integer> wordMap = documentWordCount.get(documentIndex);
-            if (wordMap.containsKey(wordIndexInVocab)) {
-                return wordMap.get(wordIndexInVocab);
-            }
-        }
-        return 0;
+        return (documentIndex >= totalDocuments || totalDocuments < 0 ||
+                wordIndexInVocab < 0 || wordIndexInVocab >= vocabularySize)
+                        ? 0 : documentWordCountArray[documentIndex][wordIndexInVocab];
     }
 
     /**
@@ -287,29 +281,7 @@ public class HierarchicalLDANode
      * @return the total number of times the word occurs in the node
      */
     public int getWordCountAllDocuments(int wordIndexInVocab) {
-        int sum = 0;
-        for (int documentIndex : documentWordCount.keySet()) {
-            Map<Integer, Integer> wordMap = documentWordCount.get(documentIndex);
-            if (wordMap.containsKey(wordIndexInVocab)) {
-                sum += wordMap.get(wordIndexInVocab);
-            }
-        }
-        return sum;
-    }
-
-    /**
-     * Returns a Set containing all of the word vocabulary indexes in
-     * use on this node.
-     *
-     * @return the Set of all vocabulary terms used
-     */
-    public Set<Integer> getVocabularyPresent() {
-        Set<Integer> result = new HashSet<>();
-        for (int documentIndex : documentWordCount.keySet()) {
-            Map<Integer, Integer> wordMap = documentWordCount.get(documentIndex);
-            result.addAll(wordMap.keySet());
-        }
-        return result;
+        return (wordIndexInVocab < 0 || wordIndexInVocab >= vocabularySize) ? 0 : wordCounts[wordIndexInVocab];
     }
 
     /**

@@ -154,7 +154,7 @@ public class HierarchicalLDAPathTest
 
     @Test
     public void testAddWordAndDocumentOnGoodPathWorksCorrectly() {
-        HierarchicalLDANode rootNode = new HierarchicalLDANode(0.5, 3, new IdentifierObjectMapper<>());
+        HierarchicalLDANode rootNode = new HierarchicalLDANode(0.5, 3, 1, new IdentifierObjectMapper<>());
         hierarchicalLDAPath = new HierarchicalLDAPath(rootNode, 3);
         hierarchicalLDAPath.addWord(0, 0, 0);
         Set<Integer> expected = new HashSet<>();
@@ -177,7 +177,7 @@ public class HierarchicalLDAPathTest
     @Test
     public void testRemoveWordAndDocumentWorksCorrectly() {
         hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
-        HierarchicalLDANode node = new HierarchicalLDANode(0.5, 4, new IdentifierObjectMapper<>());
+        HierarchicalLDANode node = new HierarchicalLDANode(0.5, 4, 1, new IdentifierObjectMapper<>());
         hierarchicalLDAPath.addNode(node);
         node.addWord(0, 0);
         Set<Integer> wordsToRemove = new HashSet<>();
