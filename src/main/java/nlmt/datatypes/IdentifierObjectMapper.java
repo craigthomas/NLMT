@@ -122,7 +122,7 @@ public class IdentifierObjectMapper<T> {
      * @return the number of objects in the mapper
      */
     public int size() {
-        return nextIndex;
+        return indexObjectMap.size();
     }
 
     /**
@@ -132,5 +132,18 @@ public class IdentifierObjectMapper<T> {
      */
     public Set<Integer> getIndexKeys() {
         return indexObjectMap.keySet();
+    }
+
+    /**
+     * Removes an object based on its index.
+     *
+     * @param index the index of the object to remove
+     */
+    public void deleteIndex(int index) {
+        if (indexObjectMap.containsKey(index)) {
+            Object objectToDelete = indexObjectMap.get(index);
+            objectIndexMap.remove(objectToDelete);
+            indexObjectMap.remove(index);
+        }
     }
 }

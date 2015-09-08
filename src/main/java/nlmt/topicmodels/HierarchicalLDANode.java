@@ -16,7 +16,6 @@
 package nlmt.topicmodels;
 
 import nlmt.datatypes.IdentifierObjectMapper;
-import nlmt.probfunctions.PMFSampler;
 
 import java.util.*;
 
@@ -40,9 +39,6 @@ public class HierarchicalLDANode
     // The total number of documents in the collection used to build the HLDA model
     private int totalDocuments;
 
-    // The gamma tuning parameter
-    private double gamma;
-
     // The set of documents that have visited this node in a path
     protected Set<Integer> documentsVisitingNode;
 
@@ -52,30 +48,35 @@ public class HierarchicalLDANode
     // The total number of words used on this node
     private int totalWords;
 
-    // A map of documents to their words
+    // A count of a document and the number of times the vocab word
+    // appears in that document, referenced as
+    // documentWordCountArray[documentIndex][vocabIndex]
     private int [][] documentWordCountArray;
+
+    // A count of the vocabulary words present in the node, referenced as
+    // wordCounts[vocabIndex]
     private int [] wordCounts;
+
+    // The total size of the vocabulary
     private int vocabularySize;
+
+    // The total number of documents that have visited the node
+    private int numDocumentsVisitingNode;
 
     /**
      * Alternate constructor used to create a node with no parent. Nodes
      * without parents are considered to be root nodes.
      *
-     * @param gamma the gamma parameter
      * @param totalDocuments the total number of documents that will be processed
      */
-    public HierarchicalLDANode(double gamma, int totalDocuments, int vocabularySize, IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
-        this(null, gamma, totalDocuments, vocabularySize, nodeMapper);
+    public HierarchicalLDANode(int totalDocuments, int vocabularySize, IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
+        this(null, totalDocuments, vocabularySize, nodeMapper);
     }
 
-    public HierarchicalLDANode(HierarchicalLDANode parent, double gamma, int totalDocuments, int vocabularySize, IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
+    public HierarchicalLDANode(HierarchicalLDANode parent, int totalDocuments, int vocabularySize, IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
         if (totalDocuments < 0) {
             throw new IllegalArgumentException("totalDocuments must be > 0");
         }
-        if (gamma <= 0.0) {
-            throw new IllegalArgumentException("gamma must be > 0");
-        }
-        this.gamma = gamma;
         this.totalDocuments = totalDocuments;
         this.vocabularySize = vocabularySize;
         this.parent = parent;
@@ -84,9 +85,8 @@ public class HierarchicalLDANode
         documentsVisitingNode = new HashSet<>();
         numChildren = 0;
         id = nodeMapper.addObject(this);
-        //documentWordCount = new HashMap<>();
         totalWords = 0;
-
+        numDocumentsVisitingNode = 0;
         documentWordCountArray  = new int[totalDocuments][vocabularySize];
         wordCounts = new int [vocabularySize];
     }
@@ -97,7 +97,7 @@ public class HierarchicalLDANode
      * @return the newly spawned node
      */
     public HierarchicalLDANode spawnChild() {
-        HierarchicalLDANode child = new HierarchicalLDANode(this, gamma, totalDocuments, vocabularySize, nodeMapper);
+        HierarchicalLDANode child = new HierarchicalLDANode(this, totalDocuments, vocabularySize, nodeMapper);
         children.add(child);
         numChildren++;
         return child;
@@ -119,49 +119,6 @@ public class HierarchicalLDANode
      */
     public int getNumChildren() {
         return numChildren;
-    }
-
-    /**
-     * The popularity of the node is calculated based on the number of
-     * documents that have visited the node (i.e. the total number of people who
-     * have visited this restaurant). This is governed by the equation:
-     *
-     * popularity = (# documents in node) / (total documents - 1 + gamma)
-     *
-     * The popularity metric is used to decide whether or not to use this
-     * node in a path, or whether a new node should be spawned.
-     *
-     * @return the popularity of this node
-     */
-    public double getPopularity() {
-        return (documentsVisitingNode.size() / (totalDocuments - 1 + gamma));
-    }
-
-    /**
-     * Returns the popularity of a new and empty node. Given that there are
-     * no children yet, the function is governed by the equation:
-     *
-     * popularity = gamma / (total documents - 1 + gamma)
-     *
-     * @return the popularity of an empty node
-     */
-    public double getEmptyPopularity() {
-        return (gamma / (totalDocuments - 1 + gamma));
-    }
-
-    /**
-     * Collects the popularity from all children into a PMF sampler. Adds
-     * the empty popularity as a final sample.
-     *
-     * @return the collection of popularities
-     */
-    public PMFSampler getChildPopularities() {
-        PMFSampler result = new PMFSampler(numChildren + 1);
-        for (HierarchicalLDANode child : children) {
-            result.add(child.getPopularity());
-        }
-        result.add(getEmptyPopularity());
-        return result;
     }
 
     /**
@@ -189,7 +146,10 @@ public class HierarchicalLDANode
      * @param documentIndex the index of the document visiting the node
      */
     public void setVisited(int documentIndex) {
-        documentsVisitingNode.add(documentIndex);
+        if (!documentsVisitingNode.contains(documentIndex)) {
+            numDocumentsVisitingNode++;
+            documentsVisitingNode.add(documentIndex);
+        }
     }
 
     /**
@@ -198,11 +158,14 @@ public class HierarchicalLDANode
      * @param documentIndex the index of the document to remove
      */
     public void removeVisited(int documentIndex) {
-        documentsVisitingNode.remove(documentIndex);
+        if (documentsVisitingNode.contains(documentIndex)) {
+            numDocumentsVisitingNode--;
+            documentsVisitingNode.remove(documentIndex);
+        }
     }
 
     /**
-     * Returns the Id of this node - which is basically the topic number.
+     * Returns the Id of this node (which is basically the topic number).
      *
      * @return the topic number of the node
      */
@@ -217,6 +180,15 @@ public class HierarchicalLDANode
      */
     public Set<Integer> getDocumentsVisitingNode() {
         return documentsVisitingNode;
+    }
+
+    /**
+     * Returns the total number of documents that have visited the node.
+     *
+     * @return the total number of documents visiting the node
+     */
+    public int getNumDocumentsVisitingNode() {
+        return numDocumentsVisitingNode;
     }
 
     /**
@@ -260,6 +232,21 @@ public class HierarchicalLDANode
     }
 
     /**
+     * Given a document, remove all instances of that document's words from
+     * the node.
+     *
+     * @param documentIndex the index of the document to remove
+     */
+    public void removeDocumentWords(int documentIndex) {
+        for (int wordIndexInVocab = 0; wordIndexInVocab < vocabularySize; wordIndexInVocab++) {
+            int wordCount = documentWordCountArray[documentIndex][wordIndexInVocab];
+            wordCounts[wordIndexInVocab] -= wordCount;
+            totalWords -= wordCount;
+            documentWordCountArray[documentIndex][wordIndexInVocab] = 0;
+        }
+    }
+
+    /**
      * Counts the total occurrences of the specified word belonging to the
      * document.
      *
@@ -268,7 +255,7 @@ public class HierarchicalLDANode
      * @return the count of the word belonging to the document
      */
     public int getWordCountForDocument(int documentIndex, int wordIndexInVocab) {
-        return (documentIndex >= totalDocuments || totalDocuments < 0 ||
+        return (documentIndex >= totalDocuments || documentIndex < 0 ||
                 wordIndexInVocab < 0 || wordIndexInVocab >= vocabularySize)
                         ? 0 : documentWordCountArray[documentIndex][wordIndexInVocab];
     }
@@ -291,5 +278,51 @@ public class HierarchicalLDANode
      */
     public int getTotalWordCount() {
         return totalWords;
+    }
+
+    /**
+     * Removes this node from the parent's list of children.
+     */
+    public void removeFromParent() {
+        if (parent != null) {
+            parent.children.remove(this);
+        }
+    }
+
+    /**
+     * Given the <code>HierarchicalLDANode</code> that contains the document counts, determine the
+     * mass that this node should have when determining whether to associate the specified
+     * word with the topic.
+     *
+     * @param documentIndex the index of the document to consider
+     * @param wordIndexInVocab the vocabulary index of the word
+     * @param alpha the alpha smoothing parameter
+     * @param eta the eta hyper-parameter
+     * @return the weight associated with the topic
+     */
+    protected double getWeight(int documentIndex, int wordIndexInVocab, double alpha, double eta) {
+        int wordTopicCount = getWordCountAllDocuments(wordIndexInVocab);
+        int topicTotal = getTotalWordCount();
+        int topicDocumentCount = getWordCountForDocument(documentIndex, wordIndexInVocab);
+        double denominator = topicTotal + (topicTotal * eta);
+        if (denominator == 0.0) {
+            return 0.0;
+        }
+        return ((wordTopicCount + eta) / denominator) *
+                (topicDocumentCount + alpha);
+    }
+
+    public String toString() {
+        String result = "{" + id;
+
+        if (!children.isEmpty()) {
+            result += ": [";
+            for (HierarchicalLDANode child : children) {
+                result += child.toString();
+            }
+            result += "]";
+        }
+        result += "}";
+        return result;
     }
 }

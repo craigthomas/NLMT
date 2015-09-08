@@ -15,7 +15,10 @@
  */
 package nlmt.topicmodels;
 
-import java.util.Set;
+import nlmt.datatypes.IdentifierObjectMapper;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a path through a Hierarchical LDA Tree.
@@ -91,8 +94,8 @@ public class HierarchicalLDAPath
      * Clears out everything except the root node from the array of nodes.
      */
     public void clear() {
-        for (int i = 1; i < maxDepth; i++) {
-            nodes[i] = null;
+        for (int level = 1; level < maxDepth; level++) {
+            nodes[level] = null;
         }
         currentDepth = 1;
     }
@@ -108,21 +111,23 @@ public class HierarchicalLDAPath
     }
 
     /**
-     * Removes both the document and the words in the document from the path,
-     * excluding the root.
+     * Removes both the document and the words in the document from the path.
      *
      * @param documentIndex the index of the document to remove
-     * @param wordSet the set of words appearing in the document
      */
-    public void removeDocumentWordsAndClear(int documentIndex, Set<Integer> wordSet) {
-        for (int pathIndex = 1; pathIndex < currentDepth; pathIndex++) {
-            HierarchicalLDANode currentNode = getNode(pathIndex);
+    public void removeDocument(int documentIndex) {
+        for (int level = 0; level < currentDepth; level++) {
+            HierarchicalLDANode currentNode = getNode(level);
             currentNode.removeVisited(documentIndex);
-            for (Integer word : wordSet) {
-                currentNode.removeWord(documentIndex, word);
-            }
+            currentNode.removeDocumentWords(documentIndex);
         }
-        clear();
+    }
+
+    public void addDocument(int documentIndex) {
+        for (int level = 0; level < currentDepth; level++) {
+            HierarchicalLDANode currentNode = getNode(level);
+            currentNode.setVisited(documentIndex);
+        }
     }
 
     /**
@@ -136,7 +141,73 @@ public class HierarchicalLDAPath
         if (level < 0 || level > currentDepth - 1) {
             throw new IllegalArgumentException("level must be >= 0 and <= current path length");
         }
-        nodes[level].setVisited(documentIndex);
         nodes[level].addWord(documentIndex, vocabularyIndex);
+    }
+
+    /**
+     * Given the root node of the tree, enumerate all possible paths that can
+     * exist through the tree. Returns a list of all paths. The list of paths uses
+     * the node ids to refer to the path elements (e.g. [[0, 4, 9], [0, 2, 8]]).
+     *
+     * @param rootNode the root node of the tree
+     * @param maxDepth the maximum depth of the paths to generate
+     * @return the list of paths through the tree
+     */
+    public static List<List<Integer>> enumeratePaths(HierarchicalLDANode rootNode, int maxDepth) {
+        return enumeratePathComponents(rootNode, 0, maxDepth);
+    }
+
+    /**
+     * Helper function for the <code>enumeratePaths</code> function that will recursively
+     * build a list of paths.
+     *
+     * @param node the current node to check
+     * @param depth the current depth in the list of paths
+     * @param maxDepth the maximum depth to descend to
+     * @return the list of paths through the tree
+     */
+    protected static List<List<Integer>> enumeratePathComponents(HierarchicalLDANode node, int depth, int maxDepth) {
+        List<List<Integer>> result = new ArrayList<>();
+        if (depth == maxDepth - 1) {
+            List<Integer> thisNode = new ArrayList<>();
+            thisNode.add(node.getId());
+            result.add(thisNode);
+            return result;
+        }
+
+        for (HierarchicalLDANode child : node.getChildren()) {
+            List<List<Integer>> childPaths = enumeratePathComponents(child, depth + 1, maxDepth);
+            for (List<Integer> childPath : childPaths) {
+                childPath.add(0, node.getId());
+                result.add(childPath);
+            }
+        }
+
+        List<Integer> emptyChildPath = new ArrayList<>();
+        emptyChildPath.add(0, node.getId());
+        for (int i = depth; i < maxDepth - 1; i++) {
+            emptyChildPath.add(-1);
+        }
+        result.add(emptyChildPath);
+        return result;
+    }
+
+    /**
+     * Given a list of node ids, add those nodes to the current path. Ignores the
+     * 0th level (root) on the path.
+     *
+     * @param path the list of node ids to add
+     * @param nodeMapper the object responsible for mapping node ids to nodes
+     */
+    public void addPath(List<Integer> path, IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
+        clear();
+        for (int level = 1; level < maxDepth; level++) {
+            int nodeId = path.get(level);
+            if (nodeId != -1) {
+                addNode(nodeMapper.getObjectFromIndex(nodeId));
+            } else {
+                addNode(getCurrentNode().spawnChild());
+            }
+        }
     }
 }
