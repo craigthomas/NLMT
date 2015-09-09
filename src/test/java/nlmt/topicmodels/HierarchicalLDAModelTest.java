@@ -104,47 +104,47 @@ public class HierarchicalLDAModelTest {
     }
 
     @Test
-    public void testGetSumLogGammaWordsNotInDocument() {
+    public void testGetSumLogEtaPlusWordsNotInDocument() {
         hierarchicalLDAModel = new HierarchicalLDAModel();
         hierarchicalLDAModel.readDocuments(singleWordDocument);
         HierarchicalLDANode testNode = new HierarchicalLDANode(2, 1, nodeMapper);
         testNode.addWord(0, 0);
         testNode.addWord(1, 0);
         testNode.addWord(1, 0);
-        assertThat(hierarchicalLDAModel.getSumLogEtaPlusWordsNotInDocument(0, testNode), is(equalTo(0.04543773854448513)));
+        assertThat(hierarchicalLDAModel.getSumLogEtaPlusWordsNotInDocument(0, testNode), is(equalTo(0.7419373447293773)));
     }
 
     @Test
-    public void testGetLogGammaEtaPlusWordsNotInDocument() {
+    public void testGetLogEtaSumPlusWordsNotInDocument() {
         hierarchicalLDAModel = new HierarchicalLDAModel();
         hierarchicalLDAModel.readDocuments(singleWordDocument);
         HierarchicalLDANode testNode = new HierarchicalLDANode(2, 1, nodeMapper);
         testNode.addWord(0, 0);
         testNode.addWord(1, 0);
         testNode.addWord(1, 0);
-        assertThat(hierarchicalLDAModel.getLogEtaSumPlusWordsNotInDocument(0, testNode), is(equalTo(0.04543773854448513)));
+        assertThat(hierarchicalLDAModel.getLogEtaSumPlusWordsNotInDocument(0, testNode), is(equalTo(0.7419373447293773)));
     }
 
     @Test
-    public void testGetLogGammaEtaSumAllWords() {
+    public void testGetLogEtaPlusSumAllWords() {
         hierarchicalLDAModel = new HierarchicalLDAModel();
         hierarchicalLDAModel.readDocuments(singleWordDocument);
         HierarchicalLDANode testNode = new HierarchicalLDANode(2, 1, nodeMapper);
         testNode.addWord(0, 0);
         testNode.addWord(1, 0);
         testNode.addWord(1, 0);
-        assertThat(hierarchicalLDAModel.getSumLogAllWords(testNode), is(equalTo(0.7873750832738625)));
+        assertThat(hierarchicalLDAModel.getLogEtaPlusSumAllWords(testNode), is(equalTo(1.1314021114911006)));
     }
 
     @Test
-    public void testGetSumLogGammaAllWords() {
+    public void testGetSumLogAllWords() {
         hierarchicalLDAModel = new HierarchicalLDAModel();
         hierarchicalLDAModel.readDocuments(singleWordDocument);
         HierarchicalLDANode testNode = new HierarchicalLDANode(2, 1, nodeMapper);
         testNode.addWord(0, 0);
         testNode.addWord(1, 0);
         testNode.addWord(1, 0);
-        assertThat(hierarchicalLDAModel.getLogEtaPlusSumAllWords(testNode), is(equalTo(0.7873750832738625)));
+        assertThat(hierarchicalLDAModel.getSumLogAllWords(testNode), is(equalTo(1.1314021114911006)));
     }
 
     @Test
@@ -157,7 +157,7 @@ public class HierarchicalLDAModelTest {
         testNode.addWord(0, 2);
         testNode.addWord(1, 2);
         testNode.addWord(1, 2);
-        assertThat(hierarchicalLDAModel.getTopicLikelihood(0, testNode), is(equalTo(-7.536363938404509)));
+        assertThat(hierarchicalLDAModel.getTopicLikelihood(0, testNode), is(equalTo(4.396797951994191)));
     }
 
     @Test
@@ -170,7 +170,7 @@ public class HierarchicalLDAModelTest {
         node.addWord(0, 2);
         node.addWord(0, 3);
         node.addWord(0, 4);
-        assertThat(hierarchicalLDAModel.getTopicLikelihood(0, node), is(equalTo(-16.730598342810836)));
+        assertThat(hierarchicalLDAModel.getTopicLikelihood(0, node), is(equalTo(10.347248628734768)));
     }
 
     @Test
