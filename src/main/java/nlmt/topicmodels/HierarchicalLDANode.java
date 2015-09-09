@@ -198,7 +198,8 @@ public class HierarchicalLDANode
      * @param wordIndexInVocab the index in the vocabulary of the word to add
      */
     public void addWord(int documentIndex, int wordIndexInVocab) {
-        if (documentIndex > totalDocuments || wordIndexInVocab > vocabularySize) {
+        if (documentIndex >= totalDocuments || wordIndexInVocab > vocabularySize ||
+                documentIndex < 0 || wordIndexInVocab < 0 ) {
             return;
         }
         documentWordCountArray[documentIndex][wordIndexInVocab]++;
@@ -286,6 +287,7 @@ public class HierarchicalLDANode
     public void removeFromParent() {
         if (parent != null) {
             parent.children.remove(this);
+            parent = null;
         }
     }
 
@@ -310,19 +312,5 @@ public class HierarchicalLDANode
         }
         return ((wordTopicCount + eta) / denominator) *
                 (topicDocumentCount + alpha);
-    }
-
-    public String toString() {
-        String result = "{" + id;
-
-        if (!children.isEmpty()) {
-            result += ": [";
-            for (HierarchicalLDANode child : children) {
-                result += child.toString();
-            }
-            result += "]";
-        }
-        result += "}";
-        return result;
     }
 }

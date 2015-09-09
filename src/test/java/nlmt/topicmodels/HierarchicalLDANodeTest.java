@@ -295,4 +295,51 @@ public class HierarchicalLDANodeTest
 
         assertThat(node.getWeight(0, 0, 1.0, 1.0), is(equalTo(0.4)));
     }
+
+    @Test
+    public void testAddWordOnBadDocumentIndexBadVocabIndexDoesNothing() {
+        hierarchicalLDANode = new HierarchicalLDANode(3, 3, nodeMapper);
+        hierarchicalLDANode.addWord(-1, 0);
+        hierarchicalLDANode.addWord(4, 0);
+        hierarchicalLDANode.addWord(0, -1);
+        hierarchicalLDANode.addWord(0, 4);
+        assertThat(hierarchicalLDANode.getTotalWordCount(), is(equalTo(0)));
+    }
+
+    @Test
+    public void testRemoveWordOnBadDocumentIndexBadVocabIndexDoesNothing() {
+        hierarchicalLDANode = new HierarchicalLDANode(3, 3, nodeMapper);
+        hierarchicalLDANode.addWord(0, 0);
+        hierarchicalLDANode.removeWord(-1, 0);
+        hierarchicalLDANode.removeWord(4, 0);
+        hierarchicalLDANode.removeWord(0, -1);
+        hierarchicalLDANode.removeWord(0, 4);
+        assertThat(hierarchicalLDANode.getTotalWordCount(), is(equalTo(1)));
+    }
+
+    @Test
+    public void testRemoveFromParentWorksCorrectlySingleChild() {
+        hierarchicalLDANode = new HierarchicalLDANode(3, 3, nodeMapper);
+        HierarchicalLDANode child = hierarchicalLDANode.spawnChild();
+        assertThat(hierarchicalLDANode.getChildren().contains(child), is(true));
+        child.removeFromParent();
+        assertThat(child.getParent(), is(nullValue()));
+        assertThat(hierarchicalLDANode.getChildren().isEmpty(), is(true));
+    }
+
+    @Test
+    public void testRemoveFromParentWorksCorrectlyMultipleChildren() {
+        hierarchicalLDANode = new HierarchicalLDANode(3, 3, nodeMapper);
+        HierarchicalLDANode child1 = hierarchicalLDANode.spawnChild();
+        HierarchicalLDANode child2 = hierarchicalLDANode.spawnChild();
+        HierarchicalLDANode child3 = hierarchicalLDANode.spawnChild();
+        assertThat(hierarchicalLDANode.getChildren().contains(child1), is(true));
+        assertThat(hierarchicalLDANode.getChildren().contains(child2), is(true));
+        assertThat(hierarchicalLDANode.getChildren().contains(child3), is(true));
+        child2.removeFromParent();
+        assertThat(child2.getParent(), is(nullValue()));
+        assertThat(hierarchicalLDANode.getChildren().contains(child1), is(true));
+        assertThat(hierarchicalLDANode.getChildren().contains(child2), is(false));
+        assertThat(hierarchicalLDANode.getChildren().contains(child3), is(true));
+    }
 }
