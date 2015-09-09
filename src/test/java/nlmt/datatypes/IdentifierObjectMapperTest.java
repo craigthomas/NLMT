@@ -152,4 +152,27 @@ public class IdentifierObjectMapperTest {
         index = mapper.addObject("word");
         assertThat(index, is(equalTo(0)));
     }
+
+    @Test
+    public void testDeleteIndexOnInvalidIndexDoesNothing() {
+        int index = mapper.addObject("word");
+        mapper.deleteIndex(-1);
+        mapper.deleteIndex(2);
+        assertThat(mapper.contains("word"), is(true));
+        assertThat(mapper.containsIndex(index), is(true));
+    }
+
+    @Test
+    public void testDeleteIndexWorksCorrectly() {
+        int index1 = mapper.addObject("word");
+        int index2 = mapper.addObject("that");
+        int index3 = mapper.addObject("another");
+        mapper.deleteIndex(index2);
+        assertThat(mapper.contains("word"), is(true));
+        assertThat(mapper.contains("that"), is(false));
+        assertThat(mapper.contains("another"), is(true));
+        assertThat(mapper.containsIndex(index1), is(true));
+        assertThat(mapper.containsIndex(index2), is(false));
+        assertThat(mapper.containsIndex(index3), is(true));
+    }
 }
