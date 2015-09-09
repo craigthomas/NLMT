@@ -94,10 +94,10 @@ public class HierarchicalLDAPath
      * Clears out everything except the root node from the array of nodes.
      */
     public void clear() {
-        for (int level = 1; level < maxDepth; level++) {
+        for (int level = 0; level < maxDepth; level++) {
             nodes[level] = null;
         }
-        currentDepth = 1;
+        currentDepth = 0;
     }
 
     /**
@@ -123,6 +123,11 @@ public class HierarchicalLDAPath
         }
     }
 
+    /**
+     * Adds a document to the path.
+     *
+     * @param documentIndex the index of the document to add
+     */
     public void addDocument(int documentIndex) {
         for (int level = 0; level < currentDepth; level++) {
             HierarchicalLDANode currentNode = getNode(level);
@@ -193,15 +198,16 @@ public class HierarchicalLDAPath
     }
 
     /**
-     * Given a list of node ids, add those nodes to the current path. Ignores the
-     * 0th level (root) on the path.
+     * Given a list of node ids, add those nodes to the current path. Partial paths
+     * are allowed
      *
      * @param path the list of node ids to add
      * @param nodeMapper the object responsible for mapping node ids to nodes
      */
     public void addPath(List<Integer> path, IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
+        int length = (path.size() < maxDepth) ? path.size() : maxDepth;
         clear();
-        for (int level = 1; level < maxDepth; level++) {
+        for (int level = 0; level < length; level++) {
             int nodeId = path.get(level);
             if (nodeId != -1) {
                 addNode(nodeMapper.getObjectFromIndex(nodeId));

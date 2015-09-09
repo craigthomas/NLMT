@@ -23,7 +23,9 @@ import nlmt.datatypes.IdentifierObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -35,12 +37,14 @@ public class HierarchicalLDAPathTest
     private HierarchicalLDANode mockChildNode1;
     private HierarchicalLDANode mockChildNode2;
     private HierarchicalLDAPath hierarchicalLDAPath;
+    private IdentifierObjectMapper nodeMapper;
 
     @Before
     public void setUp() {
         mockRootNode = mock(HierarchicalLDANode.class);
         mockChildNode1 = mock(HierarchicalLDANode.class);
         mockChildNode2 = mock(HierarchicalLDANode.class);
+        nodeMapper = new IdentifierObjectMapper<HierarchicalLDANode>();
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -131,12 +135,12 @@ public class HierarchicalLDAPathTest
     }
 
     @Test
-    public void testClearRemovesAllButRootNode() {
+    public void testClearRemovesAllNodes() {
         hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
         hierarchicalLDAPath.addNode(mockChildNode1);
         hierarchicalLDAPath.addNode(mockChildNode2);
         hierarchicalLDAPath.clear();
-        HierarchicalLDANode [] expected = {mockRootNode, null, null};
+        HierarchicalLDANode [] expected = {null, null, null};
         assertThat(hierarchicalLDAPath.getNodes(), is(equalTo(expected)));
     }
 
@@ -169,7 +173,7 @@ public class HierarchicalLDAPathTest
         hierarchicalLDAPath.addNode(mockChildNode1);
         hierarchicalLDAPath.addNode(mockChildNode2);
         hierarchicalLDAPath.clear();
-        HierarchicalLDANode [] expected = {mockRootNode, null, null};
+        HierarchicalLDANode [] expected = {null, null, null};
         assertThat(hierarchicalLDAPath.getNodes(), is(equalTo(expected)));
     }
 
@@ -184,5 +188,202 @@ public class HierarchicalLDAPathTest
         hierarchicalLDAPath.removeDocument(0);
         assertThat(node.getDocumentsVisitingNode(), is(equalTo(new HashSet<>())));
         assertThat(node.getTotalWordCount(), is(0));
+    }
+
+    @Test
+    public void testAddPathNoNodesClearsPath() {
+        hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
+        List<Integer> newPath = new ArrayList<>();
+        hierarchicalLDAPath.addPath(newPath, nodeMapper);
+        HierarchicalLDANode [] nodes = hierarchicalLDAPath.getNodes();
+        assertThat(nodes[0], is(nullValue()));
+        assertThat(nodes[1], is(nullValue()));
+        assertThat(nodes[2], is(nullValue()));
+    }
+
+    @Test
+    public void testAddPathMaxDepthAddedWorksCorrectly() {
+        hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
+        int root = nodeMapper.addObject(mockRootNode);
+        int child1 = nodeMapper.addObject(mockChildNode1);
+        int child2 = nodeMapper.addObject(mockChildNode2);
+        List<Integer> newPath = new ArrayList<>();
+        newPath.add(root);
+        newPath.add(child1);
+        newPath.add(child2);
+        hierarchicalLDAPath.addPath(newPath, nodeMapper);
+        HierarchicalLDANode [] nodes = hierarchicalLDAPath.getNodes();
+        assertThat(nodes[0], is(mockRootNode));
+        assertThat(nodes[1], is(mockChildNode1));
+        assertThat(nodes[2], is(mockChildNode2));
+    }
+
+    @Test
+    public void testAddPathPartialPathWorksCorrectly() {
+        hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
+        int root = nodeMapper.addObject(mockRootNode);
+        int child1 = nodeMapper.addObject(mockChildNode1);
+        List<Integer> newPath = new ArrayList<>();
+        newPath.add(root);
+        newPath.add(child1);
+        hierarchicalLDAPath.addPath(newPath, nodeMapper);
+        HierarchicalLDANode [] nodes = hierarchicalLDAPath.getNodes();
+        assertThat(nodes[0], is(mockRootNode));
+        assertThat(nodes[1], is(mockChildNode1));
+        assertThat(nodes[2], is(nullValue()));
+    }
+
+    @Test
+    public void testAddPathWithSpawnNodeWorksCorrectly() {
+        mockRootNode = new HierarchicalLDANode(3, 3, nodeMapper);
+        mockChildNode1 = new HierarchicalLDANode(3, 3, nodeMapper);
+        hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
+        int root = nodeMapper.addObject(mockRootNode);
+        int child1 = nodeMapper.addObject(mockChildNode1);
+        List<Integer> newPath = new ArrayList<>();
+        newPath.add(root);
+        newPath.add(child1);
+        newPath.add(-1);
+        hierarchicalLDAPath.addPath(newPath, nodeMapper);
+        HierarchicalLDANode [] nodes = hierarchicalLDAPath.getNodes();
+        assertThat(nodes[0], is(mockRootNode));
+        assertThat(nodes[1], is(mockChildNode1));
+        assertThat(mockChildNode1.getNumChildren(), is(equalTo(1)));
+        HierarchicalLDANode newNode = mockChildNode1.getChildren().get(0);
+        assertThat(nodes[2], is(newNode));
+    }
+
+    @Test
+    public void testAddDocumentWorksCorrectly() {
+        mockRootNode = new HierarchicalLDANode(3, 3, nodeMapper);
+        mockChildNode1 = new HierarchicalLDANode(3, 3, nodeMapper);
+        hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
+        hierarchicalLDAPath.addNode(mockChildNode1);
+        hierarchicalLDAPath.addDocument(0);
+        assertThat(mockRootNode.getNumDocumentsVisitingNode(), is(equalTo(1)));
+        assertThat(mockChildNode1.getNumDocumentsVisitingNode(), is(equalTo(1)));
+        assertThat(mockRootNode.getDocumentsVisitingNode().contains(0), is(true));
+        assertThat(mockChildNode1.getDocumentsVisitingNode().contains(0), is(true));
+    }
+
+    @Test
+    public void testEnumerateNodesSingleRootNode() {
+        mockRootNode = new HierarchicalLDANode(3, 3, nodeMapper);
+        List<List<Integer>> expected = new ArrayList<>();
+        List<Integer> onlyPath = new ArrayList<>();
+        onlyPath.add(nodeMapper.getIndexFromObject(mockRootNode));
+        onlyPath.add(-1);
+        onlyPath.add(-1);
+        expected.add(onlyPath);
+        assertThat(HierarchicalLDAPath.enumeratePaths(mockRootNode, 3), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testEnumerateNodesTreeWithOneChildAtEachLevelWorksCorrectly() {
+        mockRootNode = new HierarchicalLDANode(3, 3, nodeMapper);
+        mockChildNode1 = mockRootNode.spawnChild();
+        mockChildNode2 = mockChildNode1.spawnChild();
+        List<List<Integer>> expected = new ArrayList<>();
+        List<Integer> path1 = new ArrayList<>();
+        path1.add(mockRootNode.getId());
+        path1.add(mockChildNode1.getId());
+        path1.add(mockChildNode2.getId());
+        expected.add(path1);
+
+        List<Integer> path2 = new ArrayList<>();
+        path2.add(mockRootNode.getId());
+        path2.add(mockChildNode1.getId());
+        path2.add(-1);
+        expected.add(path2);
+
+        List<Integer> path3 = new ArrayList<>();
+        path3.add(mockRootNode.getId());
+        path3.add(-1);
+        path3.add(-1);
+        expected.add(path3);
+
+        assertThat(HierarchicalLDAPath.enumeratePaths(mockRootNode, 3), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testEnumerateNodesTreeStopsAtFirstLevelWorksCorrectly() {
+        mockRootNode = new HierarchicalLDANode(3, 3, nodeMapper);
+        mockChildNode1 = mockRootNode.spawnChild();
+        mockChildNode2 = mockRootNode.spawnChild();
+        List<List<Integer>> expected = new ArrayList<>();
+        List<Integer> path1 = new ArrayList<>();
+        path1.add(mockRootNode.getId());
+        path1.add(mockChildNode1.getId());
+        path1.add(-1);
+        expected.add(path1);
+
+        List<Integer> path2 = new ArrayList<>();
+        path2.add(mockRootNode.getId());
+        path2.add(mockChildNode2.getId());
+        path2.add(-1);
+        expected.add(path2);
+
+        List<Integer> path3 = new ArrayList<>();
+        path3.add(mockRootNode.getId());
+        path3.add(-1);
+        path3.add(-1);
+        expected.add(path3);
+
+        assertThat(HierarchicalLDAPath.enumeratePaths(mockRootNode, 3), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testEnumerateNodesFullTreeCorrectly() {
+        mockRootNode = new HierarchicalLDANode(3, 3, nodeMapper);
+        mockChildNode1 = mockRootNode.spawnChild();
+        HierarchicalLDANode child1Child1 = mockChildNode1.spawnChild();
+        HierarchicalLDANode child1Child2 = mockChildNode1.spawnChild();
+        mockChildNode2 = mockRootNode.spawnChild();
+        HierarchicalLDANode child2Child1 = mockChildNode2.spawnChild();
+        HierarchicalLDANode child2Child2 = mockChildNode2.spawnChild();
+        List<List<Integer>> expected = new ArrayList<>();
+        List<Integer> path1 = new ArrayList<>();
+        path1.add(mockRootNode.getId());
+        path1.add(mockChildNode1.getId());
+        path1.add(child1Child1.getId());
+        expected.add(path1);
+
+        List<Integer> path2 = new ArrayList<>();
+        path2.add(mockRootNode.getId());
+        path2.add(mockChildNode1.getId());
+        path2.add(child1Child2.getId());
+        expected.add(path2);
+
+        List<Integer> path3 = new ArrayList<>();
+        path3.add(mockRootNode.getId());
+        path3.add(mockChildNode1.getId());
+        path3.add(-1);
+        expected.add(path3);
+
+        List<Integer> path4 = new ArrayList<>();
+        path4.add(mockRootNode.getId());
+        path4.add(mockChildNode2.getId());
+        path4.add(child2Child1.getId());
+        expected.add(path4);
+
+        List<Integer> path5 = new ArrayList<>();
+        path5.add(mockRootNode.getId());
+        path5.add(mockChildNode2.getId());
+        path5.add(child2Child2.getId());
+        expected.add(path5);
+
+        List<Integer> path6 = new ArrayList<>();
+        path6.add(mockRootNode.getId());
+        path6.add(mockChildNode2.getId());
+        path6.add(-1);
+        expected.add(path6);
+
+        List<Integer> path7 = new ArrayList<>();
+        path7.add(mockRootNode.getId());
+        path7.add(-1);
+        path7.add(-1);
+        expected.add(path7);
+
+        assertThat(HierarchicalLDAPath.enumeratePaths(mockRootNode, 3), is(equalTo(expected)));
     }
 }
