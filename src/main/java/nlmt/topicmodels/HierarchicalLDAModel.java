@@ -60,7 +60,7 @@ public class HierarchicalLDAModel
     // The eta word-smoothing parameter
     private double eta;
 
-    protected double etaSum;
+    protected double etaTotal;
 
     // Keeps track of what topics have been assigned to the word in a document.
     // The documentIndex will range from 0 to the total number of documents
@@ -115,7 +115,7 @@ public class HierarchicalLDAModel
         random = new Random();
         nodeMapper = new IdentifierObjectMapper<>();
         eta = 0.1;
-        etaSum = 0.0;
+        etaTotal = 0.0;
         pmfSampler = new PMFSampler(maxDepth);
     }
 
@@ -135,7 +135,7 @@ public class HierarchicalLDAModel
             this.documents[i].readDocument(documents.get(i));
         }
 
-        etaSum = vocabulary.size() * eta;
+        etaTotal = vocabulary.size() * eta;
     }
 
     /**
@@ -224,7 +224,6 @@ public class HierarchicalLDAModel
                             eta + node.getWordCountAllDocuments(vocabIndex) -
                                     node.getWordCountForDocument(documentIndex, vocabIndex));
         }
-        if (result == Double.NaN || result == Double.POSITIVE_INFINITY) { System.out.println("getSumLogGammaWordsNotInDocument not a number!"); }
         return result;
     }
 
@@ -242,12 +241,11 @@ public class HierarchicalLDAModel
      * @return the log calculation
      */
     protected double getLogEtaSumPlusWordsNotInDocument(int documentIndex, HierarchicalLDANode node) {
-        double result = etaSum;
+        double result = etaTotal;
         for (int vocabIndex : vocabulary.getIndexKeys()) {
             result += node.getWordCountAllDocuments(vocabIndex) - node.getWordCountForDocument(documentIndex, vocabIndex);
         }
         result = log(result);
-        if (result == Double.NaN || result == Double.POSITIVE_INFINITY) { System.out.println("getLogGammaEtaPlusWordsNotInDocument not a number!"); }
         return result;
     }
 
@@ -268,7 +266,6 @@ public class HierarchicalLDAModel
         for (int vocabIndex : vocabulary.getIndexKeys()) {
             result += log(node.getWordCountAllDocuments(vocabIndex) + eta);
         }
-        if (result == Double.NaN || result == Double.POSITIVE_INFINITY) { System.out.println("getSumLogGammaAllWords not a number!"); }
         return result;
     }
 
@@ -280,9 +277,7 @@ public class HierarchicalLDAModel
      * @return the log calculation
      */
     protected double getLogEtaPlusSumAllWords(HierarchicalLDANode node) {
-        double result = log(etaSum + node.getTotalWordCount());
-        if (result == Double.NaN || result == Double.POSITIVE_INFINITY) { System.out.println("getLogGammaEtaSumAllWords not a number!"); }
-        return result;
+        return log(etaTotal + node.getTotalWordCount());
     }
 
     /**
@@ -313,15 +308,13 @@ public class HierarchicalLDAModel
      */
     protected double calculatePathLikelihood(int documentIndex, List<Integer> path) {
         double result = 0.0;
-        int parentNumDocuments = rootNode.getNumDocumentsVisitingNode();
         for (int nodeId : path) {
             if (nodeId != -1) {
                 HierarchicalLDANode node = nodeMapper.getObjectFromIndex(nodeId);
-                result += getTopicLikelihood(documentIndex, node) + log(node.getNumDocumentsVisitingNode() / (parentNumDocuments - 1 + gamma));
-                parentNumDocuments = node.getNumDocumentsVisitingNode();
+                result += getTopicLikelihood(documentIndex, node) + log(node.getNumDocumentsVisitingNode() / (documents.length - 1 + gamma));
             } else {
                 HierarchicalLDANode emptyNode = new HierarchicalLDANode(documents.length, vocabulary.size(), new IdentifierObjectMapper<>());
-                result += getTopicLikelihood(documentIndex, emptyNode) + log(gamma / (parentNumDocuments - 1 + gamma));
+                result += getTopicLikelihood(documentIndex, emptyNode) + log(gamma / (documents.length - 1 + gamma));
                 break;
             }
         }
@@ -355,6 +348,7 @@ public class HierarchicalLDAModel
         PMFSampler sampler = new PMFSampler(loglikelihoods.length);
         double sum = 0.0;
         for (int index = 0; index < loglikelihoods.length; index++) {
+            //sampler.add(loglikelihoods[index]);
             loglikelihoods[index] = exp(loglikelihoods[index] - biggest);
             sum += loglikelihoods[index];
         }
@@ -383,7 +377,7 @@ public class HierarchicalLDAModel
     protected int getNewTopic(int documentIndex, int wordIndexInVocab, HierarchicalLDAPath path) {
         pmfSampler.clear();
         for (int topicIndex = 0; topicIndex < maxDepth; topicIndex++) {
-            double weight = path.getNode(topicIndex).getWeight(documentIndex, wordIndexInVocab, alpha, eta);
+            double weight = path.getNode(topicIndex).getWeight(documentIndex, wordIndexInVocab, alpha, eta, etaTotal);
             pmfSampler.add(weight);
         }
         return pmfSampler.sample();

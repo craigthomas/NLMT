@@ -302,11 +302,11 @@ public class HierarchicalLDANode
      * @param eta the eta hyper-parameter
      * @return the weight associated with the topic
      */
-    protected double getWeight(int documentIndex, int wordIndexInVocab, double alpha, double eta) {
+    protected double getWeight(int documentIndex, int wordIndexInVocab, double alpha, double eta, double etaTotal) {
         int wordTopicCount = getWordCountAllDocuments(wordIndexInVocab);
         int topicTotal = getTotalWordCount();
         int topicDocumentCount = getWordCountForDocument(documentIndex, wordIndexInVocab);
-        double denominator = topicTotal + (topicTotal * eta);
+        double denominator = topicTotal + etaTotal;
         if (denominator == 0.0) {
             return 0.0;
         }

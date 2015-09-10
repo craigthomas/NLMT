@@ -279,9 +279,15 @@ public class HierarchicalLDANodeTest
     }
 
     @Test
-    public void testGetTopicWeightEmptyNodeReturnsZero() {
+    public void testGetTopicWeightEmptyNodeEmptyEtaReturnsZero() {
         HierarchicalLDANode node = new HierarchicalLDANode(3, 3, new IdentifierObjectMapper<>());
-        assertThat(node.getWeight(0, 0, 1.0, 1.5), is(equalTo(0.0)));
+        assertThat(node.getWeight(0, 0, 1.0, 1.5, 0.0), is(equalTo(0.0)));
+    }
+
+    @Test
+    public void testGetTopicWeightEmptyNodeWithEtaWorksCorrectly() {
+        HierarchicalLDANode node = new HierarchicalLDANode(3, 3, new IdentifierObjectMapper<>());
+        assertThat(node.getWeight(0, 0, 1.0, 1.5, 0.3), is(equalTo(5.0)));
     }
 
     @Test
@@ -293,7 +299,7 @@ public class HierarchicalLDANodeTest
         node.addWord(0, 3);
         node.addWord(0, 4);
 
-        assertThat(node.getWeight(0, 0, 1.0, 1.0), is(equalTo(0.4)));
+        assertThat(node.getWeight(0, 0, 1.0, 1.0, 5.0), is(equalTo(0.4)));
     }
 
     @Test

@@ -38,6 +38,9 @@ public class LDAModel
     // The beta smoothing parameter
     protected double beta;
 
+    // Beta multiplied by the size of the vocabulary
+    protected double betaTotal;
+
     // Keeps track of how many documents have been assigned to a topic
     // topicDocumentCount[documentIndex][topicIndex]
     protected int [][] documentTopicCount;
@@ -116,6 +119,7 @@ public class LDAModel
         documentTopicCount = new int[totalDocs][numTopics];
         wordTopicCount = new int[vocabulary.size()][numTopics];
         topicTotals = new int[numTopics];
+        betaTotal = vocabulary.size() * numTopics;
 
         for (int documentIndex = 0; documentIndex < totalDocs; documentIndex++) {
             int [] words = documents[documentIndex].getWordArray();
@@ -136,7 +140,7 @@ public class LDAModel
      * @return the mass belonging to the word
      */
     protected double getTopicWeight(int topicDocumentCount, int wordIndexInVocab, int topicIndex) {
-        double denominator = topicTotals[topicIndex] + (topicTotals[topicIndex] * beta);
+        double denominator = topicTotals[topicIndex] + betaTotal;
         if (denominator == 0.0) {
             return 0.0;
         }

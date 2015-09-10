@@ -26,7 +26,6 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Test for the HierarchicalLDAPath class.
@@ -37,14 +36,14 @@ public class HierarchicalLDAPathTest
     private HierarchicalLDANode mockChildNode1;
     private HierarchicalLDANode mockChildNode2;
     private HierarchicalLDAPath hierarchicalLDAPath;
-    private IdentifierObjectMapper nodeMapper;
+    private IdentifierObjectMapper<HierarchicalLDANode> nodeMapper;
 
     @Before
     public void setUp() {
         mockRootNode = mock(HierarchicalLDANode.class);
         mockChildNode1 = mock(HierarchicalLDANode.class);
         mockChildNode2 = mock(HierarchicalLDANode.class);
-        nodeMapper = new IdentifierObjectMapper<HierarchicalLDANode>();
+        nodeMapper = new IdentifierObjectMapper<>();
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -161,8 +160,6 @@ public class HierarchicalLDAPathTest
         HierarchicalLDANode rootNode = new HierarchicalLDANode(3, 1, new IdentifierObjectMapper<>());
         hierarchicalLDAPath = new HierarchicalLDAPath(rootNode, 3);
         hierarchicalLDAPath.addWord(0, 0, 0);
-        Set<Integer> expected = new HashSet<>();
-        expected.add(0);
         assertThat(rootNode.getTotalWordCount(), is(equalTo(1)));
         assertThat(rootNode.getWordCountForDocument(0, 0), is(equalTo(1)));
     }
@@ -183,8 +180,6 @@ public class HierarchicalLDAPathTest
         HierarchicalLDANode node = new HierarchicalLDANode(4, 1, new IdentifierObjectMapper<>());
         hierarchicalLDAPath.addNode(node);
         node.addWord(0, 0);
-        Set<Integer> wordsToRemove = new HashSet<>();
-        wordsToRemove.add(0);
         hierarchicalLDAPath.removeDocument(0);
         assertThat(node.getDocumentsVisitingNode(), is(equalTo(new HashSet<>())));
         assertThat(node.getTotalWordCount(), is(0));
