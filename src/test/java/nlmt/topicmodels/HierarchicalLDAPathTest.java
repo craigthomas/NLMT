@@ -143,46 +143,14 @@ public class HierarchicalLDAPathTest
         assertThat(hierarchicalLDAPath.getNodes(), is(equalTo(expected)));
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testAddWordAndDocumentThrowsExceptionOnNegativeLevel() {
-        hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
-        hierarchicalLDAPath.addWord(0, 0, -1);
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void testAddWordAndDocumentThrowsExceptionOnLevelGreaterThanCurrentDepth() {
-        hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
-        hierarchicalLDAPath.addWord(0, 0, 1);
-    }
-
-    @Test
-    public void testAddWordAndDocumentOnGoodPathWorksCorrectly() {
-        HierarchicalLDANode rootNode = new HierarchicalLDANode(3, 1, new IdentifierObjectMapper<>());
-        hierarchicalLDAPath = new HierarchicalLDAPath(rootNode, 3);
-        hierarchicalLDAPath.addWord(0, 0, 0);
-        assertThat(rootNode.getTotalWordCount(), is(equalTo(1)));
-        assertThat(rootNode.getWordCountForDocument(0, 0), is(equalTo(1)));
-    }
-
-    @Test
-    public void testAddWordAndDocumentWorksCorrectly() {
-        hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
-        hierarchicalLDAPath.addNode(mockChildNode1);
-        hierarchicalLDAPath.addNode(mockChildNode2);
-        hierarchicalLDAPath.clear();
-        HierarchicalLDANode [] expected = {null, null, null};
-        assertThat(hierarchicalLDAPath.getNodes(), is(equalTo(expected)));
-    }
-
     @Test
     public void testRemoveWordAndDocumentWorksCorrectly() {
         hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
-        HierarchicalLDANode node = new HierarchicalLDANode(4, 1, new IdentifierObjectMapper<>());
+        HierarchicalLDANode node = new HierarchicalLDANode(3, new IdentifierObjectMapper<>());
+        node.setVisited(0);
         hierarchicalLDAPath.addNode(node);
-        node.addWord(0, 0);
         hierarchicalLDAPath.removeDocument(0);
         assertThat(node.getDocumentsVisitingNode(), is(equalTo(new HashSet<>())));
-        assertThat(node.getTotalWordCount(), is(0));
     }
 
     @Test
@@ -230,8 +198,8 @@ public class HierarchicalLDAPathTest
 
     @Test
     public void testAddPathWithSpawnNodeWorksCorrectly() {
-        mockRootNode = new HierarchicalLDANode(3, 3, nodeMapper);
-        mockChildNode1 = new HierarchicalLDANode(3, 3, nodeMapper);
+        mockRootNode = new HierarchicalLDANode(3, nodeMapper);
+        mockChildNode1 = new HierarchicalLDANode(3, nodeMapper);
         hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
         int root = nodeMapper.addObject(mockRootNode);
         int child1 = nodeMapper.addObject(mockChildNode1);
@@ -250,8 +218,8 @@ public class HierarchicalLDAPathTest
 
     @Test
     public void testAddDocumentWorksCorrectly() {
-        mockRootNode = new HierarchicalLDANode(3, 3, nodeMapper);
-        mockChildNode1 = new HierarchicalLDANode(3, 3, nodeMapper);
+        mockRootNode = new HierarchicalLDANode(3, nodeMapper);
+        mockChildNode1 = new HierarchicalLDANode(3, nodeMapper);
         hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
         hierarchicalLDAPath.addNode(mockChildNode1);
         hierarchicalLDAPath.addDocument(0);
@@ -263,7 +231,7 @@ public class HierarchicalLDAPathTest
 
     @Test
     public void testEnumerateNodesSingleRootNode() {
-        mockRootNode = new HierarchicalLDANode(3, 3, nodeMapper);
+        mockRootNode = new HierarchicalLDANode(3, nodeMapper);
         List<List<Integer>> expected = new ArrayList<>();
         List<Integer> onlyPath = new ArrayList<>();
         onlyPath.add(nodeMapper.getIndexFromObject(mockRootNode));
@@ -275,9 +243,9 @@ public class HierarchicalLDAPathTest
 
     @Test
     public void testEnumerateNodesTreeWithOneChildAtEachLevelWorksCorrectly() {
-        mockRootNode = new HierarchicalLDANode(3, 3, nodeMapper);
-        mockChildNode1 = mockRootNode.spawnChild();
-        mockChildNode2 = mockChildNode1.spawnChild();
+        mockRootNode = new HierarchicalLDANode(3, nodeMapper);
+        mockChildNode1 = mockRootNode.spawnChild(1);
+        mockChildNode2 = mockChildNode1.spawnChild(2);
         List<List<Integer>> expected = new ArrayList<>();
         List<Integer> path1 = new ArrayList<>();
         path1.add(mockRootNode.getId());
@@ -302,9 +270,9 @@ public class HierarchicalLDAPathTest
 
     @Test
     public void testEnumerateNodesTreeStopsAtFirstLevelWorksCorrectly() {
-        mockRootNode = new HierarchicalLDANode(3, 3, nodeMapper);
-        mockChildNode1 = mockRootNode.spawnChild();
-        mockChildNode2 = mockRootNode.spawnChild();
+        mockRootNode = new HierarchicalLDANode(3, nodeMapper);
+        mockChildNode1 = mockRootNode.spawnChild(1);
+        mockChildNode2 = mockRootNode.spawnChild(2);
         List<List<Integer>> expected = new ArrayList<>();
         List<Integer> path1 = new ArrayList<>();
         path1.add(mockRootNode.getId());
@@ -329,13 +297,13 @@ public class HierarchicalLDAPathTest
 
     @Test
     public void testEnumerateNodesFullTreeCorrectly() {
-        mockRootNode = new HierarchicalLDANode(3, 3, nodeMapper);
-        mockChildNode1 = mockRootNode.spawnChild();
-        HierarchicalLDANode child1Child1 = mockChildNode1.spawnChild();
-        HierarchicalLDANode child1Child2 = mockChildNode1.spawnChild();
-        mockChildNode2 = mockRootNode.spawnChild();
-        HierarchicalLDANode child2Child1 = mockChildNode2.spawnChild();
-        HierarchicalLDANode child2Child2 = mockChildNode2.spawnChild();
+        mockRootNode = new HierarchicalLDANode(3, nodeMapper);
+        mockChildNode1 = mockRootNode.spawnChild(1);
+        HierarchicalLDANode child1Child1 = mockChildNode1.spawnChild(2);
+        HierarchicalLDANode child1Child2 = mockChildNode1.spawnChild(2);
+        mockChildNode2 = mockRootNode.spawnChild(1);
+        HierarchicalLDANode child2Child1 = mockChildNode2.spawnChild(2);
+        HierarchicalLDANode child2Child2 = mockChildNode2.spawnChild(2);
         List<List<Integer>> expected = new ArrayList<>();
         List<Integer> path1 = new ArrayList<>();
         path1.add(mockRootNode.getId());

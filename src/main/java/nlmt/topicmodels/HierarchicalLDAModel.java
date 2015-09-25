@@ -51,14 +51,15 @@ public class HierarchicalLDAModel
     // Keeps track of how deep the tree can become
     private int maxDepth;
 
-    // The alpha smoothing parameter
-    private double alpha;
-
     // The gamma hyper-parameter
     private double gamma;
 
     // The eta word-smoothing parameter
-    private double eta;
+    private double [] eta;
+
+    // Stick breaking parameters
+    private double m = 0.5;
+    private double pi = 100;
 
     protected double etaTotal;
 
@@ -78,6 +79,10 @@ public class HierarchicalLDAModel
     // The paths that each document takes through the topic tree
     protected HierarchicalLDAPath [] documentPaths;
 
+    protected int [][][] documentWordLevel;
+
+    protected int [][] documentLevelTotals;
+
     // The root node of the topic tree
     private HierarchicalLDANode rootNode;
 
@@ -90,31 +95,37 @@ public class HierarchicalLDAModel
     // The default value for the gamma hyper-parameter
     public final static double DEFAULT_GAMMA = 1.0;
 
-    // The default value for the alpha smoothing parameter
-    public final static double DEFAULT_ALPHA = 1.0;
+    // Default values for the eta hyper-parameter - favors more terms towards the root
+    public final static double [] DEFAULT_ETA = {2.0, 1.0, 0.5};
+
+    //
+    public final static double DEFAULT_PI = 100;
+
+    public final static double DEFAULT_M = 0.5;
 
     public HierarchicalLDAModel() {
-        this(DEFAULT_MAX_DEPTH, DEFAULT_ALPHA, DEFAULT_GAMMA);
+        this(DEFAULT_MAX_DEPTH, DEFAULT_GAMMA, DEFAULT_ETA, DEFAULT_M, DEFAULT_PI);
     }
 
-    public HierarchicalLDAModel(int maxDepth, double alpha, double gamma) {
+    public HierarchicalLDAModel(int maxDepth, double gamma, double [] eta, double m, double pi) {
         if (maxDepth <= 2) {
             throw new IllegalArgumentException("maxDepth must be > 2");
         }
         if (gamma < 0) {
             throw new IllegalArgumentException("gamma must be >= 0");
         }
-        if (alpha < 0) {
-            throw new IllegalArgumentException("alpha must be >= 0");
+        if (eta.length < maxDepth) {
+            throw new IllegalArgumentException("eta must have at least " + maxDepth + " values");
         }
         this.gamma = gamma;
         this.maxDepth = maxDepth;
-        this.alpha = alpha;
+        this.eta = eta;
+        this.m = m;
+        this.pi = pi;
         vocabulary = new IdentifierObjectMapper<>();
         documents = new Document[0];
         random = new Random();
         nodeMapper = new IdentifierObjectMapper<>();
-        eta = 0.1;
         etaTotal = 0.0;
         pmfSampler = new PMFSampler(maxDepth);
     }
@@ -135,7 +146,10 @@ public class HierarchicalLDAModel
             this.documents[i].readDocument(documents.get(i));
         }
 
-        etaTotal = vocabulary.size() * eta;
+        documentPaths = new HierarchicalLDAPath[documents.size()];
+        rootNode = new HierarchicalLDANode(vocabulary.size(), nodeMapper);
+        documentWordLevel = new int[documents.size()][vocabulary.size()][maxDepth];
+        documentLevelTotals = new int[documents.size()][maxDepth];
     }
 
     /**
@@ -145,14 +159,12 @@ public class HierarchicalLDAModel
      * document to one of the nodes in the path.
      */
     public void initialize() {
-        int totalDocs = documents.length;
-        documentPaths = new HierarchicalLDAPath[totalDocs];
-        rootNode = new HierarchicalLDANode(totalDocs, vocabulary.size(), nodeMapper);
-//        for (int documentIndex = 0; documentIndex < totalDocs; documentIndex++) {
-//            rootNode.setVisited(documentIndex);
-//        }
 
-        for (int documentIndex = 0; documentIndex < totalDocs; documentIndex++) {
+        for (int documentIndex = 0; documentIndex < documents.length; documentIndex++) {
+            rootNode.setVisited(documentIndex);
+        }
+
+        for (int documentIndex = 0; documentIndex < documents.length; documentIndex++) {
             documentPaths[documentIndex] = new HierarchicalLDAPath(rootNode, maxDepth);
             HierarchicalLDAPath path = documentPaths[documentIndex];
 
@@ -185,113 +197,48 @@ public class HierarchicalLDAModel
             }
 
             // Generate the new path through the tree
-            System.out.println("Document " + documentIndex + " new path " + newPath);
             path.addPath(newPath, nodeMapper);
             path.addDocument(documentIndex);
-
-            // Flag the nodes in the path as being visited
-            for (int level = 1; level < maxDepth; level++) {
-                path.getNode(level).setVisited(documentIndex);
-            }
 
             // For every word in the document, assign it to a random node in the path
             int [] words = documents[documentIndex].getWordArray();
             for (int wordIndex = 0; wordIndex < words.length; wordIndex++) {
                 int level = random.nextInt(maxDepth);
-                path.addWord(documentIndex, words[wordIndex], level);
-                documents[documentIndex].setTopicForWord(wordIndex, path.getNode(level).getId());
+                path.getNode(level).addWord(words[wordIndex]);
+                documentWordLevel[documentIndex][words[wordIndex]][level]++;
+                documentLevelTotals[documentIndex][level]++;
+                documents[documentIndex].setTopicForWord(wordIndex, level);
             }
         }
     }
 
     /**
-     * Used to calculate a portion of the log likelihood for a topic given a document and a vocabulary
-     * word. Separated out for easier testing. NB: calculating what words are in use in
-     * a node is an expensive operation, so it appears as the <code>vocabulary</code>
-     * parameter here even though we could call <code>node.getVocabularyPresent()</code>
-     * to get it (in other words, it is better to call it once and cache the result
-     * for the each component of the log likelihood calculation rather than call it
-     * each time for each component).
+     * Given the specified document, calculates the complete log likelihood for
+     * that document given the words in this path component, and the number of
+     * documents that have visited the node.
      *
-     * @param documentIndex the index of the document to consider
-     * @param node the HierarchicalLDANode with the document
-     * @return the sum of the log gamma counts for each word not in the document
-     */
-    protected double getSumLogEtaPlusWordsNotInDocument(int documentIndex, HierarchicalLDANode node) {
-        double result = 0.0;
-        for (int vocabIndex : vocabulary.getIndexKeys()) {
-            result += log(
-                            eta + node.getWordCountAllDocuments(vocabIndex) -
-                                    node.getWordCountForDocument(documentIndex, vocabIndex));
-        }
-        return result;
-    }
-
-    /**
-     * Used to calculate a portion of the log likelihood for a topic given a document and a vocabulary
-     * word. Separated out for easier testing. NB: calculating what words are in use in
-     * a node is an expensive operation, so it appears as the <code>vocabulary</code>
-     * parameter here even though we could call <code>node.getVocabularyPresent()</code>
-     * to get it (in other words, it is better to call it once and cache the result
-     * for the each component of the log likelihood calculation rather than call it
-     * each time for each component).
-     *
-     * @param documentIndex the index of the document to consider
-     * @param node the HierarchicalLDANode with the document
-     * @return the log calculation
-     */
-    protected double getLogEtaSumPlusWordsNotInDocument(int documentIndex, HierarchicalLDANode node) {
-        double result = etaTotal;
-        for (int vocabIndex : vocabulary.getIndexKeys()) {
-            result += node.getWordCountAllDocuments(vocabIndex) - node.getWordCountForDocument(documentIndex, vocabIndex);
-        }
-        result = log(result);
-        return result;
-    }
-
-    /**
-     * Used to calculate a portion of the log likelihood for a topic given a document and a vocabulary
-     * word. Separated out for easier testing. NB: calculating what words are in use in
-     * a node is an expensive operation, so it appears as the <code>vocabulary</code>
-     * parameter here even though we could call <code>node.getVocabularyPresent()</code>
-     * to get it (in other words, it is better to call it once and cache the result
-     * for the each component of the log likelihood calculation rather than call it
-     * each time for each component).
-     *
-     * @param node the HierarchicalLDANode with the words
-     * @return the log calculation
-     */
-    protected double getSumLogAllWords(HierarchicalLDANode node) {
-        double result = 0.0;
-        for (int vocabIndex : vocabulary.getIndexKeys()) {
-            result += log(node.getWordCountAllDocuments(vocabIndex) + eta);
-        }
-        return result;
-    }
-
-    /**
-     * Used to calculate a portion of the log likelihood for a topic given a document and a vocabulary
-     * word. Separated out for easier testing.
-     *
-     * @param node the HierarchicalLDANode with the words
-     * @return the log calculation
-     */
-    protected double getLogEtaPlusSumAllWords(HierarchicalLDANode node) {
-        return log(etaTotal + node.getTotalWordCount());
-    }
-
-    /**
-     * Calculates the complete log likelihood for the given node and document index.
-     *
-     * @param documentIndex the index of the document
+     * @param thisDocument the index of the document
      * @param node the node with the words
      * @return the log likelihood of choosing this node
      */
-    protected double getTopicLikelihood(int documentIndex, HierarchicalLDANode node) {
-        double factor1 = getLogEtaSumPlusWordsNotInDocument(documentIndex, node);
-        double factor2 = getSumLogEtaPlusWordsNotInDocument(documentIndex, node);
-        double factor3 = getSumLogAllWords(node);
-        double factor4 = getLogEtaPlusSumAllWords(node);
+    protected double getPathWordsLikelihood(int thisDocument, int level, HierarchicalLDANode node) {
+        double factor1 = 0.0;
+        double factor2 = 0.0;
+        double factor3 = 0.0;
+        for (int vocabIndex : vocabulary.getIndexKeys()) {
+            int wordCountAllDocuments = node.getWordCount(vocabIndex);
+            if (node.getDocumentsVisitingNode().contains(thisDocument)) {
+                factor1 += wordCountAllDocuments - documentWordLevel[thisDocument][vocabIndex][level];
+                factor2 += log(eta[level] + wordCountAllDocuments - documentWordLevel[thisDocument][vocabIndex][level]);
+            } else {
+                factor1 += wordCountAllDocuments;
+                factor2 += log(eta[level] + wordCountAllDocuments);
+            }
+            factor3 += log(wordCountAllDocuments + eta[level]);
+        }
+
+        factor1 = log((eta[level] * vocabulary.size()) + factor1);
+        double factor4 = log((eta[level] * vocabulary.size()) + node.getTotalWordCount());
 
         return factor1 - factor2 + factor3 - factor4;
     }
@@ -308,13 +255,14 @@ public class HierarchicalLDAModel
      */
     protected double calculatePathLikelihood(int documentIndex, List<Integer> path) {
         double result = 0.0;
-        for (int nodeId : path) {
+        for (int level = 1; level < maxDepth; level++) {
+            int nodeId = path.get(level);
             if (nodeId != -1) {
                 HierarchicalLDANode node = nodeMapper.getObjectFromIndex(nodeId);
-                result += getTopicLikelihood(documentIndex, node) + log(node.getNumDocumentsVisitingNode() / (documents.length - 1 + gamma));
+                result += getPathWordsLikelihood(documentIndex, level, node) + log(node.getNumDocumentsVisitingNode() / (documents.length - 1 + gamma));
             } else {
-                HierarchicalLDANode emptyNode = new HierarchicalLDANode(documents.length, vocabulary.size(), new IdentifierObjectMapper<>());
-                result += getTopicLikelihood(documentIndex, emptyNode) + log(gamma / (documents.length - 1 + gamma));
+                HierarchicalLDANode emptyNode = new HierarchicalLDANode(vocabulary.size(), new IdentifierObjectMapper<>());
+                result += getPathWordsLikelihood(documentIndex, level, emptyNode) + log(gamma / (documents.length - 1 + gamma));
                 break;
             }
         }
@@ -336,7 +284,6 @@ public class HierarchicalLDAModel
         for (int pathIndex = 0; pathIndex < paths.size(); pathIndex++) {
             loglikelihoods[pathIndex] = calculatePathLikelihood(documentIndex, paths.get(pathIndex));
         }
-        //System.out.println("raw loglikelihoods " + Arrays.toString(loglikelihoods));
 
         double biggest = Double.NEGATIVE_INFINITY;
         for (double loglikelihood : loglikelihoods) {
@@ -348,17 +295,14 @@ public class HierarchicalLDAModel
         PMFSampler sampler = new PMFSampler(loglikelihoods.length);
         double sum = 0.0;
         for (int index = 0; index < loglikelihoods.length; index++) {
-            //sampler.add(loglikelihoods[index]);
             loglikelihoods[index] = exp(loglikelihoods[index] - biggest);
             sum += loglikelihoods[index];
         }
-        //System.out.println("probability space " + Arrays.toString(loglikelihoods));
 
         for (double loglikelihood : loglikelihoods) {
             sampler.add(loglikelihood / sum);
         }
 
-        //System.out.println("normalized loglikelihoods " + Arrays.toString(sampler.getProbabilities()));
         return sampler.sample();
     }
 
@@ -374,13 +318,39 @@ public class HierarchicalLDAModel
      * @param path the HierarchicalLDAPath to consider
      * @return the level of the node in the path that was chosen
      */
-    protected int getNewTopic(int documentIndex, int wordIndexInVocab, HierarchicalLDAPath path) {
+    protected int chooseNewLevel(int documentIndex, int wordIndexInVocab, HierarchicalLDAPath path) {
         pmfSampler.clear();
         for (int topicIndex = 0; topicIndex < maxDepth; topicIndex++) {
-            double weight = path.getNode(topicIndex).getWeight(documentIndex, wordIndexInVocab, alpha, eta, etaTotal);
+            double weight = getLevelProbability(documentIndex, wordIndexInVocab, path, topicIndex);
             pmfSampler.add(weight);
         }
         return pmfSampler.sample();
+    }
+
+    public double getLevelProbability(int documentIndex, int wordIndexInVocab, HierarchicalLDAPath path, int level) {
+        double temp = pi;
+        for (int i = level; i < maxDepth; i++) {
+            temp += documentLevelTotals[documentIndex][i];
+        }
+        double factor1 = ((m * pi) + documentLevelTotals[documentIndex][level]) / temp;
+
+        for (int i = 1; i < level - 1; i++) {
+            double numerator = (1 - m) * pi;
+            double denominator = pi;
+            for (int j = i + 1; j < maxDepth; j++) {
+                numerator += documentLevelTotals[documentIndex][j];
+            }
+
+            for (int j = i; j < maxDepth; j++) {
+                denominator += documentLevelTotals[documentIndex][j];
+            }
+            factor1 *= (numerator / denominator);
+        }
+        HierarchicalLDANode node = path.getNode(level);
+        if (node.getDocumentsVisitingNode().contains(documentIndex)) {
+            return factor1 * ((node.getWordCount(wordIndexInVocab) - documentWordLevel[documentIndex][wordIndexInVocab][level]) + eta[level]);
+        }
+        return factor1 * ((node.getWordCount(wordIndexInVocab)) + eta[level]);
     }
 
     /**
@@ -391,7 +361,7 @@ public class HierarchicalLDAModel
         List<Integer> nodesToDelete = new ArrayList<>();
         for (int nodeIndex : nodeMapper.getIndexKeys()) {
             HierarchicalLDANode node = nodeMapper.getObjectFromIndex(nodeIndex);
-            if (node.getDocumentsVisitingNode().size() == 0 && node.getTotalWordCount() == 0 && node.getNumChildren() == 0) {
+            if (node.getNumDocumentsVisitingNode() == 0) {
                 node.removeFromParent();
                 nodesToDelete.add(nodeIndex);
             }
@@ -418,7 +388,7 @@ public class HierarchicalLDAModel
 
         System.out.println("Gibbs Sampling");
         for (int iteration = 0; iteration < numIterations; iteration++) {
-            System.out.println("Iteration " + iteration + ", number of nodes " + nodeMapper.size());
+            System.out.println("Iteration " + iteration + ", number of nodes " + nodeMapper.size() + ", number of paths " + HierarchicalLDAPath.enumeratePaths(rootNode, maxDepth).size());
             for (int documentIndex = 0; documentIndex < totalDocs; documentIndex++) {
 
                 // Sample a new path for the document
@@ -426,29 +396,35 @@ public class HierarchicalLDAModel
                 int bestPath = chooseBestPath(documentIndex, paths);
                 List<Integer> newPath = paths.get(bestPath);
 
-                //System.out.println("document " + documentIndex + " Chose path " + newPathNodes);
-
                 // Deallocate the document and all its words from the current path
                 HierarchicalLDAPath path = documentPaths[documentIndex];
                 path.removeDocument(documentIndex);
+                int[] words = documents[documentIndex].getWordArray();
+                int[] oldLevels = documents[documentIndex].getTopicArray();
+                for (int wordIndex = 0; wordIndex < words.length; wordIndex++) {
+                    documentWordLevel[documentIndex][words[wordIndex]][oldLevels[wordIndex]]--;
+                    documentLevelTotals[documentIndex][oldLevels[wordIndex]]--;
+                    path.getNode(oldLevels[wordIndex]).removeWord(words[wordIndex]);
+                }
+
+                // Assign the new path
                 path.addPath(newPath, nodeMapper);
                 path.addDocument(documentIndex);
 
-                // For every word in the document, assign it to a node (topic) in the path
-                int[] words = documents[documentIndex].getWordArray();
+                // For every word in the document, assign a new level in the path
                 for (int wordIndex = 0; wordIndex < words.length; wordIndex++) {
-                    int newTopic = getNewTopic(documentIndex, words[wordIndex], path);
-                    path.addWord(documentIndex, words[wordIndex], newTopic);
-                    documents[documentIndex].setTopicForWord(wordIndex, path.getNode(newTopic).getId());
+                    int newLevel = chooseNewLevel(documentIndex, words[wordIndex], path);
+                    documentWordLevel[documentIndex][words[wordIndex]][newLevel]++;
+                    documentLevelTotals[documentIndex][newLevel]++;
+                    documents[documentIndex].setTopicForWord(wordIndex, newLevel);
+                    path.getNode(newLevel).addWord(words[wordIndex]);
                 }
+
+                deleteEmptyNodes();
             }
 
-            deleteEmptyNodes();
-
-            if (iteration % 10 == 0) {
-                System.out.println("topics " + getTopics(5, 2));
-                System.out.println("tree " + rootNode.toString());
-            }
+            System.out.println("topics " + getTopics(5, 2));
+            System.out.println("tree " + rootNode.toString());
         }
     }
 
@@ -469,7 +445,7 @@ public class HierarchicalLDAModel
         HierarchicalLDANode node = nodeMapper.getObjectFromIndex(topicId);
         BoundedPriorityQueue<Integer> priorityQueue = new BoundedPriorityQueue<>(numWords);
         for (int wordIndex = 0; wordIndex < vocabulary.size(); wordIndex++) {
-            priorityQueue.add(node.getWordCountAllDocuments(wordIndex), wordIndex);
+            priorityQueue.add(node.getWordCount(wordIndex), wordIndex);
         }
         return priorityQueue.getElements().stream().map(vocabulary::getObjectFromIndex).collect(Collectors.toList());
     }

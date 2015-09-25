@@ -119,7 +119,6 @@ public class HierarchicalLDAPath
         for (int level = 0; level < currentDepth; level++) {
             HierarchicalLDANode currentNode = getNode(level);
             currentNode.removeVisited(documentIndex);
-            currentNode.removeDocumentWords(documentIndex);
         }
     }
 
@@ -133,20 +132,6 @@ public class HierarchicalLDAPath
             HierarchicalLDANode currentNode = getNode(level);
             currentNode.setVisited(documentIndex);
         }
-    }
-
-    /**
-     * Adds a word to the node at the specified level in the path.
-     *
-     * @param documentIndex the index of the document to add
-     * @param vocabularyIndex the vocabulary index of the word to add
-     * @param level the level of the node in the path
-     */
-    public void addWord(int documentIndex, int vocabularyIndex, int level) {
-        if (level < 0 || level > currentDepth - 1) {
-            throw new IllegalArgumentException("level must be >= 0 and <= current path length");
-        }
-        nodes[level].addWord(documentIndex, vocabularyIndex);
     }
 
     /**
@@ -212,8 +197,16 @@ public class HierarchicalLDAPath
             if (nodeId != -1) {
                 addNode(nodeMapper.getObjectFromIndex(nodeId));
             } else {
-                addNode(getCurrentNode().spawnChild());
+                addNode(getCurrentNode().spawnChild(level));
             }
         }
+    }
+
+    public static HierarchicalLDAPath createPath(List<Integer> path, IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
+        HierarchicalLDAPath newPath = new HierarchicalLDAPath(nodeMapper.getObjectFromIndex(path.get(0)), path.size());
+        for (int level = 1; level < path.size(); level++) {
+            newPath.addNode(nodeMapper.getObjectFromIndex(path.get(level)));
+        }
+        return newPath;
     }
 }
