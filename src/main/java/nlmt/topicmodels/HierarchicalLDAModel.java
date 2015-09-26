@@ -122,10 +122,10 @@ public class HierarchicalLDAModel
         if (eta.length < maxDepth) {
             throw new IllegalArgumentException("eta must have at least " + maxDepth + " values");
         }
-        if (m < 0.0) {
+        if (m <= 0.0) {
             throw new IllegalArgumentException("m must be > 0");
         }
-        if (pi < 0.0) {
+        if (pi <= 0.0) {
             throw new IllegalArgumentException("pi must be > 0");
         }
         this.gamma = gamma;
@@ -374,22 +374,6 @@ public class HierarchicalLDAModel
     }
 
     /**
-     * Scans the trees for nodes that have 0 documents, 0 words and no children,
-     * and deletes them from the tree.
-     */
-    protected void deleteEmptyNodes() {
-        List<Integer> nodesToDelete = new ArrayList<>();
-        for (int nodeIndex : nodeMapper.getIndexKeys()) {
-            HierarchicalLDANode node = nodeMapper.getObjectFromIndex(nodeIndex);
-            if (node.getNumDocumentsVisitingNode() == 0) {
-                node.removeFromParent();
-                nodesToDelete.add(nodeIndex);
-            }
-        }
-        nodesToDelete.forEach(nodeMapper::deleteIndex);
-    }
-
-    /**
      * Loops for the specified number of iterations. For each document, removes
      * the document from its current path, generates a new path through the tree,
      * removes each word of the document from its old node, and then calculates what
@@ -440,7 +424,7 @@ public class HierarchicalLDAModel
                     path.getNode(newLevel).addWord(words[wordIndex]);
                 }
 
-                deleteEmptyNodes();
+                HierarchicalLDANode.deleteEmptyNodes(nodeMapper);
             }
 
             System.out.println("topics " + getTopics(5, 2));

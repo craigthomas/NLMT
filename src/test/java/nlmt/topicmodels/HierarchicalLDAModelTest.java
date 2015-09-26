@@ -65,14 +65,44 @@ public class HierarchicalLDAModelTest {
     }
 
     @Test(expected=IllegalArgumentException.class)
+    public void testEtaSizeLessThanMaxDepthValuesThrowsException() {
+        new HierarchicalLDAModel(3, HierarchicalLDAModel.DEFAULT_GAMMA, new double [] {0.1, 0.2},
+                HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testMLessThanZeroThrowsException() {
+        new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, HierarchicalLDAModel.DEFAULT_GAMMA,
+                HierarchicalLDAModel.DEFAULT_ETA, -1.0, HierarchicalLDAModel.DEFAULT_PI);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testMZeroThrowsException() {
+        new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, HierarchicalLDAModel.DEFAULT_GAMMA,
+                HierarchicalLDAModel.DEFAULT_ETA, 0.0, HierarchicalLDAModel.DEFAULT_PI);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testPiLessThanZeroThrowsException() {
+        new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, HierarchicalLDAModel.DEFAULT_GAMMA,
+                HierarchicalLDAModel.DEFAULT_ETA, HierarchicalLDAModel.DEFAULT_M, -1.0);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testPiZeroThrowsException() {
+        new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, HierarchicalLDAModel.DEFAULT_GAMMA,
+                HierarchicalLDAModel.DEFAULT_ETA, HierarchicalLDAModel.DEFAULT_M, 0.0);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
     public void testMaxDepthThanTwoThrowsException() {
-        hierarchicalLDAModel = new HierarchicalLDAModel(1, HierarchicalLDAModel.DEFAULT_GAMMA,
+        new HierarchicalLDAModel(1, HierarchicalLDAModel.DEFAULT_GAMMA,
                 HierarchicalLDAModel.DEFAULT_ETA, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testGammaLessThanZeroThrowsException() {
-        hierarchicalLDAModel = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH,
+        new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH,
                 -1.0, HierarchicalLDAModel.DEFAULT_ETA, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
     }
 
@@ -264,6 +294,11 @@ public class HierarchicalLDAModelTest {
         assertThat(hierarchicalLDAModel.vocabulary.getObjectFromIndex(4), is(equalTo("document")));
 
         assertThat(hierarchicalLDAModel.getTopics(4, 1), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testDeleteNodesWorksCorrectly() {
+
     }
 
     /**

@@ -52,6 +52,7 @@ public class HierarchicalLDANode
     // The total number of words in the node
     private int totalWordCount;
 
+    // The level of this node in the tree
     private int level;
 
     /**
@@ -76,10 +77,20 @@ public class HierarchicalLDANode
         wordCounts = new int[vocabularySize];
     }
 
+    /**
+     * Sets the level for this node.
+     *
+     * @param level the new level for the node
+     */
     public void setLevel(int level) {
         this.level = level;
     }
 
+    /**
+     * Returns the level for this node.
+     *
+     * @return the level number of this node
+     */
     public int getLevel() {
         return level;
     }
@@ -232,5 +243,20 @@ public class HierarchicalLDANode
      */
     public int getTotalWordCount() {
         return totalWordCount;
+    }
+
+    /**
+     * Scans the specified <code>nodeMapper</code> for nodes that have 0 documents and deletes them.
+     */
+    public static void deleteEmptyNodes(IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
+        List<Integer> nodesToDelete = new ArrayList<>();
+        for (int nodeIndex : nodeMapper.getIndexKeys()) {
+            HierarchicalLDANode node = nodeMapper.getObjectFromIndex(nodeIndex);
+            if (node.getNumDocumentsVisitingNode() == 0) {
+                node.removeFromParent();
+                nodesToDelete.add(nodeIndex);
+            }
+        }
+        nodesToDelete.forEach(nodeMapper::deleteIndex);
     }
 }

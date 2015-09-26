@@ -237,30 +237,6 @@ public class HierarchicalLDANodeTest
         assertThat(hierarchicalLDANode.getWordCount(2), is(equalTo(0)));
     }
 
-//    @Test
-//    public void testGetTopicWeightEmptyNodeEmptyEtaReturnsZero() {
-//        HierarchicalLDANode node = new HierarchicalLDANode(new IdentifierObjectMapper<>());
-//        assertThat(node.getWeight(0, 0, 1.0, 1.5, 0.0), is(equalTo(0.0)));
-//    }
-//
-//    @Test
-//    public void testGetTopicWeightEmptyNodeWithEtaWorksCorrectly() {
-//        HierarchicalLDANode node = new HierarchicalLDANode(new IdentifierObjectMapper<>());
-//        assertThat(node.getWeight(0, 0, 1.0, 1.5, 0.3), is(equalTo(5.0)));
-//    }
-//
-//    @Test
-//    public void testGetTopicWeightWorksCorrectlySimpleCase() {
-//        HierarchicalLDANode node = new HierarchicalLDANode(3, 5, new IdentifierObjectMapper<>());
-//        node.addWord(0, 0);
-//        node.addWord(0, 1);
-//        node.addWord(0, 2);
-//        node.addWord(0, 3);
-//        node.addWord(0, 4);
-//
-//        assertThat(node.getWeight(0, 0, 1.0, 1.0, 5.0), is(equalTo(0.4)));
-//    }
-
     @Test
     public void testRemoveFromParentWorksCorrectlySingleChild() {
         hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
@@ -285,5 +261,97 @@ public class HierarchicalLDANodeTest
         assertThat(hierarchicalLDANode.getChildren().contains(child1), is(true));
         assertThat(hierarchicalLDANode.getChildren().contains(child2), is(false));
         assertThat(hierarchicalLDANode.getChildren().contains(child3), is(true));
+    }
+
+    @Test
+    public void testDeleteEmptyNodesWorksCorrectlyNoNodes() {
+        IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
+        HierarchicalLDANode.deleteEmptyNodes(nodeMapper);
+        assertThat(nodeMapper.size(), is(equalTo(0)));
+    }
+
+    @Test
+    public void testDeleteEmptyNodesSingleNodeNoDocuments() {
+        IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
+        HierarchicalLDANode node = new HierarchicalLDANode(1, nodeMapper);
+        assertThat(nodeMapper.contains(node), is(true));
+        assertThat(nodeMapper.size(), is(equalTo(1)));
+        HierarchicalLDANode.deleteEmptyNodes(nodeMapper);
+        assertThat(nodeMapper.contains(node), is(false));
+        assertThat(nodeMapper.size(), is(equalTo(0)));
+    }
+
+    @Test
+    public void testDeleteEmptyNodesSingleNodeWithDocuments() {
+        IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
+        HierarchicalLDANode node = new HierarchicalLDANode(1, nodeMapper);
+        node.setVisited(1);
+        assertThat(nodeMapper.contains(node), is(true));
+        assertThat(nodeMapper.size(), is(equalTo(1)));
+        HierarchicalLDANode.deleteEmptyNodes(nodeMapper);
+        assertThat(nodeMapper.contains(node), is(true));
+        assertThat(nodeMapper.size(), is(equalTo(1)));
+    }
+
+    @Test
+    public void testDeleteEmptyNodesTwoNodesBothEmpty() {
+        IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
+        HierarchicalLDANode node1 = new HierarchicalLDANode(1, nodeMapper);
+        HierarchicalLDANode node2 = new HierarchicalLDANode(1, nodeMapper);
+        assertThat(nodeMapper.contains(node1), is(true));
+        assertThat(nodeMapper.contains(node2), is(true));
+        assertThat(nodeMapper.size(), is(equalTo(2)));
+        HierarchicalLDANode.deleteEmptyNodes(nodeMapper);
+        assertThat(nodeMapper.contains(node1), is(false));
+        assertThat(nodeMapper.contains(node2), is(false));
+        assertThat(nodeMapper.size(), is(equalTo(0)));
+    }
+
+    @Test
+    public void testDeleteEmptyNodesTwoNodesOneEmpty() {
+        IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
+        HierarchicalLDANode node1 = new HierarchicalLDANode(1, nodeMapper);
+        node1.setVisited(1);
+        HierarchicalLDANode node2 = new HierarchicalLDANode(1, nodeMapper);
+        assertThat(nodeMapper.contains(node1), is(true));
+        assertThat(nodeMapper.contains(node2), is(true));
+        assertThat(nodeMapper.size(), is(equalTo(2)));
+        HierarchicalLDANode.deleteEmptyNodes(nodeMapper);
+        assertThat(nodeMapper.contains(node1), is(true));
+        assertThat(nodeMapper.contains(node2), is(false));
+        assertThat(nodeMapper.size(), is(equalTo(1)));
+    }
+
+    @Test
+    public void testDeleteEmptyNodesTwoNodesNeitherEmpty() {
+        IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
+        HierarchicalLDANode node1 = new HierarchicalLDANode(1, nodeMapper);
+        node1.setVisited(1);
+        HierarchicalLDANode node2 = new HierarchicalLDANode(1, nodeMapper);
+        node2.setVisited(1);
+        assertThat(nodeMapper.contains(node1), is(true));
+        assertThat(nodeMapper.contains(node2), is(true));
+        assertThat(nodeMapper.size(), is(equalTo(2)));
+        HierarchicalLDANode.deleteEmptyNodes(nodeMapper);
+        assertThat(nodeMapper.contains(node1), is(true));
+        assertThat(nodeMapper.contains(node2), is(true));
+        assertThat(nodeMapper.size(), is(equalTo(2)));
+    }
+
+    @Test
+    public void testDeleteEmptyNodesRemovesEmptyNodeFromParent() {
+        IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
+        HierarchicalLDANode node1 = new HierarchicalLDANode(1, nodeMapper);
+        node1.setVisited(1);
+        HierarchicalLDANode node2 = node1.spawnChild(1);
+        assertThat(nodeMapper.contains(node1), is(true));
+        assertThat(nodeMapper.contains(node2), is(true));
+        assertThat(nodeMapper.size(), is(equalTo(2)));
+        assertThat(node1.getChildren().contains(node2), is(true));
+        HierarchicalLDANode.deleteEmptyNodes(nodeMapper);
+        assertThat(nodeMapper.contains(node1), is(true));
+        assertThat(nodeMapper.contains(node2), is(false));
+        assertThat(nodeMapper.size(), is(equalTo(1)));
+        assertThat(node1.getChildren().contains(node2), is(false));
     }
 }
