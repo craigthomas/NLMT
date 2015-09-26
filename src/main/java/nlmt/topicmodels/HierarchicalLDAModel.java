@@ -57,11 +57,11 @@ public class HierarchicalLDAModel
     // The eta word-smoothing parameter
     private double [] eta;
 
-    // Stick breaking parameters
-    private double m = 0.5;
-    private double pi = 100;
+    // Stick breaking parameter to control proportion of specific / general words
+    private double m;
 
-    protected double etaTotal;
+    // Stick breaking parameter to control how strongly m is upheld
+    private double pi = 100;
 
     // Keeps track of what topics have been assigned to the word in a document.
     // The documentIndex will range from 0 to the total number of documents
@@ -79,8 +79,12 @@ public class HierarchicalLDAModel
     // The paths that each document takes through the topic tree
     protected HierarchicalLDAPath [] documentPaths;
 
+    // Records the number of times the word appears in the document at the specified level
+    // documentWordLevel[documentIndex][wordIndex][level]
     protected int [][][] documentWordLevel;
 
+    // Records the number of times a word in the document appears at the specified level
+    // documentLevelTotals[documentIndex][level]
     protected int [][] documentLevelTotals;
 
     // The root node of the topic tree
@@ -98,9 +102,10 @@ public class HierarchicalLDAModel
     // Default values for the eta hyper-parameter - favors more terms towards the root
     public final static double [] DEFAULT_ETA = {2.0, 1.0, 0.5};
 
-    //
+    // The default value of pi - favors more specific words
     public final static double DEFAULT_PI = 100;
 
+    // The default value of m - favors more specific words
     public final static double DEFAULT_M = 0.5;
 
     public HierarchicalLDAModel() {
@@ -111,11 +116,17 @@ public class HierarchicalLDAModel
         if (maxDepth <= 2) {
             throw new IllegalArgumentException("maxDepth must be > 2");
         }
-        if (gamma < 0) {
+        if (gamma < 0.0) {
             throw new IllegalArgumentException("gamma must be >= 0");
         }
         if (eta.length < maxDepth) {
             throw new IllegalArgumentException("eta must have at least " + maxDepth + " values");
+        }
+        if (m < 0.0) {
+            throw new IllegalArgumentException("m must be > 0");
+        }
+        if (pi < 0.0) {
+            throw new IllegalArgumentException("pi must be > 0");
         }
         this.gamma = gamma;
         this.maxDepth = maxDepth;
@@ -126,7 +137,6 @@ public class HierarchicalLDAModel
         documents = new Document[0];
         random = new Random();
         nodeMapper = new IdentifierObjectMapper<>();
-        etaTotal = 0.0;
         pmfSampler = new PMFSampler(maxDepth);
     }
 
@@ -327,6 +337,16 @@ public class HierarchicalLDAModel
         return pmfSampler.sample();
     }
 
+    /**
+     * Returns the probability of the document with the specified word existing at the specified
+     * level along the specified path.
+     *
+     * @param documentIndex the index of the document to check
+     * @param wordIndexInVocab the index of the word in the vocabulary to check
+     * @param path the path to check
+     * @param level the level to check
+     * @return the probability of the word in the document existing at the specified level in the path
+     */
     public double getLevelProbability(int documentIndex, int wordIndexInVocab, HierarchicalLDAPath path, int level) {
         double temp = pi;
         for (int i = level; i < maxDepth; i++) {

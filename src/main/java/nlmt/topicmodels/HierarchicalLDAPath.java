@@ -111,7 +111,8 @@ public class HierarchicalLDAPath
     }
 
     /**
-     * Removes both the document and the words in the document from the path.
+     * Removes the document from the path. Note: does not remove the words in
+     * the document from the path.
      *
      * @param documentIndex the index of the document to remove
      */
@@ -200,13 +201,5 @@ public class HierarchicalLDAPath
                 addNode(getCurrentNode().spawnChild(level));
             }
         }
-    }
-
-    public static HierarchicalLDAPath createPath(List<Integer> path, IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
-        HierarchicalLDAPath newPath = new HierarchicalLDAPath(nodeMapper.getObjectFromIndex(path.get(0)), path.size());
-        for (int level = 1; level < path.size(); level++) {
-            newPath.addNode(nodeMapper.getObjectFromIndex(path.get(level)));
-        }
-        return newPath;
     }
 }

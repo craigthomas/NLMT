@@ -45,8 +45,11 @@ public class HierarchicalLDANode
     // The total number of documents that have visited the node
     private int numDocumentsVisitingNode;
 
+    // A count of the number of words of the specified vocabulary index
+    // wordCounts[wordIndexInVocab]
     private int [] wordCounts;
 
+    // The total number of words in the node
     private int totalWordCount;
 
     private int level;
@@ -192,20 +195,41 @@ public class HierarchicalLDANode
         }
     }
 
+    /**
+     * Adds the specified word to the node once.
+     *
+     * @param wordIndexInVocab the index of the vocabulary word to add
+     */
     public void addWord(int wordIndexInVocab) {
         wordCounts[wordIndexInVocab]++;
         totalWordCount++;
     }
 
+    /**
+     * Removes the specified word from the node once.
+     *
+     * @param wordIndexInVocab the index of the vocabulary word to remove
+     */
     public void removeWord(int wordIndexInVocab) {
         wordCounts[wordIndexInVocab]--;
         totalWordCount--;
     }
 
+    /**
+     * Returns the total number of times the specified word appears in the node.
+     *
+     * @param wordIndexInVocab the index of the vocabulary word
+     * @return the count of the number of times this word appears
+     */
     public int getWordCount(int wordIndexInVocab) {
         return wordCounts[wordIndexInVocab];
     }
 
+    /**
+     * Returns the total number of words in the node.
+     *
+     * @return the total number of words in the node
+     */
     public int getTotalWordCount() {
         return totalWordCount;
     }
