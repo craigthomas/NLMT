@@ -115,4 +115,37 @@ public class PMFSamplerTest {
                 0.10465116279069761};
         assertThat(pmfSampler.getProbabilities(), is(equalTo(expected)));
     }
+
+    @Test
+    public void testNormalizeLogLikelihoodsWithSingleValue() {
+        double [] likelihoods = {0.1};
+        pmfSampler = PMFSampler.normalizeLogLikelihoods(likelihoods);
+        double [] expected = {1.0};
+        assertThat(pmfSampler.getProbabilities(), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testNormalizeLogLikelihoodsWithTwoValues() {
+        double [] likelihoods = {0.1, 0.1};
+        pmfSampler = PMFSampler.normalizeLogLikelihoods(likelihoods);
+        double [] expected = {0.5, 0.5};
+        assertThat(pmfSampler.getProbabilities(), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testNormalizeLogLikelihoodsNegativeValues() {
+        double [] likelihoods = {-0.1, -0.1};
+        pmfSampler = PMFSampler.normalizeLogLikelihoods(likelihoods);
+        double [] expected = {0.5, 0.5};
+        assertThat(pmfSampler.getProbabilities(), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testNormalizeLogLikelihoodsNegativePositiveValues() {
+        double [] likelihoods = {1000.0, -0.00001};
+        pmfSampler = PMFSampler.normalizeLogLikelihoods(likelihoods);
+        double [] expected = {1.0, 0.0};
+        assertThat(pmfSampler.getProbabilities(), is(equalTo(expected)));
+    }
+
 }

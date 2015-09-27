@@ -278,7 +278,7 @@ public class HierarchicalLDAModel
         }
         return result;
     }
-
+    
     /**
      * Given a list of paths through the tree, calculates the log-likelihood of
      * each potential path, converts back to probability space, and then selects
@@ -290,30 +290,11 @@ public class HierarchicalLDAModel
      * @return the index of the path chosen from the list
      */
     protected int chooseBestPath(int documentIndex, List<List<Integer>> paths) {
-        double [] loglikelihoods = new double [paths.size()];
+        double [] logLikelihoods = new double [paths.size()];
         for (int pathIndex = 0; pathIndex < paths.size(); pathIndex++) {
-            loglikelihoods[pathIndex] = calculatePathLikelihood(documentIndex, paths.get(pathIndex));
+            logLikelihoods[pathIndex] = calculatePathLikelihood(documentIndex, paths.get(pathIndex));
         }
-
-        double biggest = Double.NEGATIVE_INFINITY;
-        for (double loglikelihood : loglikelihoods) {
-            if (loglikelihood > biggest) {
-                biggest = loglikelihood;
-            }
-        }
-
-        PMFSampler sampler = new PMFSampler(loglikelihoods.length);
-        double sum = 0.0;
-        for (int index = 0; index < loglikelihoods.length; index++) {
-            loglikelihoods[index] = exp(loglikelihoods[index] - biggest);
-            sum += loglikelihoods[index];
-        }
-
-        for (double loglikelihood : loglikelihoods) {
-            sampler.add(loglikelihood / sum);
-        }
-
-        return sampler.sample();
+        return PMFSampler.normalizeLogLikelihoods(logLikelihoods).sample();
     }
 
     /**
