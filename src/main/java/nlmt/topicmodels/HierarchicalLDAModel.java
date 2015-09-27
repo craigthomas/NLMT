@@ -88,7 +88,7 @@ public class HierarchicalLDAModel
     protected int [][] documentLevelTotals;
 
     // The root node of the topic tree
-    private HierarchicalLDANode rootNode;
+    protected HierarchicalLDANode rootNode;
 
     // Used to sample from various distributions
     PMFSampler pmfSampler;
@@ -113,8 +113,8 @@ public class HierarchicalLDAModel
     }
 
     public HierarchicalLDAModel(int maxDepth, double gamma, double [] eta, double m, double pi) {
-        if (maxDepth <= 2) {
-            throw new IllegalArgumentException("maxDepth must be > 2");
+        if (maxDepth < 2) {
+            throw new IllegalArgumentException("maxDepth must be >= 2");
         }
         if (gamma < 0.0) {
             throw new IllegalArgumentException("gamma must be >= 0");
