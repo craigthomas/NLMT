@@ -218,12 +218,14 @@ public class HierarchicalLDAModel
      * @param node the node with the words
      * @return the log likelihood of choosing this node
      */
-    protected double getPathWordsLikelihood(Map<Integer, Integer> wordCountsAtLevel, double eta, HierarchicalLDANode node) {
+    protected double getPathWordsLikelihood(Map<Integer, Integer> wordCountsAtLevel, Set<Word> documentWords, double eta, HierarchicalLDANode node) {
         double etaTotal = eta * vocabulary.size();
-        double result = logGamma(etaTotal + node.getTotalWordCount() - wordCountsAtLevel.values().stream().mapToInt(v -> v).sum());
-        result -= logGamma(etaTotal + node.getTotalWordCount());
+        int nodeTotalWordCount = node.getTotalWordCount();
+        double result = logGamma(etaTotal + nodeTotalWordCount - wordCountsAtLevel.values().stream().mapToInt(v -> v).sum());
+        result -= logGamma(etaTotal + nodeTotalWordCount);
 
-        for (int vocabIndex : node.getWordsInNode()) {
+        for (Word word : documentWords) {
+            int vocabIndex = word.getVocabularyId();
             int wordCountAllDocuments = node.getWordCount(vocabIndex);
             result -= logGamma(eta + wordCountAllDocuments - wordCountsAtLevel.getOrDefault(vocabIndex, 0));
             result += logGamma(wordCountAllDocuments + eta);
@@ -239,25 +241,22 @@ public class HierarchicalLDAModel
      * should be created (e.g. [0, 3, -1]).
      *
      * @param documentIndex the index of the document to check
-     * @param path the path elements to check
+     * @param pathToConsider the List of nodes in a path to check
      * @return the log-likelihood of the specified path
      */
-    protected double calculatePathLikelihood(int documentIndex, List<Integer> path) {
+    protected double calculatePathLikelihood(int documentIndex, List<Integer> pathToConsider) {
         double result = 0.0;
-        int numVisitingParent = rootNode.getNumDocumentsVisitingNode();
+        Set<Word> documentWords = documents[documentIndex].getWordSet();
         for (int level = 1; level < maxDepth; level++) {
-            int nodeId = path.get(level);
+            int nodeId = pathToConsider.get(level);
             if (nodeId != -1) {
                 HierarchicalLDANode node = nodeMapper.getObjectFromIndex(nodeId);
                 // Don't include the document words if the document isn't mapped to the node!
-                Map<Integer, Integer> wordCountsByTopic =
+                Map<Integer, Integer> wordCountsByLevel =
                         (documentPaths[documentIndex].getNode(level).getId() == nodeId) ? documents[documentIndex].getWordCountsByTopic(level) : new HashMap<>();
-                result += getPathWordsLikelihood(wordCountsByTopic, eta[level], node) + log(node.getNumDocumentsVisitingNode() / (numVisitingParent - 1 + gamma));
-                numVisitingParent = node.getNumDocumentsVisitingNode();
+                result += getPathWordsLikelihood(wordCountsByLevel, documentWords, eta[level], node) + log(node.getNumDocumentsVisitingNode() / (documents.length - 1 + gamma));
             } else {
-                HierarchicalLDANode emptyNode = new HierarchicalLDANode(vocabulary.size(), new IdentifierObjectMapper<>());
-                result += getPathWordsLikelihood(new HashMap<>(), eta[level], emptyNode) + log(gamma / (numVisitingParent - 1 + gamma));
-                break;
+                result += log(gamma / (documents.length - 1 + gamma));
             }
         }
         return result;
@@ -335,40 +334,6 @@ public class HierarchicalLDAModel
         return factor1 * ((node.getWordCount(word.getVocabularyId()) + eta[level]) / (node.getTotalWordCount() + (vocabulary.size() * eta[level])));
     }
 
-//    /**
-//     * Returns the probability of the document with the specified word existing at the specified
-//     * level along the specified path.
-//     *
-//     * @param documentIndex the index of the document to check
-//     * @param wordIndexInVocab the index of the word in the vocabulary to check
-//     * @param path the path to check
-//     * @param level the level to check
-//     * @return the probability of the word in the document existing at the specified level in the path
-//     */
-//    public double getLevelProbability(SparseDocument document, Word word, HierarchicalLDAPath path, int level) {
-//        double temp = pi;
-//        for (int i = level; i < maxDepth; i++) {
-//            document.
-//            temp += documentLevelTotals[documentIndex][i] - documentWordLevel[documentIndex][wordIndexInVocab][i];
-//        }
-//        double factor1 = ((m * pi) + documentLevelTotals[documentIndex][level] - documentWordLevel[documentIndex][wordIndexInVocab][level]) / temp;
-//
-//        for (int i = 0; i < level - 1; i++) {
-//            double numerator = (1 - m) * pi;
-//            double denominator = pi;
-//            for (int j = i + 1; j < maxDepth; j++) {
-//                numerator += documentLevelTotals[documentIndex][j] - documentWordLevel[documentIndex][wordIndexInVocab][j];
-//            }
-//
-//            for (int j = i; j < maxDepth; j++) {
-//                denominator += documentLevelTotals[documentIndex][j] - documentWordLevel[documentIndex][wordIndexInVocab][j];
-//            }
-//            factor1 *= (numerator / denominator);
-//        }
-//        HierarchicalLDANode node = path.getNode(level);
-//        return factor1 * ((node.getWordCount(wordIndexInVocab) + eta[level]) / (node.getTotalWordCount() + (vocabulary.size() * eta[level])));
-//    }
-
     /**
      * Loops for the specified number of iterations. For each document, removes
      * the document from its current path, generates a new path through the tree,
@@ -386,10 +351,7 @@ public class HierarchicalLDAModel
         initialize();
 
         for (int iteration = 0; iteration < numIterations; iteration++) {
-            System.out.println("Iteration " + iteration + ", number of nodes " + nodeMapper.size() + ", number of paths " + HierarchicalLDAPath.enumeratePaths(rootNode, maxDepth).size());
-//            System.out.println("tree " + HierarchicalLDANode.generateMap(nodeMapper));
-//            System.out.println("paths " + HierarchicalLDAPath.enumeratePaths(rootNode, maxDepth));
-//            System.out.println("topics " + getTopics(4, 1));
+            //System.out.println("Iteration " + iteration + ", number of nodes " + nodeMapper.size() + ", number of paths " + HierarchicalLDAPath.enumeratePaths(rootNode, maxDepth).size());
             for (int documentIndex = 0; documentIndex < totalDocs; documentIndex++) {
 
                 // Sample a new path for the document

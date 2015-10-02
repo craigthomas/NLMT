@@ -196,9 +196,12 @@ public class HierarchicalLDANodeTest
     @Test
     public void testAddWordWorksCorrectly() {
         hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
-        hierarchicalLDANode.addWord(0);
-        assertThat(hierarchicalLDANode.getTotalWordCount(), is(equalTo(1)));
-        assertThat(hierarchicalLDANode.getWordCount(0), is(equalTo(1)));
+        IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
+        Word word = new Word("test", vocabulary.addObject("test"));
+        word.setTotalCount(3);
+        hierarchicalLDANode.addWord(word);
+        assertThat(hierarchicalLDANode.getTotalWordCount(), is(equalTo(3)));
+        assertThat(hierarchicalLDANode.getWordCount(0), is(equalTo(3)));
         assertThat(hierarchicalLDANode.getWordCount(1), is(equalTo(0)));
         assertThat(hierarchicalLDANode.getWordCount(2), is(equalTo(0)));
     }
@@ -206,10 +209,13 @@ public class HierarchicalLDANodeTest
     @Test
     public void testDoubleAddWordToDocumentsWorksCorrectly() {
         hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
-        hierarchicalLDANode.addWord(0);
-        hierarchicalLDANode.addWord(0);
-        assertThat(hierarchicalLDANode.getTotalWordCount(), is(equalTo(2)));
-        assertThat(hierarchicalLDANode.getWordCount(0), is(equalTo(2)));
+        IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
+        Word word = new Word("test", vocabulary.addObject("test"));
+        word.setTotalCount(3);
+        hierarchicalLDANode.addWord(word);
+        hierarchicalLDANode.addWord(word);
+        assertThat(hierarchicalLDANode.getTotalWordCount(), is(equalTo(6)));
+        assertThat(hierarchicalLDANode.getWordCount(0), is(equalTo(6)));
         assertThat(hierarchicalLDANode.getWordCount(1), is(equalTo(0)));
         assertThat(hierarchicalLDANode.getWordCount(2), is(equalTo(0)));
     }
@@ -217,8 +223,11 @@ public class HierarchicalLDANodeTest
     @Test
     public void testRemoveWordWorksCorrectly() {
         hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
-        hierarchicalLDANode.addWord(0);
-        hierarchicalLDANode.removeWord(0);
+        IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
+        Word word = new Word("test", vocabulary.addObject("test"));
+        word.setTotalCount(3);
+        hierarchicalLDANode.addWord(word);
+        hierarchicalLDANode.removeWord(word);
         assertThat(hierarchicalLDANode.getTotalWordCount(), is(equalTo(0)));
         assertThat(hierarchicalLDANode.getWordCount(0), is(equalTo(0)));
         assertThat(hierarchicalLDANode.getWordCount(1), is(equalTo(0)));
@@ -228,11 +237,15 @@ public class HierarchicalLDANodeTest
     @Test
     public void testDoubleAddWordRemoveOneWorksCorrectly() {
         hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
-        hierarchicalLDANode.addWord(0);
-        hierarchicalLDANode.addWord(0);
-        hierarchicalLDANode.removeWord(0);
-        assertThat(hierarchicalLDANode.getTotalWordCount(), is(equalTo(1)));
-        assertThat(hierarchicalLDANode.getWordCount(0), is(equalTo(1)));
+        IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
+        Word word = new Word("test", vocabulary.addObject("test"));
+        word.setTotalCount(3);
+        hierarchicalLDANode.addWord(word);
+        word.setTotalCount(2);
+        hierarchicalLDANode.addWord(word);
+        hierarchicalLDANode.removeWord(word);
+        assertThat(hierarchicalLDANode.getTotalWordCount(), is(equalTo(3)));
+        assertThat(hierarchicalLDANode.getWordCount(0), is(equalTo(3)));
         assertThat(hierarchicalLDANode.getWordCount(1), is(equalTo(0)));
         assertThat(hierarchicalLDANode.getWordCount(2), is(equalTo(0)));
     }
