@@ -17,6 +17,7 @@ package nlmt.topicmodels;
 
 import nlmt.datatypes.BoundedPriorityQueue;
 import nlmt.datatypes.IdentifierObjectMapper;
+import nlmt.datatypes.Word;
 
 import java.util.*;
 import java.util.stream.Collectors;

@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nlmt.topicmodels;
-
-import nlmt.datatypes.IdentifierObjectMapper;
+package nlmt.datatypes;
 
 import java.util.*;
 

@@ -16,6 +16,8 @@
 package nlmt.topicmodels;
 
 import nlmt.datatypes.IdentifierObjectMapper;
+import nlmt.datatypes.SparseDocument;
+import nlmt.datatypes.Word;
 import nlmt.probfunctions.PMFSampler;
 
 import java.util.*;
@@ -64,7 +66,7 @@ public class HierarchicalLDAModel
 
     // Keeps track of what topics have been assigned to the word in a document.
     // The documentIndex will range from 0 to the total number of documents
-    protected SparseDocument [] documents;
+    protected SparseDocument[] documents;
 
     // Associates a word with a specific number
     protected IdentifierObjectMapper<String> vocabulary;

@@ -14,16 +14,26 @@
  * limitations under the License.
  */
 
-package nlmt.topicmodels;
+package nlmt.datatypes;
 
 /**
- * Created by thomas on 01/10/15.
+ * The Word class keeps track of a word within a document. Each word contains
+ * a vocabulary ID associated with it, the raw string used to store the word,
+ * a topic associated with the word, and the total number of times the word
+ * appears in a document (or corpus).
  */
-public class Word {
-
+public class Word
+{
+    // The vocabulary identifier for the word
     private int vocabularyId;
+
+    // The String representation of the word
     private String rawWord;
+
+    // The total number of times this word appears in a document
     private int totalCount;
+
+    // The topic number assigned to the word
     private int topic;
 
     public Word(String rawWord, int vocabularyId) {
@@ -33,26 +43,56 @@ public class Word {
         topic = -1;
     }
 
+    /**
+     * Sets the total number of times this word appears.
+     *
+     * @param newCount the total number of times the word appears
+     */
     public void setTotalCount(int newCount) {
         totalCount = newCount;
     }
 
+    /**
+     * Gets the total number of times this word appears.
+     *
+     * @return the total number of times this word appears
+     */
     public int getTotalCount() {
         return totalCount;
     }
 
+    /**
+     * Sets the topic for the word.
+     *
+     * @param newTopic the topic for the word
+     */
     public void setTopic(int newTopic) {
         topic = newTopic;
     }
 
+    /**
+     * Gets the topic for the word.
+     *
+     * @return the topic for the word
+     */
     public int getTopic() {
         return topic;
     }
 
+    /**
+     * Returns the String representation of the word.
+     *
+     * @return the String representation of the word
+     */
     public String getRawWord() {
         return rawWord;
     }
 
+    /**
+     * Returns the vocabulary number for the word.
+     *
+     * @return the vocabulary id number for the word
+     */
     public int getVocabularyId() {
         return vocabularyId;
     }

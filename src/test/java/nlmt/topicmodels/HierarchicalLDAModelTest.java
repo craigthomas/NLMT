@@ -16,6 +16,8 @@
 package nlmt.topicmodels;
 
 import nlmt.datatypes.IdentifierObjectMapper;
+import nlmt.datatypes.SparseDocument;
+import nlmt.datatypes.Word;
 import org.junit.Before;
 import org.junit.Test;
 

@@ -16,6 +16,7 @@
 package nlmt.topicmodels;
 
 import nlmt.datatypes.BoundedPriorityQueue;
+import nlmt.datatypes.Document;
 import nlmt.datatypes.IdentifierObjectMapper;
 import nlmt.probfunctions.PMFSampler;
 
@@ -58,7 +59,7 @@ public class LDAModel
     // Keeps track of what topics have been assigned to the word in a document,
     // associates each word with an index giving us wordIndexInDoc. The
     // documentIndex will range from 0 to the total number of documents
-    protected Document [] documents;
+    protected Document[] documents;
 
     // Associates a word with a specific number, giving us wordIndexInVocab
     protected IdentifierObjectMapper<String> vocabulary;
