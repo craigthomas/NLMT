@@ -354,4 +354,13 @@ public class HierarchicalLDANodeTest
         assertThat(nodeMapper.size(), is(equalTo(1)));
         assertThat(node1.getChildren().contains(node2), is(false));
     }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testGetTopWordsThrowsExceptionOnBadNumWords() {
+        IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
+        IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
+        HierarchicalLDANode node1 = new HierarchicalLDANode(1, nodeMapper);
+        node1.getTopWords(0, vocabulary);
+    }
+
 }

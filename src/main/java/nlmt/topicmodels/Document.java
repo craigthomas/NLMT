@@ -16,12 +16,8 @@
 package nlmt.topicmodels;
 
 import nlmt.datatypes.IdentifierObjectMapper;
-import org.apache.commons.lang3.ArrayUtils;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * The Document class performs two important functions. First,
@@ -32,25 +28,15 @@ import java.util.Set;
  */
 public class Document
 {
-    // The vocabulary words as they appear. For example,
-    // "the cat sat" may be mapped to the array
-    // [90, 5, 108] where 90 = "the", 5 = "cat", and 108 = "sat"
-    // in the vocabulary
-    private int [] wordArray;
-
-    // The topic assigned to the specific word in the
-    // document. For example, [0, 3, 2] means that
-    // "the" is assigned to topic 0, "cat" is assigned to
-    // topic 3, and "sat" is assigned to topic 2
-    private int [] topicArray;
+    // The vocabulary words along with topic assignments
+    private List<Word> wordArray;
 
     // The Vocabulary that provides the mapping from word
     // Strings to numbers
     private IdentifierObjectMapper<String> vocabulary;
 
     public Document(IdentifierObjectMapper<String> vocabulary) {
-        this.wordArray = new int[0];
-        this.topicArray = new int[0];
+        wordArray = new ArrayList<>();
         this.vocabulary = vocabulary;
     }
 
@@ -63,14 +49,9 @@ public class Document
      * @param words the list of words in the document
      */
     public void readDocument(List<String> words) {
-        wordArray = new int[words.size()];
-        topicArray = new int[words.size()];
-        int currentIndex = 0;
         for (String word : words) {
             vocabulary.addObject(word);
-            wordArray[currentIndex] = vocabulary.getIndexFromObject(word);
-            topicArray[currentIndex] = -1;
-            currentIndex++;
+            wordArray.add(new Word(word, vocabulary.getIndexFromObject(word)));
         }
     }
 
@@ -82,7 +63,7 @@ public class Document
      * @return the list of word indexes
      */
     public int [] getWordArray() {
-        return wordArray;
+        return wordArray.stream().mapToInt(Word::getVocabularyId).toArray();
     }
 
     /**
@@ -92,11 +73,7 @@ public class Document
      * @return the original array of Strings
      */
     public String [] getRawWords() {
-        String [] result = new String[wordArray.length];
-        for (int wordIndex = 0; wordIndex < wordArray.length; wordIndex++) {
-            result[wordIndex] = vocabulary.getObjectFromIndex(wordArray[wordIndex]);
-        }
-        return result;
+        return wordArray.stream().map(Word::getRawWord).toArray(String[]::new);
     }
 
     /**
@@ -106,7 +83,7 @@ public class Document
      * @return the list of topics
      */
     public int [] getTopicArray() {
-        return topicArray;
+        return wordArray.stream().mapToInt(Word::getTopic).toArray();
     }
 
     /**
@@ -116,17 +93,17 @@ public class Document
      * @param topicIndex the topic to assign
      */
     public void setTopicForWord(int wordIndex, int topicIndex) {
-        if ((wordIndex > wordArray.length - 1) || (wordIndex < 0)) {
-            throw new IllegalArgumentException("wordIndex must be >= 0 or <= " + (wordArray.length - 1));
+        if ((wordIndex > wordArray.size() - 1) || (wordIndex < 0)) {
+            throw new IllegalArgumentException("wordIndex must be >= 0 or <= " + (wordArray.size() - 1));
         }
-        topicArray[wordIndex] = topicIndex;
+        wordArray.get(wordIndex).setTopic(topicIndex);
     }
 
     /**
      * Sets all of the topics to -1.
      */
     public void clearTopics() {
-        Arrays.fill(topicArray, -1);
+        wordArray.stream().forEach(word -> word.setTopic(-1));
     }
 
     /**
@@ -135,7 +112,8 @@ public class Document
      * @return the set of all words
      */
     public Set<Integer> getWordSet() {
-        List<Integer> wordsInDoc = Arrays.asList(ArrayUtils.toObject(wordArray));
-        return new HashSet<>(wordsInDoc);
+        Set<Integer> result = new HashSet<>();
+        wordArray.stream().mapToInt(Word::getVocabularyId).forEach(result::add);
+        return result;
     }
 }

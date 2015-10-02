@@ -335,22 +335,6 @@ public class HierarchicalLDAModelTest {
         assertThat(newTopic, is(equalTo(2)));
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testGetTopWordsForTopicThrowsExceptionOnInvalidTopic() {
-        hierarchicalLDAModel = new HierarchicalLDAModel();
-        hierarchicalLDAModel.readDocuments(documents);
-        hierarchicalLDAModel.initialize();
-        hierarchicalLDAModel.getTopWordsForTopic(200000, 5);
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void testGetTopWordsForTopicThrowsExceptionOnBadNumWords() {
-        hierarchicalLDAModel = new HierarchicalLDAModel();
-        hierarchicalLDAModel.readDocuments(documents);
-        hierarchicalLDAModel.initialize();
-        hierarchicalLDAModel.getTopWordsForTopic(0, 0);
-    }
-
     @Test
     public void testGetTopicsWorksCorrectly() {
         documents = new ArrayList<>();

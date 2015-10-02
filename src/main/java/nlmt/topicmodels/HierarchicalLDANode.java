@@ -15,9 +15,11 @@
  */
 package nlmt.topicmodels;
 
+import nlmt.datatypes.BoundedPriorityQueue;
 import nlmt.datatypes.IdentifierObjectMapper;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Implements a node on the tree formed by the Nested Chinese Restaurant Problem.
@@ -55,6 +57,8 @@ public class HierarchicalLDANode
     // The level of this node in the tree
     private int level;
 
+    private Set<Integer> wordsInNode;
+
     /**
      * Alternate constructor used to create a node with no parent. Nodes
      * without parents are considered to be root nodes.
@@ -75,6 +79,7 @@ public class HierarchicalLDANode
         numDocumentsVisitingNode = 0;
         level = 0;
         wordCounts = new int[vocabularySize];
+        wordsInNode = new HashSet<>();
     }
 
     /**
@@ -202,28 +207,38 @@ public class HierarchicalLDANode
     public void removeFromParent() {
         if (parent != null) {
             parent.children.remove(this);
+            parent.numChildren--;
             parent = null;
         }
     }
 
     /**
-     * Adds the specified word to the node once.
+     * Adds the specified word to the node.
      *
-     * @param wordIndexInVocab the index of the vocabulary word to add
+     * @param word the word to add to the node
      */
-    public void addWord(int wordIndexInVocab) {
-        wordCounts[wordIndexInVocab]++;
-        totalWordCount++;
+    public void addWord(Word word) {
+        wordCounts[word.getVocabularyId()] += word.getTotalCount();
+        totalWordCount += word.getTotalCount();
+        wordsInNode.add(word.getVocabularyId());
     }
 
     /**
-     * Removes the specified word from the node once.
+     * Removes the specified word from the node.
      *
-     * @param wordIndexInVocab the index of the vocabulary word to remove
+     * @param word the word to remove
      */
-    public void removeWord(int wordIndexInVocab) {
-        wordCounts[wordIndexInVocab]--;
-        totalWordCount--;
+    public void removeWord(Word word) {
+        wordCounts[word.getVocabularyId()] -= word.getTotalCount();
+        totalWordCount -= word.getTotalCount();
+        if (wordCounts[word.getVocabularyId()] <= 0) {
+            wordsInNode.remove(word.getVocabularyId());
+            wordCounts[word.getVocabularyId()] = 0;
+        }
+    }
+
+    public Set<Integer> getWordsInNode() {
+        return wordsInNode;
     }
 
     /**
@@ -258,5 +273,33 @@ public class HierarchicalLDANode
             }
         }
         nodesToDelete.forEach(nodeMapper::deleteIndex);
+    }
+
+    /**
+     * Returns the top <code>numWords</code> that best describe the topic.
+     *
+     * @param numWords the number of words to return
+     * @param vocabulary the global vocabulary
+     * @return an List of Strings that are the words that describe the topic
+     */
+    public List<String> getTopWords(int numWords, IdentifierObjectMapper<String> vocabulary) {
+        if (numWords <= 0) {
+            throw new IllegalArgumentException("numWords must be > 0");
+        }
+        BoundedPriorityQueue<Integer> priorityQueue = new BoundedPriorityQueue<>(numWords);
+        for (int wordIndex = 0; wordIndex < vocabulary.size(); wordIndex++) {
+            priorityQueue.add(getWordCount(wordIndex), wordIndex);
+        }
+        return priorityQueue.getElements().stream().map(vocabulary::getObjectFromIndex).collect(Collectors.toList());
+    }
+
+    public static Map<Integer, List<Integer>> generateMap(IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
+        Map<Integer, List<Integer>> result = new HashMap<>();
+        for (int nodeId : nodeMapper.getIndexKeys()) {
+            HierarchicalLDANode parent = nodeMapper.getObjectFromIndex(nodeId);
+            List<Integer> children = parent.getChildren().stream().map(HierarchicalLDANode::getId).collect(Collectors.toList());
+            result.put(nodeId, children);
+        }
+        return result;
     }
 }

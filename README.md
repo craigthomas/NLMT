@@ -44,3 +44,24 @@ sample iterations:
 model.inference(unseenDocument, 100);
 ```
 
+## Hierarchical Latent Dirichlet Allocation
+
+Recover topics that appear in a collection of documents. No parameters need be specified -
+the model will automatically recover the optimal number of topics. To extract topics from
+a list of documents (each document is a list of strings), over 1000 iterations:
+
+```java
+HierarchicalLDAModel mode = new HierarchicalLDAModel();
+model.readDocuments(documentList);
+model.doGibbsSampling(1000);
+```
+
+To get the top 5 words that describe each topic, only considering those topics that have
+2 or more documents assigned to them:
+
+```java
+Map<Integer, List<String>> topics = model.getTopics(5, 2);
+for (int key : topics.keySet()) {
+    System.out.println("Top 5 words for topic " + key + ": " + topics.get(key));
+}
+```
