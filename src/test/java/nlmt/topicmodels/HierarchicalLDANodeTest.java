@@ -377,4 +377,141 @@ public class HierarchicalLDANodeTest
         node1.getTopWords(0, vocabulary);
     }
 
+    @Test
+    public void testGetTopWordsWorksCorrectly() {
+        IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
+        IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
+        HierarchicalLDANode node1 = new HierarchicalLDANode(10, nodeMapper);
+        Word word1 = new Word("word1", vocabulary.addObject("word1"));
+        word1.setTotalCount(3);
+        Word word2 = new Word("word2", vocabulary.addObject("word2"));
+        word2.setTotalCount(1);
+        Word word3 = new Word("word3", vocabulary.addObject("word3"));
+        word3.setTotalCount(4);
+        Word word4 = new Word("word4", vocabulary.addObject("word4"));
+        word4.setTotalCount(5);
+        Word word5 = new Word("word5", vocabulary.addObject("word5"));
+        word5.setTotalCount(2);
+        Word word6 = new Word("word6", vocabulary.addObject("word6"));
+        word6.setTotalCount(9);
+        Word word7 = new Word("word7", vocabulary.addObject("word7"));
+        word7.setTotalCount(8);
+        Word word8 = new Word("word8", vocabulary.addObject("word8"));
+        word8.setTotalCount(7);
+        Word word9 = new Word("word9", vocabulary.addObject("word9"));
+        word9.setTotalCount(6);
+        Word word10 = new Word("word10", vocabulary.addObject("word10"));
+        word10.setTotalCount(10);
+        node1.addWord(word1);
+        node1.addWord(word2);
+        node1.addWord(word3);
+        node1.addWord(word4);
+        node1.addWord(word5);
+        node1.addWord(word6);
+        node1.addWord(word7);
+        node1.addWord(word8);
+        node1.addWord(word9);
+        node1.addWord(word10);
+        List<String> result = node1.getTopWords(5, vocabulary);
+        List<String> expected = Arrays.asList("word10", "word6", "word7", "word8", "word9");
+        assertThat(result, is(equalTo(expected)));
+    }
+
+    @Test
+    public void testGetTopWordsReturnsFullSortedListWhenMoreWordsRequestedThanActualWords() {
+        IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
+        IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
+        HierarchicalLDANode node1 = new HierarchicalLDANode(10, nodeMapper);
+        Word word1 = new Word("word1", vocabulary.addObject("word1"));
+        word1.setTotalCount(3);
+        Word word2 = new Word("word2", vocabulary.addObject("word2"));
+        word2.setTotalCount(1);
+        Word word3 = new Word("word3", vocabulary.addObject("word3"));
+        word3.setTotalCount(4);
+        Word word4 = new Word("word4", vocabulary.addObject("word4"));
+        word4.setTotalCount(5);
+        Word word5 = new Word("word5", vocabulary.addObject("word5"));
+        word5.setTotalCount(2);
+        Word word6 = new Word("word6", vocabulary.addObject("word6"));
+        word6.setTotalCount(9);
+        Word word7 = new Word("word7", vocabulary.addObject("word7"));
+        word7.setTotalCount(8);
+        Word word8 = new Word("word8", vocabulary.addObject("word8"));
+        word8.setTotalCount(7);
+        Word word9 = new Word("word9", vocabulary.addObject("word9"));
+        word9.setTotalCount(6);
+        Word word10 = new Word("word10", vocabulary.addObject("word10"));
+        word10.setTotalCount(10);
+        node1.addWord(word1);
+        node1.addWord(word2);
+        node1.addWord(word3);
+        node1.addWord(word4);
+        node1.addWord(word5);
+        node1.addWord(word6);
+        node1.addWord(word7);
+        node1.addWord(word8);
+        node1.addWord(word9);
+        node1.addWord(word10);
+        List<String> result = node1.getTopWords(20, vocabulary);
+        List<String> expected = Arrays.asList("word10", "word6", "word7", "word8", "word9", "word4", "word3", "word1", "word5", "word2");
+        assertThat(result, is(equalTo(expected)));
+    }
+
+    @Test
+    public void testWordsInNodeEmptyOnInit() {
+        hierarchicalLDANode = new HierarchicalLDANode(1, nodeMapper);
+        assertThat(hierarchicalLDANode.getWordsInNode(), is(equalTo(new HashSet<>())));
+    }
+
+    @Test
+    public void testWordsInNodeCorrectWhenWordsAdded() {
+        IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
+        Word word1 = new Word("wordOne", vocabulary.addObject("wordOne"));
+        Word word2 = new Word("wordTwo", vocabulary.addObject("wordTwo"));
+        hierarchicalLDANode = new HierarchicalLDANode(2, nodeMapper);
+        hierarchicalLDANode.addWord(word1);
+        hierarchicalLDANode.addWord(word2);
+        assertThat(hierarchicalLDANode.getWordsInNode().size(), is(equalTo(2)));
+        assertThat(hierarchicalLDANode.getWordsInNode().contains(word1.getVocabularyId()), is(true));
+        assertThat(hierarchicalLDANode.getWordsInNode().contains(word2.getVocabularyId()), is(true));
+    }
+
+    @Test
+    public void testWordsInNodeCorrectWhenWordsAddedAndRemoved() {
+        IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
+        Word word1 = new Word("wordOne", vocabulary.addObject("wordOne"));
+        Word word2 = new Word("wordTwo", vocabulary.addObject("wordTwo"));
+        hierarchicalLDANode = new HierarchicalLDANode(2, nodeMapper);
+        hierarchicalLDANode.addWord(word1);
+        hierarchicalLDANode.addWord(word2);
+        hierarchicalLDANode.removeWord(word2);
+        assertThat(hierarchicalLDANode.getWordsInNode().size(), is(equalTo(1)));
+        assertThat(hierarchicalLDANode.getWordsInNode().contains(word1.getVocabularyId()), is(true));
+        assertThat(hierarchicalLDANode.getWordsInNode().contains(word2.getVocabularyId()), is(false));
+    }
+
+    @Test
+    public void testGenerateMapReturnsEmptyWhenRootNodeIsSingleNode() {
+        hierarchicalLDANode = new HierarchicalLDANode(1, nodeMapper);
+        Map<Integer, List<Integer>> expected = new HashMap<>();
+        expected.put(0, new ArrayList<>());
+        assertThat(HierarchicalLDANode.generateMap(nodeMapper), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testGenerateMapComplexExampleWorksCorrectly() {
+        hierarchicalLDANode = new HierarchicalLDANode(1, nodeMapper);
+        HierarchicalLDANode node1 = hierarchicalLDANode.spawnChild(1);
+        HierarchicalLDANode node2 = hierarchicalLDANode.spawnChild(1);
+        HierarchicalLDANode node3 = node2.spawnChild(2);
+        HierarchicalLDANode node4 = node3.spawnChild(3);
+        Map<Integer, List<Integer>> expected = new HashMap<>();
+        expected.put(0, Arrays.asList(1, 2));
+        expected.put(1, new ArrayList<>());
+        expected.put(2, Arrays.asList(3));
+        expected.put(3, Arrays.asList(4));
+        expected.put(4, new ArrayList<>());
+        assertThat(HierarchicalLDANode.generateMap(nodeMapper), is(equalTo(expected)));
+    }
+
 }

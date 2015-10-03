@@ -238,6 +238,11 @@ public class HierarchicalLDANode
         }
     }
 
+    /**
+     * Returns the set of all vocabulary ids that exist within the node.
+     *
+     * @return the set of all vocabulary ids in the node
+     */
     public Set<Integer> getWordsInNode() {
         return wordsInNode;
     }
@@ -294,6 +299,21 @@ public class HierarchicalLDANode
         return priorityQueue.getElements().stream().map(vocabulary::getObjectFromIndex).collect(Collectors.toList());
     }
 
+    /**
+     * Returns a mapping of parent to children for each node. For example, if
+     * node 0 has children 1 and 2, and node 2 has child 3, the resultant map
+     * would look like:
+     *
+     * {
+     *     0: [1, 2],
+     *     1: [],
+     *     2: [3],
+     *     3: []
+     * }
+     *
+     * @param nodeMapper the IdentifierObjectMapper responsible for mapping nodes to ids
+     * @return a Map containing each node and a list of its children
+     */
     public static Map<Integer, List<Integer>> generateMap(IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
         Map<Integer, List<Integer>> result = new HashMap<>();
         for (int nodeId : nodeMapper.getIndexKeys()) {
