@@ -80,10 +80,10 @@ public class SparseDocument {
 
     /**
      * Gets the count of this vocabulary word in this document. Will return 0
-     * if the word does not occur in this document
+     * if the word does not occur in this document.
      *
-     * @param vocabularyWord
-     * @return
+     * @param vocabularyWord the word count to get
+     * @return the count of the number of times this word appears
      */
     public int getWordCount(int vocabularyWord) {
         return (wordMap.containsKey(vocabularyWord)) ? wordMap.get(vocabularyWord).getTotalCount() : 0;
@@ -107,17 +107,38 @@ public class SparseDocument {
         return wordMap.values().stream().map(Word::getTopic).collect(Collectors.toCollection(HashSet::new));
     }
 
+    /**
+     * Returns a count of the number of words in each topic. The result is a map
+     * with the topic number being the key, and the topic count being the value.
+     *
+     * @return a Map of topic numbers to number of words
+     */
     public Map<Integer, Integer> getTopicCounts() {
         return wordMap.values().stream()
                 .collect(Collectors.groupingBy(Word::getTopic, Collectors.summingInt(Word::getTotalCount)));
     }
 
+    /**
+     * Returns a count of the number of times the specified word appears with the topic.
+     * The return value is a Map that maps topic numbers to their counts for the word.
+     *
+     * @param word the word to analyze
+     * @return a Map of the number of times the specified topic appears with the word
+     */
     public Map<Integer, Integer> getWordTopicCount(Word word) {
         return wordMap.values().stream()
                 .filter(w -> w.getVocabularyId() == word.getVocabularyId())
                 .collect(Collectors.groupingBy(Word::getTopic, Collectors.summingInt(Word::getTotalCount)));
     }
 
+    /**
+     * Returns a count of each of the words in the specified topic. The Map returned
+     * maps a word vocabulary id to a count of the number of times it appears in the
+     * document.
+     *
+     * @param topic the topic number to count
+     * @return a Map of word ids to their counts
+     */
     public Map<Integer, Integer> getWordCountsByTopic(int topic) {
         return wordMap.values().stream()
                 .filter(word -> word.getTopic() == topic)
