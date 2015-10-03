@@ -36,12 +36,11 @@ public class HierarchicalLDAModelTest {
     private String [] document1 = {"this", "is", "a", "test", "document"};
     private String [] document2 = {"the", "cat", "sat", "on", "the", "mat"};
     private String [] document3 = {"the", "dog", "chased", "the", "cat"};
-    private String [] singleWordDoc = {"the"};
-    private String [] threeWordDoc = {"the", "dog", "chased"};
+    private String [] threeWordDoc = {"the", "the", "dog", "dog", "dog", "chased", "chased"};
 
     private HierarchicalLDAModel hierarchicalLDAModel;
     private List<List<String>> documents;
-    private List<List<String>> singleWordDocument;
+    private List<List<String>> multipleDocuments;
     private List<List<String>> fiveWordDocument;
     private List<List<String>> fiveWordDocumentTwice;
     private List<List<String>> threeWordDocument;
@@ -53,15 +52,17 @@ public class HierarchicalLDAModelTest {
         documents.add(Arrays.asList(document1));
         documents.add(Arrays.asList(document2));
         documents.add(Arrays.asList(document3));
-        singleWordDocument = new ArrayList<>();
-        singleWordDocument.add(Arrays.asList(singleWordDoc));
+        multipleDocuments = new ArrayList<>();
+        multipleDocuments.add(Arrays.asList(document1));
+        multipleDocuments.add(Arrays.asList(document2));
+        multipleDocuments.add(Arrays.asList(document3));
+        multipleDocuments.add(Arrays.asList(threeWordDoc));
         fiveWordDocument = new ArrayList<>();
         fiveWordDocument.add(Arrays.asList(document1));
         fiveWordDocumentTwice = new ArrayList<>();
         fiveWordDocumentTwice.add(Arrays.asList(document1));
         fiveWordDocumentTwice.add(Arrays.asList(document1));
         threeWordDocument = new ArrayList<>();
-        threeWordDocument.add(Arrays.asList(threeWordDoc));
         threeWordDocument.add(Arrays.asList(threeWordDoc));
         nodeMapper = new IdentifierObjectMapper<>();
     }
@@ -281,6 +282,90 @@ public class HierarchicalLDAModelTest {
         testNode.setVisited(0);
         testNode.setVisited(1);
         assertThat(hierarchicalLDAModel.calculatePathLikelihood(0, Arrays.asList(0, 1, -1)), is(equalTo(-10.199407533323365)));
+    }
+
+    @Test
+    public void testGetTopicsReturnsEmptyMapWhenNoDocuments() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.rootNode = new HierarchicalLDANode(3, nodeMapper);   // node 0
+        HierarchicalLDANode node1 = hierarchicalLDAModel.rootNode.spawnChild(1);  // node 1
+        hierarchicalLDAModel.rootNode.spawnChild(1);                              // node 2
+        node1.spawnChild(2);                                                      // node 3
+        Map<Integer, List<String>> expected = new HashMap<>();
+        assertThat(hierarchicalLDAModel.getTopics(5, 1), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testGetTopicsWorksCorrectlySingleNode() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(threeWordDocument);
+        hierarchicalLDAModel.rootNode.setVisited(0);
+        Map<Integer, List<String>> expected = new HashMap<>();
+        expected.put(0, Arrays.asList("dog", "chased", "the"));
+        assertThat(hierarchicalLDAModel.getTopics(3, 1), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testGetTopicsMoreWordsRequestedThanWordsExistingWorksCorrectly() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(threeWordDocument);
+        hierarchicalLDAModel.rootNode.setVisited(0);
+        Map<Integer, List<String>> expected = new HashMap<>();
+        expected.put(0, Arrays.asList("dog", "chased", "the"));
+        assertThat(hierarchicalLDAModel.getTopics(6, 1), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testGetTopicsMoreDocumentsThanVisitedWorksCorrectly() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(threeWordDocument);
+        hierarchicalLDAModel.rootNode.setVisited(0);
+        Map<Integer, List<String>> expected = new HashMap<>();
+        assertThat(hierarchicalLDAModel.getTopics(3, 2), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testGetTopicsMultipleNodesMultipleTopicsWorksCorrectly() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(multipleDocuments);
+        HierarchicalLDANode node1 = hierarchicalLDAModel.rootNode.spawnChild(1);
+        HierarchicalLDANode node2 = hierarchicalLDAModel.rootNode.spawnChild(1);
+        HierarchicalLDANode node3 = hierarchicalLDAModel.rootNode.spawnChild(1);
+        HierarchicalLDANode node4 = hierarchicalLDAModel.rootNode.spawnChild(1);
+
+        hierarchicalLDAModel.rootNode.setVisited(0);
+        hierarchicalLDAModel.rootNode.setVisited(1);
+        hierarchicalLDAModel.rootNode.setVisited(2);
+        hierarchicalLDAModel.rootNode.setVisited(3);
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[2].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[3].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+
+        node1.setVisited(0);
+        node1.setVisited(1);
+        node1.setVisited(3);
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(node1::addWord);
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(node1::addWord);
+        hierarchicalLDAModel.documents[3].getWordSet().forEach(node1::addWord);
+
+        node2.setVisited(1);
+        node2.setVisited(2);
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(node2::addWord);
+        hierarchicalLDAModel.documents[2].getWordSet().forEach(node2::addWord);
+
+        node3.setVisited(0);
+        node3.setVisited(2);
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(node3::addWord);
+        hierarchicalLDAModel.documents[2].getWordSet().forEach(node3::addWord);
+
+        node4.setVisited(0);
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(node4::addWord);
+
+        Map<Integer, List<String>> expected = new HashMap<>();
+        expected.put(0, Arrays.asList("the", "dog", "chased", "cat"));
+        expected.put(1, Arrays.asList("the", "dog", "chased", "on"));
+        assertThat(hierarchicalLDAModel.getTopics(4, 3), is(equalTo(expected)));
     }
 
 //    @Test

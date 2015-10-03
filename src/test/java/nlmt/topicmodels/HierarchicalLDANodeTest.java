@@ -500,18 +500,17 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testGenerateMapComplexExampleWorksCorrectly() {
-        hierarchicalLDANode = new HierarchicalLDANode(1, nodeMapper);
-        HierarchicalLDANode node1 = hierarchicalLDANode.spawnChild(1);
-        HierarchicalLDANode node2 = hierarchicalLDANode.spawnChild(1);
-        HierarchicalLDANode node3 = node2.spawnChild(2);
-        HierarchicalLDANode node4 = node3.spawnChild(3);
+        hierarchicalLDANode = new HierarchicalLDANode(1, nodeMapper);  // node 0
+        hierarchicalLDANode.spawnChild(1);                             // node 1
+        HierarchicalLDANode node2 = hierarchicalLDANode.spawnChild(1); // node 2
+        HierarchicalLDANode node3 = node2.spawnChild(2);               // node 3
+        node3.spawnChild(3);                                           // node 4
         Map<Integer, List<Integer>> expected = new HashMap<>();
         expected.put(0, Arrays.asList(1, 2));
         expected.put(1, new ArrayList<>());
-        expected.put(2, Arrays.asList(3));
-        expected.put(3, Arrays.asList(4));
+        expected.put(2, Collections.singletonList(3));
+        expected.put(3, Collections.singletonList(4));
         expected.put(4, new ArrayList<>());
         assertThat(HierarchicalLDANode.generateMap(nodeMapper), is(equalTo(expected)));
     }
-
 }
