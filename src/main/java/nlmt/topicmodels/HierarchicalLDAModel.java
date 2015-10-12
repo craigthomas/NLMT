@@ -441,7 +441,7 @@ public class HierarchicalLDAModel
      * @param numWords the number of words to print per line
      */
     public String prettyPrintTree(int numWords) {
-        return prettyPrintNode(rootNode, 2, numWords);
+        return prettyPrintNode(rootNode, 0, numWords);
     }
 
     /**
