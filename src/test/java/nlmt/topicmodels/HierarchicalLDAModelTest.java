@@ -26,6 +26,7 @@ import java.util.*;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -36,6 +37,7 @@ public class HierarchicalLDAModelTest {
     private String [] document1 = {"this", "is", "a", "test", "document"};
     private String [] document2 = {"the", "cat", "sat", "on", "the", "mat"};
     private String [] document3 = {"the", "dog", "chased", "the", "cat"};
+    private String [] oneWord = {"test"};
     private String [] threeWordDoc = {"the", "the", "dog", "dog", "dog", "chased", "chased"};
 
     private HierarchicalLDAModel hierarchicalLDAModel;
@@ -44,6 +46,7 @@ public class HierarchicalLDAModelTest {
     private List<List<String>> fiveWordDocument;
     private List<List<String>> fiveWordDocumentTwice;
     private List<List<String>> threeWordDocument;
+    private List<List<String>> oneWordDocument;
     private IdentifierObjectMapper<HierarchicalLDANode> nodeMapper;
 
     @Before
@@ -64,6 +67,8 @@ public class HierarchicalLDAModelTest {
         fiveWordDocumentTwice.add(Arrays.asList(document1));
         threeWordDocument = new ArrayList<>();
         threeWordDocument.add(Arrays.asList(threeWordDoc));
+        oneWordDocument = new ArrayList<>();
+        oneWordDocument.add(Arrays.asList(oneWord));
         nodeMapper = new IdentifierObjectMapper<>();
     }
 
@@ -149,7 +154,7 @@ public class HierarchicalLDAModelTest {
     }
 
     @Test
-    public void getPathWordsLikelihood() {
+    public void testPathWordsLikelihood() {
         hierarchicalLDAModel = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, HierarchicalLDAModel.DEFAULT_GAMMA,
                 new double [] {0.1, 0.1, 0.1}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
         hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
@@ -174,7 +179,7 @@ public class HierarchicalLDAModelTest {
     }
 
     @Test
-    public void getPathWordsLikelihoodDocumentNotInNode() {
+    public void testPathWordsLikelihoodDocumentNotInNode() {
         hierarchicalLDAModel = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, 0.1,
                 new double [] {0.1, 0.1, 0.1}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
         hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
@@ -198,7 +203,21 @@ public class HierarchicalLDAModelTest {
     }
 
     @Test
-    public void getCalculatePathLikelihoodSinglePathSingleNode() {
+    public void testCalculatePathLikelihoodSinglePathSingleNode() {
+        hierarchicalLDAModel = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
+                new double [] {0.1, 0.1}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
+        hierarchicalLDAModel.readDocuments(fiveWordDocument);
+        hierarchicalLDAModel.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        HierarchicalLDANode testNode = hierarchicalLDAModel.rootNode.spawnChild(1);
+        hierarchicalLDAModel.documentPaths[0].addNode(testNode);
+        hierarchicalLDAModel.rootNode.setVisited(0);
+        testNode.setVisited(0);
+        hierarchicalLDAModel.rootNode.propagatePathWeight(0.0, HierarchicalLDAModel.DEFAULT_GAMMA, 2);
+        assertThat(hierarchicalLDAModel.calculatePathLikelihood(Arrays.asList(0, 1)), is(equalTo(0.0)));
+    }
+
+    @Test
+    public void testCalculateWordLikelihoodSinglePathSingleNode() {
         hierarchicalLDAModel = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
                 new double [] {0.1, 0.1}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
         hierarchicalLDAModel.readDocuments(fiveWordDocument);
@@ -214,11 +233,48 @@ public class HierarchicalLDAModelTest {
             document.getWordSet().forEach(testNode::addWord);
         }
         testNode.setVisited(0);
-        assertThat(hierarchicalLDAModel.calculatePathLikelihood(0, Arrays.asList(0, 1)), is(equalTo(-14.898374489664242)));
+        assertThat(hierarchicalLDAModel.calculateWordLikelihood(0, Arrays.asList(0, 1)), is(equalTo(-14.898374489664242)));
     }
 
     @Test
-    public void getCalculatePathLikelihoodSinglePathSingleNodeTwoDocumentsVisitingNode() {
+    public void testCalculatePathLikelihoodSinglePathSingleNodeTwoDocumentsVisitingNode() {
+        hierarchicalLDAModel = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
+                new double [] {0.1, 0.1}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
+        hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
+        hierarchicalLDAModel.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        HierarchicalLDANode testNode = hierarchicalLDAModel.rootNode.spawnChild(1);
+        hierarchicalLDAModel.documentPaths[0].addNode(testNode);
+        for (SparseDocument document : hierarchicalLDAModel.documents) {
+            document.getWordSet().forEach(testNode::addWord);
+        }
+        hierarchicalLDAModel.rootNode.setVisited(0);
+        hierarchicalLDAModel.rootNode.setVisited(1);
+        testNode.setVisited(0);
+        testNode.setVisited(1);
+        hierarchicalLDAModel.rootNode.propagatePathWeight(0.0, HierarchicalLDAModel.DEFAULT_GAMMA, 2);
+        assertThat(hierarchicalLDAModel.calculatePathLikelihood(Arrays.asList(0, 1)), is(equalTo(0.0)));
+    }
+
+    @Test
+    public void testCalculatePathLikelihoodSinglePathSingleNodeTwoDocumentsButOnlyOneVisitingNode() {
+        hierarchicalLDAModel = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
+                new double [] {0.1, 0.1}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
+        hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
+        hierarchicalLDAModel.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        HierarchicalLDANode testNode = hierarchicalLDAModel.rootNode.spawnChild(1);
+        hierarchicalLDAModel.documentPaths[0].addNode(testNode);
+        for (SparseDocument document : hierarchicalLDAModel.documents) {
+            document.getWordSet().forEach(testNode::addWord);
+        }
+        hierarchicalLDAModel.rootNode.setVisited(0);
+        hierarchicalLDAModel.rootNode.setVisited(1);
+        testNode.setVisited(0);
+        hierarchicalLDAModel.rootNode.propagatePathWeight(0.0, HierarchicalLDAModel.DEFAULT_GAMMA, 2);
+        assertThat(hierarchicalLDAModel.calculatePathLikelihood(Arrays.asList(0, 1)), is(equalTo(-0.6931471805599453)));
+    }
+
+    @Test
+    public void testCalculateWordLikelihoodSinglePathSingleNodeTwoDocumentsVisitingNode() {
         hierarchicalLDAModel = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
                 new double [] {0.1, 0.1}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
         hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
@@ -240,27 +296,91 @@ public class HierarchicalLDAModelTest {
         }
         testNode.setVisited(0);
         testNode.setVisited(1);
-        assertThat(hierarchicalLDAModel.calculatePathLikelihood(0, Arrays.asList(0, 1)), is(equalTo(-9.50626035276342)));
+        assertThat(hierarchicalLDAModel.calculateWordLikelihood(0, Arrays.asList(0, 1)), is(equalTo(-9.50626035276342)));
     }
 
     @Test
-    public void getCalculatePathLikelihoodSinglePathSingleEmptyNode() {
-        hierarchicalLDAModel = new HierarchicalLDAModel(2, 0.1,
+    public void testCalculatePathProbabilitySinglePathSingleEmptyNode() {
+        hierarchicalLDAModel = new HierarchicalLDAModel(2, 1.0,
                 new double [] {1.0, 1.0}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
         hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
-        assertThat(hierarchicalLDAModel.calculatePathLikelihood(0, Arrays.asList(0, -1)), is(equalTo(-2.3978952727983707)));
+        hierarchicalLDAModel.rootNode.setVisited(0);
+        hierarchicalLDAModel.rootNode.setVisited(1);
+        hierarchicalLDAModel.rootNode.propagatePathWeight(0.0, HierarchicalLDAModel.DEFAULT_GAMMA, HierarchicalLDAModel.DEFAULT_MAX_DEPTH);
+        assertThat(hierarchicalLDAModel.calculatePathLikelihood(Arrays.asList(0, -1)), is(equalTo(-0.6931471805599453)));
     }
 
     @Test
-    public void getCalculatePathLikelihoodSinglePathMultipleEmptyNodes() {
+    public void testCalculatePathLikelihoodSinglePathMultipleEmptyNodes() {
+        hierarchicalLDAModel = new HierarchicalLDAModel(3, 1.0,
+                new double [] {1.0, 1.0, 1.0}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
+        hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
+        hierarchicalLDAModel.rootNode.setVisited(0);
+        hierarchicalLDAModel.rootNode.setVisited(1);
+        hierarchicalLDAModel.rootNode.propagatePathWeight(0.0, HierarchicalLDAModel.DEFAULT_GAMMA, HierarchicalLDAModel.DEFAULT_MAX_DEPTH);
+        assertThat(hierarchicalLDAModel.calculatePathLikelihood(Arrays.asList(0, -1, -1)), is(equalTo(-0.6931471805599453)));
+    }
+
+    @Test
+    public void testCalculateWordLikelihoodSinglePathMultipleEmptyNodesBothDocumentsAssignedToRoot() {
         hierarchicalLDAModel = new HierarchicalLDAModel(3, 0.1,
                 new double [] {1.0, 1.0, 1.0}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
         hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
-        assertThat(hierarchicalLDAModel.calculatePathLikelihood(0, Arrays.asList(0, -1, -1)), is(equalTo(-4.795790545596741)));
+        hierarchicalLDAModel.documentPaths = new HierarchicalLDAPath[2];
+        hierarchicalLDAModel.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        hierarchicalLDAModel.rootNode.setVisited(0);
+        hierarchicalLDAModel.rootNode.setVisited(1);
+        hierarchicalLDAModel.documents[0].setTopicForWord(0, 0);
+        hierarchicalLDAModel.documents[0].setTopicForWord(1, 0);
+        hierarchicalLDAModel.documents[0].setTopicForWord(2, 0);
+        hierarchicalLDAModel.documents[0].setTopicForWord(3, 0);
+        hierarchicalLDAModel.documents[0].setTopicForWord(4, 0);
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[1].setTopicForWord(0, 0);
+        hierarchicalLDAModel.documents[1].setTopicForWord(1, 0);
+        hierarchicalLDAModel.documents[1].setTopicForWord(2, 0);
+        hierarchicalLDAModel.documents[1].setTopicForWord(3, 0);
+        hierarchicalLDAModel.documents[1].setTopicForWord(4, 0);
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        assertThat(hierarchicalLDAModel.calculateWordLikelihood(0, Arrays.asList(0, -1, -1)), is(equalTo(-8.92365779985749)));
     }
 
     @Test
-    public void getCalculatePathLikelihoodSinglePathWithRealAndEmptyNodes() {
+    public void testCalculateWordLikelihoodSinglePathMultipleEmptyNodesOtherDocumentAssignedToRoot() {
+        hierarchicalLDAModel = new HierarchicalLDAModel(3, 0.1,
+                new double [] {0.1, 0.1, 0.1}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
+        hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
+        hierarchicalLDAModel.documentPaths = new HierarchicalLDAPath[2];
+        hierarchicalLDAModel.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        hierarchicalLDAModel.rootNode.setVisited(0);
+        hierarchicalLDAModel.rootNode.setVisited(1);
+        hierarchicalLDAModel.documents[1].setTopicForWord(0, 0);
+        hierarchicalLDAModel.documents[1].setTopicForWord(1, 0);
+        hierarchicalLDAModel.documents[1].setTopicForWord(2, 0);
+        hierarchicalLDAModel.documents[1].setTopicForWord(3, 0);
+        hierarchicalLDAModel.documents[1].setTopicForWord(4, 0);
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        assertThat(hierarchicalLDAModel.calculateWordLikelihood(0, Arrays.asList(0, -1, -1)), is(equalTo(0.0)));
+    }
+
+    @Test
+    public void testCalculatePathLikelihoodSinglePathWithRealAndEmptyNodes() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(documents);
+        hierarchicalLDAModel.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        HierarchicalLDANode testNode = hierarchicalLDAModel.rootNode.spawnChild(1);
+        hierarchicalLDAModel.documentPaths[0].addNode(testNode);
+        hierarchicalLDAModel.rootNode.setVisited(0);
+        hierarchicalLDAModel.rootNode.setVisited(1);
+        hierarchicalLDAModel.rootNode.setVisited(2);
+        testNode.setVisited(0);
+        testNode.setVisited(2);
+        hierarchicalLDAModel.rootNode.propagatePathWeight(0.0, HierarchicalLDAModel.DEFAULT_GAMMA, HierarchicalLDAModel.DEFAULT_MAX_DEPTH);
+        assertThat(hierarchicalLDAModel.calculatePathLikelihood(Arrays.asList(0, 1, -1)), is(equalTo(-1.0986122886681098)));
+    }
+
+    @Test
+    public void testCalculateWordLikelihoodSinglePathWithRealAndEmptyNodes() {
         hierarchicalLDAModel = new HierarchicalLDAModel(3, 1.0,
                 new double [] {0.1, 0.1, 0.1}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
         hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
@@ -281,7 +401,32 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel.documents[1].getWordSet().forEach(testNode::addWord);
         testNode.setVisited(0);
         testNode.setVisited(1);
-        assertThat(hierarchicalLDAModel.calculatePathLikelihood(0, Arrays.asList(0, 1, -1)), is(equalTo(-10.199407533323365)));
+        assertThat(hierarchicalLDAModel.calculateWordLikelihood(0, Arrays.asList(0, 1, -1)), is(equalTo(-9.50626035276342)));
+    }
+
+    @Test
+    public void testCalculateWordLikelihoodReturnsBiggerLikelihoodForPathWithMoreSimilarWords() {
+        hierarchicalLDAModel = new HierarchicalLDAModel(3, 1.0,
+                new double [] {0.1, 0.1, 0.1}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
+        hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
+        hierarchicalLDAModel.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        HierarchicalLDANode testNode = hierarchicalLDAModel.rootNode.spawnChild(1);
+        hierarchicalLDAModel.documentPaths[0].addNode(testNode);
+        hierarchicalLDAModel.documents[0].setTopicForWord(0, 1);
+        hierarchicalLDAModel.documents[0].setTopicForWord(1, 1);
+        hierarchicalLDAModel.documents[0].setTopicForWord(2, 1);
+        hierarchicalLDAModel.documents[0].setTopicForWord(3, 1);
+        hierarchicalLDAModel.documents[0].setTopicForWord(4, 1);
+        hierarchicalLDAModel.documents[1].setTopicForWord(0, 1);
+        hierarchicalLDAModel.documents[1].setTopicForWord(1, 1);
+        hierarchicalLDAModel.documents[1].setTopicForWord(2, 1);
+        hierarchicalLDAModel.documents[1].setTopicForWord(3, 1);
+        hierarchicalLDAModel.documents[1].setTopicForWord(4, 1);
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(testNode::addWord);
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(testNode::addWord);
+        testNode.setVisited(0);
+        testNode.setVisited(1);
+        assertThat(hierarchicalLDAModel.calculateWordLikelihood(0, Arrays.asList(0, 1, -1)), is(equalTo(-9.50626035276342)));
     }
 
     @Test
@@ -300,6 +445,7 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel = new HierarchicalLDAModel();
         hierarchicalLDAModel.readDocuments(threeWordDocument);
         hierarchicalLDAModel.rootNode.setVisited(0);
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
         Map<Integer, List<String>> expected = new HashMap<>();
         expected.put(0, Arrays.asList("dog", "chased", "the"));
         assertThat(hierarchicalLDAModel.getTopics(3, 1), is(equalTo(expected)));
@@ -310,6 +456,7 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel = new HierarchicalLDAModel();
         hierarchicalLDAModel.readDocuments(threeWordDocument);
         hierarchicalLDAModel.rootNode.setVisited(0);
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
         Map<Integer, List<String>> expected = new HashMap<>();
         expected.put(0, Arrays.asList("dog", "chased", "the"));
         assertThat(hierarchicalLDAModel.getTopics(6, 1), is(equalTo(expected)));
@@ -368,16 +515,95 @@ public class HierarchicalLDAModelTest {
         assertThat(hierarchicalLDAModel.getTopics(4, 3), is(equalTo(expected)));
     }
 
+    @Test
+    public void testGetLevelProbabilitiesSimpleCaseLevel0() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        List<List<String>> testDocuments = new ArrayList<>();
+        testDocuments.add(Arrays.asList(document1));
+        testDocuments.add(Arrays.asList(document1));
+        testDocuments.add(Arrays.asList(document1));
+        hierarchicalLDAModel.readDocuments(testDocuments);
+
+        HierarchicalLDAPath path = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        path.addNode(hierarchicalLDAModel.rootNode.spawnChild(1));
+        HierarchicalLDANode child0 = hierarchicalLDAModel.rootNode.getChildren().get(0);
+        path.addNode(child0.spawnChild(2));
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(w -> w.setTopic(0));
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(w -> w.setTopic(0));
+        hierarchicalLDAModel.documents[2].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[2].getWordSet().forEach(w -> w.setTopic(0));
+
+        Map<Integer, Integer> documentTopicCounts = hierarchicalLDAModel.documents[2].getTopicCounts();
+        double [] levelProbabilities = hierarchicalLDAModel.getLevelProbabilities(documentTopicCounts);
+        double [] expected = {0.8571428571428571, 0.07142857142857145, 0.0714285714285714};
+        assertArrayEquals(expected, levelProbabilities, 0.0000001);
+    }
+
+    @Test
+    public void testGetLevelProbabilitiesSimpleCaseLevel1() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        List<List<String>> testDocuments = new ArrayList<>();
+        testDocuments.add(Arrays.asList(document1));
+        testDocuments.add(Arrays.asList(document1));
+        testDocuments.add(Arrays.asList(document1));
+        hierarchicalLDAModel.readDocuments(testDocuments);
+
+        HierarchicalLDAPath path = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        path.addNode(hierarchicalLDAModel.rootNode.spawnChild(1));
+        HierarchicalLDANode child0 = hierarchicalLDAModel.rootNode.getChildren().get(0);
+        path.addNode(child0.spawnChild(2));
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(w -> w.setTopic(1));
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(w -> w.setTopic(1));
+        hierarchicalLDAModel.documents[2].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[2].getWordSet().forEach(w -> w.setTopic(1));
+
+        Map<Integer, Integer> documentTopicCounts = hierarchicalLDAModel.documents[2].getTopicCounts();
+        double [] levelProbabilities = hierarchicalLDAModel.getLevelProbabilities(documentTopicCounts);
+        double [] expected = {0.14285714285714285, 0.7346938775510204, 0.12244897959183676};
+        assertArrayEquals(expected, levelProbabilities, 0.0000001);
+    }
+
+    @Test
+    public void testGetLevelProbabilitiesSimpleCaseLevel2() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        List<List<String>> testDocuments = new ArrayList<>();
+        testDocuments.add(Arrays.asList(document1));
+        testDocuments.add(Arrays.asList(document1));
+        testDocuments.add(Arrays.asList(document1));
+        hierarchicalLDAModel.readDocuments(testDocuments);
+
+        HierarchicalLDAPath path = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        path.addNode(hierarchicalLDAModel.rootNode.spawnChild(1));
+        HierarchicalLDANode child0 = hierarchicalLDAModel.rootNode.getChildren().get(0);
+        path.addNode(child0.spawnChild(2));
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(w -> w.setTopic(2));
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(w -> w.setTopic(2));
+        hierarchicalLDAModel.documents[2].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[2].getWordSet().forEach(w -> w.setTopic(2));
+
+        Map<Integer, Integer> documentTopicCounts = hierarchicalLDAModel.documents[2].getTopicCounts();
+        double [] levelProbabilities = hierarchicalLDAModel.getLevelProbabilities(documentTopicCounts);
+        double [] expected = {0.14285714285714285, 0.12244897959183673, 0.7346938775510204};
+        assertArrayEquals(expected, levelProbabilities, 0.0000001);
+    }
+
 //    @Test
 //    public void testGetNewTopicAllWordsInDocumentInLevelOneReturnsCorrectChild() {
 //        hierarchicalLDAModel = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, HierarchicalLDAModel.DEFAULT_GAMMA,
 //                new double [] {0.1, 0.1, 0.1}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
 //        documents.clear();
 //        documents.add(Arrays.asList(document1));
+//        documents.add(Arrays.asList(oneWord));
 //        hierarchicalLDAModel.readDocuments(documents);
 //        hierarchicalLDAModel.initialize();
 //
-//        HierarchicalLDANode rootNode = new HierarchicalLDANode(5, new IdentifierObjectMapper<>());
+//        HierarchicalLDANode rootNode = new HierarchicalLDANode(hierarchicalLDAModel.vocabulary.size(), new IdentifierObjectMapper<>());
 //        HierarchicalLDAPath path = new HierarchicalLDAPath(rootNode, 3);
 //        path.addNode(rootNode.spawnChild(1));
 //        HierarchicalLDANode child0 = rootNode.getChildren().get(0);
@@ -389,47 +615,12 @@ public class HierarchicalLDAModelTest {
 //        hierarchicalLDAModel.documents[0].setTopicForWord(2, 1);
 //        hierarchicalLDAModel.documents[0].setTopicForWord(3, 1);
 //        hierarchicalLDAModel.documents[0].setTopicForWord(4, 1);
+//        hierarchicalLDAModel.documents[0].getWordSet().forEach(child1::addWord);
 //
-//        hierarchicalLDAModel.documentWordLevel[0][0][2] += 10;
-//        hierarchicalLDAModel.documentWordLevel[0][1][2]++;
-//        hierarchicalLDAModel.documentWordLevel[0][2][2]++;
-//        hierarchicalLDAModel.documentWordLevel[0][3][2]++;
-//        hierarchicalLDAModel.documentWordLevel[0][4][2]++;
-//        child1.addWord(0);
-//        child1.addWord(0);
-//        child1.addWord(0);
-//        child1.addWord(0);
-//        child1.addWord(0);
-//        child1.addWord(0);
-//        child1.addWord(0);
-//        child1.addWord(0);
-//        child1.addWord(0);
-//        child1.addWord(0);
-//        child1.addWord(1);
-//        child1.addWord(2);
-//        child1.addWord(3);
-//        child1.addWord(4);
+//        Word word = new Word("test", hierarchicalLDAModel.vocabulary.getIndexFromObject("test"));
 //
-//        hierarchicalLDAModel.documentWordLevel[0][1][1]++;
-//        hierarchicalLDAModel.documentWordLevel[0][2][1]++;
-//        hierarchicalLDAModel.documentWordLevel[0][3][1]++;
-//        hierarchicalLDAModel.documentWordLevel[0][4][1]++;
-//        child0.addWord(1);
-//        child0.addWord(2);
-//        child0.addWord(3);
-//        child0.addWord(4);
-//
-//        hierarchicalLDAModel.documentWordLevel[0][1][0]++;
-//        hierarchicalLDAModel.documentWordLevel[0][2][0]++;
-//        hierarchicalLDAModel.documentWordLevel[0][3][0]++;
-//        hierarchicalLDAModel.documentWordLevel[0][4][0]++;
-//        rootNode.addWord(1);
-//        rootNode.addWord(2);
-//        rootNode.addWord(3);
-//        rootNode.addWord(4);
-//
-//        int newTopic = hierarchicalLDAModel.chooseNewLevel(0, 0, path);
-//        assertThat(newTopic, is(equalTo(2)));
+//        int newTopic = hierarchicalLDAModel.chooseNewLevel(hierarchicalLDAModel.documents[1], word, path);
+//        assertThat(newTopic, is(equalTo(1)));
 //    }
 
 //    @Test

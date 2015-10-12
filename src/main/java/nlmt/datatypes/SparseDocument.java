@@ -137,7 +137,7 @@ public class SparseDocument {
      * document.
      *
      * @param topic the topic number to count
-     * @return a Map of word ids to their counts
+     * @return a map
      */
     public Map<Integer, Integer> getWordCountsByTopic(int topic) {
         return wordMap.values().stream()

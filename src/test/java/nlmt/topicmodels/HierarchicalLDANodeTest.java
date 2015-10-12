@@ -285,7 +285,7 @@ public class HierarchicalLDANodeTest
     }
 
     @Test
-    public void testDeleteEmptyNodesSingleNodeNoDocuments() {
+    public void testDeleteEmptyNodesSingleNodeNoDocumentsNoWords() {
         IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
         HierarchicalLDANode node = new HierarchicalLDANode(1, nodeMapper);
         assertThat(nodeMapper.contains(node), is(true));
@@ -296,10 +296,25 @@ public class HierarchicalLDANodeTest
     }
 
     @Test
-    public void testDeleteEmptyNodesSingleNodeWithDocuments() {
+    public void testDeleteEmptyNodesSingleNodeOneDocumentsNoWords() {
         IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
         HierarchicalLDANode node = new HierarchicalLDANode(1, nodeMapper);
+        node.setVisited(0);
+        assertThat(nodeMapper.contains(node), is(true));
+        assertThat(nodeMapper.size(), is(equalTo(1)));
+        HierarchicalLDANode.deleteEmptyNodes(nodeMapper);
+        assertThat(nodeMapper.contains(node), is(false));
+        assertThat(nodeMapper.size(), is(equalTo(0)));
+    }
+
+    @Test
+    public void testDeleteEmptyNodesSingleNodeWithDocuments() {
+        IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
+        IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
+        HierarchicalLDANode node = new HierarchicalLDANode(1, nodeMapper);
+        Word word = new Word("test", vocabulary.addObject("test"));
         node.setVisited(1);
+        node.addWord(word);
         assertThat(nodeMapper.contains(node), is(true));
         assertThat(nodeMapper.size(), is(equalTo(1)));
         HierarchicalLDANode.deleteEmptyNodes(nodeMapper);
@@ -323,9 +338,12 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testDeleteEmptyNodesTwoNodesOneEmpty() {
+        IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
+        Word word = new Word("test", vocabulary.addObject("test"));
         IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
         HierarchicalLDANode node1 = new HierarchicalLDANode(1, nodeMapper);
         node1.setVisited(1);
+        node1.addWord(word);
         HierarchicalLDANode node2 = new HierarchicalLDANode(1, nodeMapper);
         assertThat(nodeMapper.contains(node1), is(true));
         assertThat(nodeMapper.contains(node2), is(true));
@@ -338,11 +356,15 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testDeleteEmptyNodesTwoNodesNeitherEmpty() {
+        IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
+        Word word = new Word("test", vocabulary.addObject("test"));
         IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
         HierarchicalLDANode node1 = new HierarchicalLDANode(1, nodeMapper);
         node1.setVisited(1);
+        node1.addWord(word);
         HierarchicalLDANode node2 = new HierarchicalLDANode(1, nodeMapper);
         node2.setVisited(1);
+        node2.addWord(word);
         assertThat(nodeMapper.contains(node1), is(true));
         assertThat(nodeMapper.contains(node2), is(true));
         assertThat(nodeMapper.size(), is(equalTo(2)));
@@ -354,9 +376,12 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testDeleteEmptyNodesRemovesEmptyNodeFromParent() {
+        IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
+        Word word = new Word("test", vocabulary.addObject("test"));
         IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
         HierarchicalLDANode node1 = new HierarchicalLDANode(1, nodeMapper);
         node1.setVisited(1);
+        node1.addWord(word);
         HierarchicalLDANode node2 = node1.spawnChild(1);
         assertThat(nodeMapper.contains(node1), is(true));
         assertThat(nodeMapper.contains(node2), is(true));

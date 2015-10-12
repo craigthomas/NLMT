@@ -19,6 +19,7 @@ import nlmt.datatypes.BoundedPriorityQueue;
 import nlmt.datatypes.IdentifierObjectMapper;
 import nlmt.datatypes.Word;
 
+import static java.lang.Math.log;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -60,6 +61,8 @@ public class HierarchicalLDANode
 
     private Set<Integer> wordsInNode;
 
+    private double pathWeight;
+
     /**
      * Alternate constructor used to create a node with no parent. Nodes
      * without parents are considered to be root nodes.
@@ -81,6 +84,7 @@ public class HierarchicalLDANode
         level = 0;
         wordCounts = new int[vocabularySize];
         wordsInNode = new HashSet<>();
+        pathWeight = 0;
     }
 
     /**
@@ -273,7 +277,7 @@ public class HierarchicalLDANode
         List<Integer> nodesToDelete = new ArrayList<>();
         for (int nodeIndex : nodeMapper.getIndexKeys()) {
             HierarchicalLDANode node = nodeMapper.getObjectFromIndex(nodeIndex);
-            if (node.getNumDocumentsVisitingNode() == 0) {
+            if (node.getNumDocumentsVisitingNode() == 0 || node.wordsInNode.isEmpty()) {
                 node.removeFromParent();
                 nodesToDelete.add(nodeIndex);
             }
@@ -282,7 +286,9 @@ public class HierarchicalLDANode
     }
 
     /**
-     * Returns the top <code>numWords</code> that best describe the topic.
+     * Returns the top <code>numWords</code> that best describe the topic. If <code>numWords</code>
+     * is greater than the number of words in the node, returns the set of all words in the
+     * node arranged by their frequency.
      *
      * @param numWords the number of words to return
      * @param vocabulary the global vocabulary
@@ -294,7 +300,10 @@ public class HierarchicalLDANode
         }
         BoundedPriorityQueue<Integer> priorityQueue = new BoundedPriorityQueue<>(numWords);
         for (int wordIndex = 0; wordIndex < vocabulary.size(); wordIndex++) {
-            priorityQueue.add(getWordCount(wordIndex), wordIndex);
+            int wordCount = getWordCount(wordIndex);
+            if (wordCount > 0) {
+                priorityQueue.add(getWordCount(wordIndex), wordIndex);
+            }
         }
         return priorityQueue.getElements().stream().map(vocabulary::getObjectFromIndex).collect(Collectors.toList());
     }
@@ -322,5 +331,35 @@ public class HierarchicalLDANode
             result.put(nodeId, children);
         }
         return result;
+    }
+
+    /**
+     * Used for path selection probabilities. Confers the weight specified onto the node,
+     * calculates what the child weights should be, and passes the sum of the weights down
+     * to the children. If the node is an internal node, adds the weight of generating a new
+     * child node to this node. The weight is calculated in log space.
+     *
+     * @param weight the weight to apply to this node (plus any weight of generating new nodes)
+     * @param gamma the gamma hyper-parameter
+     * @param maxDepth the maximum depth of the tree
+     */
+    public void propagatePathWeight(double weight, double gamma, int maxDepth) {
+        pathWeight = weight;
+        for (HierarchicalLDANode child : children) {
+            child.propagatePathWeight(weight + log(child.getNumDocumentsVisitingNode() / (numDocumentsVisitingNode - 1 + gamma)), gamma, maxDepth);
+        }
+
+        if (level != (maxDepth - 1)) {
+            pathWeight += log(gamma / (numDocumentsVisitingNode - 1 + gamma));
+        }
+    }
+
+    /**
+     * Gets the weight of the path at this point in the tree.
+     *
+     * @return the weight of the path
+     */
+    public double getPathWeight() {
+        return pathWeight;
     }
 }

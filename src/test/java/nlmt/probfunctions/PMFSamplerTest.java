@@ -17,9 +17,11 @@ package nlmt.probfunctions;
 
 import org.junit.Test;
 
+import static java.lang.Math.log;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -146,6 +148,17 @@ public class PMFSamplerTest {
         pmfSampler = PMFSampler.normalizeLogLikelihoods(likelihoods);
         double [] expected = {1.0, 0.0};
         assertThat(pmfSampler.getProbabilities(), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testNormalizeLogLikelihoodsCorrectValues() {
+        double [] probabilities = {0.25, 0.15, 0.5, 0.10};
+        double [] likelihoods = new double [4];
+        for (int i = 0; i < likelihoods.length; i++) {
+            likelihoods[i] = log(probabilities[i]);
+        }
+        pmfSampler = PMFSampler.normalizeLogLikelihoods(likelihoods);
+        assertArrayEquals(pmfSampler.getProbabilities(), probabilities, 0.0001);
     }
 
 }
