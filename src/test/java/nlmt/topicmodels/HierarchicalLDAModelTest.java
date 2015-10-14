@@ -46,7 +46,6 @@ public class HierarchicalLDAModelTest {
     private List<List<String>> fiveWordDocument;
     private List<List<String>> fiveWordDocumentTwice;
     private List<List<String>> threeWordDocument;
-    private List<List<String>> oneWordDocument;
     private IdentifierObjectMapper<HierarchicalLDANode> nodeMapper;
 
     @Before
@@ -67,8 +66,6 @@ public class HierarchicalLDAModelTest {
         fiveWordDocumentTwice.add(Arrays.asList(document1));
         threeWordDocument = new ArrayList<>();
         threeWordDocument.add(Arrays.asList(threeWordDoc));
-        oneWordDocument = new ArrayList<>();
-        oneWordDocument.add(Arrays.asList(oneWord));
         nodeMapper = new IdentifierObjectMapper<>();
     }
 
@@ -233,7 +230,8 @@ public class HierarchicalLDAModelTest {
             document.getWordSet().forEach(testNode::addWord);
         }
         testNode.setVisited(0);
-        assertThat(hierarchicalLDAModel.calculateWordLikelihood(0, Arrays.asList(0, 1)), is(equalTo(-14.898374489664242)));
+        assertThat(hierarchicalLDAModel.calculateWordLikelihood(hierarchicalLDAModel.documents[0],
+                hierarchicalLDAModel.documentPaths[0], Arrays.asList(0, 1)), is(equalTo(-14.898374489664242)));
     }
 
     @Test
@@ -296,7 +294,8 @@ public class HierarchicalLDAModelTest {
         }
         testNode.setVisited(0);
         testNode.setVisited(1);
-        assertThat(hierarchicalLDAModel.calculateWordLikelihood(0, Arrays.asList(0, 1)), is(equalTo(-9.50626035276342)));
+        assertThat(hierarchicalLDAModel.calculateWordLikelihood(hierarchicalLDAModel.documents[0],
+                hierarchicalLDAModel.documentPaths[0], Arrays.asList(0, 1)), is(equalTo(-9.50626035276342)));
     }
 
     @Test
@@ -342,7 +341,8 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel.documents[1].setTopicForWord(3, 0);
         hierarchicalLDAModel.documents[1].setTopicForWord(4, 0);
         hierarchicalLDAModel.documents[1].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
-        assertThat(hierarchicalLDAModel.calculateWordLikelihood(0, Arrays.asList(0, -1, -1)), is(equalTo(-8.92365779985749)));
+        assertThat(hierarchicalLDAModel.calculateWordLikelihood(hierarchicalLDAModel.documents[0],
+                hierarchicalLDAModel.documentPaths[0], Arrays.asList(0, -1, -1)), is(equalTo(-8.92365779985749)));
     }
 
     @Test
@@ -360,7 +360,8 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel.documents[1].setTopicForWord(3, 0);
         hierarchicalLDAModel.documents[1].setTopicForWord(4, 0);
         hierarchicalLDAModel.documents[1].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
-        assertThat(hierarchicalLDAModel.calculateWordLikelihood(0, Arrays.asList(0, -1, -1)), is(equalTo(0.0)));
+        assertThat(hierarchicalLDAModel.calculateWordLikelihood(hierarchicalLDAModel.documents[0],
+                hierarchicalLDAModel.documentPaths[0], Arrays.asList(0, -1, -1)), is(equalTo(0.0)));
     }
 
     @Test
@@ -401,7 +402,9 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel.documents[1].getWordSet().forEach(testNode::addWord);
         testNode.setVisited(0);
         testNode.setVisited(1);
-        assertThat(hierarchicalLDAModel.calculateWordLikelihood(0, Arrays.asList(0, 1, -1)), is(equalTo(-9.50626035276342)));
+        assertThat(hierarchicalLDAModel.calculateWordLikelihood(hierarchicalLDAModel.documents[0],
+                hierarchicalLDAModel.documentPaths[0],
+                Arrays.asList(0, 1, -1)), is(equalTo(-9.50626035276342)));
     }
 
     @Test
@@ -426,7 +429,9 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel.documents[1].getWordSet().forEach(testNode::addWord);
         testNode.setVisited(0);
         testNode.setVisited(1);
-        assertThat(hierarchicalLDAModel.calculateWordLikelihood(0, Arrays.asList(0, 1, -1)), is(equalTo(-9.50626035276342)));
+        assertThat(hierarchicalLDAModel.calculateWordLikelihood(hierarchicalLDAModel.documents[0],
+                hierarchicalLDAModel.documentPaths[0],
+                Arrays.asList(0, 1, -1)), is(equalTo(-9.50626035276342)));
     }
 
     @Test

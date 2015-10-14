@@ -19,8 +19,11 @@ import nlmt.datatypes.IdentifierObjectMapper;
 import nlmt.datatypes.SparseDocument;
 import nlmt.datatypes.Word;
 import nlmt.probfunctions.PMFSampler;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.apache.commons.math3.special.Gamma.logGamma;
 
@@ -260,20 +263,20 @@ public class HierarchicalLDAModel
      * The path may have an id element of -1, which indicates that a new node
      * should be created (e.g. [0, 3, -1]).
      *
-     * @param documentIndex the index of the document to consider
+     * @param document the SparseDocument to consider
      * @param pathToConsider the path nodes to consider
      * @return the log-likelihood of the path
      */
-    protected double calculateWordLikelihood(int documentIndex, List<Integer> pathToConsider) {
+    protected double calculateWordLikelihood(SparseDocument document, HierarchicalLDAPath path, List<Integer> pathToConsider) {
         double wordProbability = 0.0;
-        Set<Word> documentWords = documents[documentIndex].getWordSet();
+        Set<Word> documentWords = document.getWordSet();
         for (int level = 0; level < maxDepth; level++) {
             int nodeId = pathToConsider.get(level);
             if (nodeId != -1) {
                 HierarchicalLDANode node = nodeMapper.getObjectFromIndex(nodeId);
                 // Don't include the document words if the document isn't mapped to the node!
                 Map<Integer, Integer> wordCountsByLevel =
-                        (documentPaths[documentIndex].getNode(level).getId() == nodeId) ? documents[documentIndex].getWordCountsByTopic(level) : new HashMap<>();
+                        (path.getNode(level).getId() == nodeId) ? document.getWordCountsByTopic(level) : new HashMap<>();
                 wordProbability += getPathWordsLikelihood(wordCountsByLevel, documentWords, eta[level], node);
             }
         }
@@ -286,15 +289,15 @@ public class HierarchicalLDAModel
      * one randomly (based upon their total 'weight'). Each path in the list of
      * paths is specified by a series of node ids (e.g. [1, 4, 9]).
      *
-     * @param documentIndex the index of the document to check
+     * @param document the SparseDocument to check
      * @param paths a list of paths
      * @return the index of the path chosen from the list
      */
-    protected int chooseBestPath(int documentIndex, List<List<Integer>> paths) {
+    protected int chooseBestPath(SparseDocument document, HierarchicalLDAPath path, List<List<Integer>> paths) {
         rootNode.propagatePathWeight(0.0, gamma, maxDepth);
         double [] logLikelihoods = new double [paths.size()];
         for (int pathIndex = 0; pathIndex < paths.size(); pathIndex++) {
-            logLikelihoods[pathIndex] = (calculateWordLikelihood(documentIndex, paths.get(pathIndex)) + calculatePathLikelihood(paths.get(pathIndex)));
+            logLikelihoods[pathIndex] = (calculateWordLikelihood(document, path, paths.get(pathIndex)) + calculatePathLikelihood(paths.get(pathIndex)));
         }
         return PMFSampler.normalizeLogLikelihoods(logLikelihoods).sample();
     }
@@ -383,34 +386,44 @@ public class HierarchicalLDAModel
 
         for (int iteration = 0; iteration < numIterations; iteration++) {
             for (int documentIndex = 0; documentIndex < totalDocs; documentIndex++) {
-
-                // Sample a new path for the document
-                List<List<Integer>> paths = HierarchicalLDAPath.enumeratePaths(rootNode, maxDepth);
-                int bestPath = chooseBestPath(documentIndex, paths);
-                List<Integer> newPath = paths.get(bestPath);
-
-                // Deallocate the document and all its words from the current path
-                HierarchicalLDAPath path = documentPaths[documentIndex];
-                path.removeDocument(documentIndex);
-                Set<Word> words = documents[documentIndex].getWordSet();
-                for (Word word : words) {
-                    path.getNode(word.getTopic()).removeWord(word);
-                    //word.setTopic(-1);
-                }
-
-                // Assign the new path
-                path.addPath(newPath, nodeMapper);
-                path.addDocument(documentIndex);
-
-                // For every word in the document, assign a new level in the path
-                for (Word word : words) {
-                    int newLevel = chooseNewLevelForWord(documents[documentIndex], word, path);
-                    word.setTopic(newLevel);
-                    path.getNode(newLevel).addWord(word);
-                }
-
+                doGibbsSamplingSingleDocument(documentIndex, documents[documentIndex], documentPaths[documentIndex]);
                 HierarchicalLDANode.deleteEmptyNodes(nodeMapper);
             }
+        }
+    }
+
+    /**
+     * Performs a single round of sampling for the specified document, along its path.
+     * It will choose a new path for the document, deallocate it from its current path,
+     * assign it to the new path, and then assign new levels for each of the words in
+     * the new path.
+     *
+     * @param documentId the identifier for the document (typically a document index)
+     * @param document the SparseDocument to consider
+     * @param path the HierarchicalLDA path that the document currently takes through the tree
+     */
+    protected void doGibbsSamplingSingleDocument(int documentId, SparseDocument document, HierarchicalLDAPath path) {
+        List<List<Integer>> paths = HierarchicalLDAPath.enumeratePaths(rootNode, maxDepth);
+        int bestPath = chooseBestPath(document, path, paths);
+        List<Integer> newPath = paths.get(bestPath);
+
+        // Deallocate the document and all its words from the current path
+        path.removeDocument(documentId);
+        Set<Word> words = document.getWordSet();
+        for (Word word : words) {
+            path.getNode(word.getTopic()).removeWord(word);
+            //word.setTopic(-1);
+        }
+
+        // Assign the new path
+        path.addPath(newPath, nodeMapper);
+        path.addDocument(documentId);
+
+        // For every word in the document, assign a new level in the path
+        for (Word word : words) {
+            int newLevel = chooseNewLevelForWord(document, word, path);
+            word.setTopic(newLevel);
+            path.getNode(newLevel).addWord(word);
         }
     }
 
@@ -465,5 +478,36 @@ public class HierarchicalLDAModel
             result += prettyPrintNode(child, indentationLevel + 2, numWords);
         }
         return result;
+    }
+
+    /**
+     * Infer what the topic distributions should be for an unseen document.
+     * Returns a Pair with the left-most item containing a list of nodes that
+     * the document belongs to in the topic hierarchy. The right-most item in
+     * the Pair contains the distribution of the document over the topics. Both
+     * lists will contain <code>maxDepth</code> number of items.
+     *
+     * @param document the List of Strings that represents the document
+     * @param numIterations the number of times to perform gibbs sampling on the inference
+     * @return a Pair of Lists, the left being the topic numbers, the right being the distributions
+     */
+    public Pair<List<Integer>, List<Double>> inference(List<String> document, int numIterations) {
+        SparseDocument newDocument = new SparseDocument(vocabulary);
+        newDocument.readDocument(document);
+        HierarchicalLDAPath newDocumentPath = new HierarchicalLDAPath(rootNode, maxDepth);
+        int temporaryDocumentId = documents.length;
+
+        for (int iteration = 0; iteration < numIterations; iteration++) {
+            doGibbsSamplingSingleDocument(temporaryDocumentId, newDocument, newDocumentPath);
+        }
+
+        List<Integer> pathNodeIds = Arrays.stream(newDocumentPath.getNodes()).map(node -> node.getId()).collect(Collectors.toList());
+        Map<Integer, Integer> wordCountsByTopic = newDocument.getTopicCounts();
+        int totalWords = wordCountsByTopic.values().stream().mapToInt(value -> value).sum();
+        List<Double> wordDistributions = new ArrayList<>();
+        for (int level = 0; level < maxDepth; level++) {
+            wordDistributions.add((double)(wordCountsByTopic.getOrDefault(level, 0) / totalWords));
+        }
+        return Pair.of(pathNodeIds, wordDistributions);
     }
 }
