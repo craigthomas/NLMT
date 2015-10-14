@@ -92,7 +92,7 @@ public class HierarchicalLDAModel
     public final static double DEFAULT_GAMMA = 1.0;
 
     // Default values for the eta hyper-parameter - favors more terms towards the root
-    public final static double [] DEFAULT_ETA = {0.1, 0.1, 0.1};
+    public final static double [] DEFAULT_ETA = {2.0, 1.0, 0.5};
 
     // The default value of pi - favors more specific words
     public final static double DEFAULT_PI = 2;

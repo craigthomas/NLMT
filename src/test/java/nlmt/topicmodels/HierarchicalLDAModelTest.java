@@ -615,4 +615,49 @@ public class HierarchicalLDAModelTest {
         assertThat(hierarchicalLDAModel.prettyPrintTree(10), is(equalTo(expected)));
     }
 
+    @Test
+    public void testGetWordProbabilitiesEmptyNode() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(fiveWordDocument);
+        HierarchicalLDANode child0 = hierarchicalLDAModel.rootNode.spawnChild(1);
+        HierarchicalLDANode child1 = child0.spawnChild(2);
+        Word word = new Word("test", hierarchicalLDAModel.vocabulary.getIndexFromObject("test"));
+        HierarchicalLDAPath path = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        path.addNode(child0);
+        path.addNode(child1);
+        double [] expected = {0.2, 0.2, 0.2};
+        assertThat(hierarchicalLDAModel.getWordProbabilities(word, path), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testGetWordProbabilitiesWordsInRootNode() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(fiveWordDocument);
+        HierarchicalLDANode child0 = hierarchicalLDAModel.rootNode.spawnChild(1);
+        HierarchicalLDANode child1 = child0.spawnChild(2);
+        Word word = new Word("test", hierarchicalLDAModel.vocabulary.getIndexFromObject("test"));
+        HierarchicalLDAPath path = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        path.addNode(child0);
+        path.addNode(child1);
+        double [] expected = {0.2, 0.2, 0.2};
+        assertThat(hierarchicalLDAModel.getWordProbabilities(word, path), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testGetWordProbabilitiesMultipleDocumentsSomeWordsInRootNode() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(documents);
+        HierarchicalLDANode child0 = hierarchicalLDAModel.rootNode.spawnChild(1);
+        HierarchicalLDANode child1 = child0.spawnChild(2);
+        Word word = new Word("test", hierarchicalLDAModel.vocabulary.getIndexFromObject("test"));
+        HierarchicalLDAPath path = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(child1::addWord);
+        path.addNode(child0);
+        path.addNode(child1);
+        double [] expected = {0.08571428571428572, 0.08333333333333333, 0.041666666666666664};
+        assertThat(hierarchicalLDAModel.getWordProbabilities(word, path), is(equalTo(expected)));
+    }
 }
