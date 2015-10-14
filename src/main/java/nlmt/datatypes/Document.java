@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Craig Thomas
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nlmt.topicmodels;
+package nlmt.datatypes;
 
-import java.util.List;
+import java.util.*;
 
 /**
  * The Document class performs two important functions. First,
@@ -26,25 +26,15 @@ import java.util.List;
  */
 public class Document
 {
-    // The vocabulary words as they appear. For example,
-    // "the cat sat" may be mapped to the array
-    // [90, 5, 108] where 90 = "the", 5 = "cat", and 108 = "sat"
-    // in the vocabulary
-    private int [] wordArray;
-
-    // The topic assigned to the specific word in the
-    // document. For example, [0, 3, 2] means that
-    // "the" is assigned to topic 0, "cat" is assigned to
-    // topic 3, and "sat" is assigned to topic 2
-    private int [] topicArray;
+    // The vocabulary words along with topic assignments
+    private List<Word> wordArray;
 
     // The Vocabulary that provides the mapping from word
     // Strings to numbers
-    private Vocabulary vocabulary;
+    private IdentifierObjectMapper<String> vocabulary;
 
-    public Document(Vocabulary vocabulary) {
-        this.wordArray = new int[0];
-        this.topicArray = new int[0];
+    public Document(IdentifierObjectMapper<String> vocabulary) {
+        wordArray = new ArrayList<>();
         this.vocabulary = vocabulary;
     }
 
@@ -52,18 +42,14 @@ public class Document
      * Each document is a List of Strings that represent the
      * words in the document. For each word, add it to the vocabulary,
      * and then add the vocabulary number assigned to the word to
-     * the wordArray for the document. Assign the topic for the
-     * @param words
+     * the wordArray for the document.
+     *
+     * @param words the list of words in the document
      */
     public void readDocument(List<String> words) {
-        wordArray = new int[words.size()];
-        topicArray = new int[words.size()];
-        int currentIndex = 0;
         for (String word : words) {
-            vocabulary.addWord(word);
-            wordArray[currentIndex] = vocabulary.getIndexFromWord(word);
-            topicArray[currentIndex] = -1;
-            currentIndex++;
+            vocabulary.addObject(word);
+            wordArray.add(new Word(word, vocabulary.getIndexFromObject(word)));
         }
     }
 
@@ -75,7 +61,7 @@ public class Document
      * @return the list of word indexes
      */
     public int [] getWordArray() {
-        return wordArray;
+        return wordArray.stream().mapToInt(Word::getVocabularyId).toArray();
     }
 
     /**
@@ -85,11 +71,7 @@ public class Document
      * @return the original array of Strings
      */
     public String [] getRawWords() {
-        String [] result = new String[wordArray.length];
-        for (int wordIndex = 0; wordIndex < wordArray.length; wordIndex++) {
-            result[wordIndex] = vocabulary.getWordFromIndex(wordArray[wordIndex]);
-        }
-        return result;
+        return wordArray.stream().map(Word::getRawWord).toArray(String[]::new);
     }
 
     /**
@@ -99,7 +81,7 @@ public class Document
      * @return the list of topics
      */
     public int [] getTopicArray() {
-        return topicArray;
+        return wordArray.stream().mapToInt(Word::getTopic).toArray();
     }
 
     /**
@@ -109,9 +91,27 @@ public class Document
      * @param topicIndex the topic to assign
      */
     public void setTopicForWord(int wordIndex, int topicIndex) {
-        if ((wordIndex > wordArray.length - 1) || (wordIndex < 0)) {
-            throw new IllegalArgumentException("wordIndex must be >= 0 or <= " + (wordArray.length - 1));
+        if ((wordIndex > wordArray.size() - 1) || (wordIndex < 0)) {
+            throw new IllegalArgumentException("wordIndex must be >= 0 or <= " + (wordArray.size() - 1));
         }
-        topicArray[wordIndex] = topicIndex;
+        wordArray.get(wordIndex).setTopic(topicIndex);
+    }
+
+    /**
+     * Sets all of the topics to -1.
+     */
+    public void clearTopics() {
+        wordArray.stream().forEach(word -> word.setTopic(-1));
+    }
+
+    /**
+     * Returns the set of all words used in the document.
+     *
+     * @return the set of all words
+     */
+    public Set<Integer> getWordSet() {
+        Set<Integer> result = new HashSet<>();
+        wordArray.stream().mapToInt(Word::getVocabularyId).forEach(result::add);
+        return result;
     }
 }

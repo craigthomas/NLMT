@@ -17,6 +17,8 @@ package nlmt.probfunctions;
 
 import java.util.Random;
 
+import static java.lang.Math.exp;
+
 /**
  * Sample a probability mass function. Each sample has a weight associated
  * with it that represents the mass of the sample. The sampler works by
@@ -126,5 +128,34 @@ public class PMFSampler
             result[i - 1] = (weights[i] - weights[i - 1]) / total;
         }
         return result;
+    }
+
+    /**
+     * Given an array of log likelihoods, will normalize them and add them to a
+     * PMFSampler.
+     *
+     * @param logLikelihoods the log likelihoods to normalize
+     * @return a PMFSampler containing the normalized log likelihoods
+     */
+    public static PMFSampler normalizeLogLikelihoods(double [] logLikelihoods) {
+        double biggest = Double.NEGATIVE_INFINITY;
+        for (double logLikelihood : logLikelihoods) {
+            if (logLikelihood > biggest) {
+                biggest = logLikelihood;
+            }
+        }
+
+        PMFSampler sampler = new PMFSampler(logLikelihoods.length);
+        double sum = 0.0;
+        for (int index = 0; index < logLikelihoods.length; index++) {
+            logLikelihoods[index] = exp(logLikelihoods[index] - biggest);
+            sum += logLikelihoods[index];
+        }
+
+        for (double logLikelihood : logLikelihoods) {
+            sampler.add(logLikelihood / sum);
+        }
+
+        return sampler;
     }
 }

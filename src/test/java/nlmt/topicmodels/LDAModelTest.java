@@ -35,10 +35,6 @@ public class LDAModelTest {
     private String [] document3 = {"the", "dog", "chased", "the", "cat"};
     private String [] longDocument = {"once", "upon", "a", "time", "there", "lived",
                                         "a", "dragon"};
-    private String [] topic1 = {"1", "1", "1", "1", "1"};
-    private String [] topic2 = {"2", "2", "2", "2", "2"};
-
-
     private LDAModel ldaModel;
     private List<List<String>> documents;
 
@@ -177,7 +173,7 @@ public class LDAModelTest {
         ldaModel.addTopicToWord(0, 3, 3, 1);
         ldaModel.addTopicToWord(0, 4, 4, 1);
 
-        assertThat(ldaModel.getTopicWeight(ldaModel.documentTopicCount[0][0], 0, 0), is(equalTo(1.1666666666666667)));
+        assertThat(ldaModel.getTopicWeight(ldaModel.documentTopicCount[0][0], 0, 0), is(equalTo(0.29615384615384616)));
     }
 
     @Test
@@ -567,9 +563,7 @@ public class LDAModelTest {
         // Generate the new document
         List<String> unseenDocument = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
-            for (String word : expectedTopic0) {
-                unseenDocument.add(word);
-            }
+            Collections.addAll(unseenDocument, expectedTopic0);
         }
 
         double [] probabilities = ldaModel.inference(unseenDocument, 100);

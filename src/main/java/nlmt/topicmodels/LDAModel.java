@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Craig Thomas
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,9 +16,12 @@
 package nlmt.topicmodels;
 
 import nlmt.datatypes.BoundedPriorityQueue;
+import nlmt.datatypes.Document;
+import nlmt.datatypes.IdentifierObjectMapper;
 import nlmt.probfunctions.PMFSampler;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Simple implementation of Latent Dirichlet Allocation using Gibbs
@@ -35,6 +38,9 @@ public class LDAModel
 
     // The beta smoothing parameter
     protected double beta;
+
+    // Beta multiplied by the size of the vocabulary
+    protected double betaTotal;
 
     // Keeps track of how many documents have been assigned to a topic
     // topicDocumentCount[documentIndex][topicIndex]
@@ -53,10 +59,10 @@ public class LDAModel
     // Keeps track of what topics have been assigned to the word in a document,
     // associates each word with an index giving us wordIndexInDoc. The
     // documentIndex will range from 0 to the total number of documents
-    protected Document [] documents;
+    protected Document[] documents;
 
     // Associates a word with a specific number, giving us wordIndexInVocab
-    protected Vocabulary vocabulary;
+    protected IdentifierObjectMapper<String> vocabulary;
 
     // Used to produce random numbers
     private Random random;
@@ -81,7 +87,7 @@ public class LDAModel
         this.alpha = (alpha == 0.0) ? 0.5 : alpha;
         this.beta = (beta == 0.0) ? 0.1 : beta;
         this.numTopics = numTopics;
-        vocabulary = new Vocabulary();
+        vocabulary = new IdentifierObjectMapper<>();
         documents = new Document[0];
         random = new Random();
         pmfSampler = new PMFSampler(numTopics);
@@ -114,6 +120,7 @@ public class LDAModel
         documentTopicCount = new int[totalDocs][numTopics];
         wordTopicCount = new int[vocabulary.size()][numTopics];
         topicTotals = new int[numTopics];
+        betaTotal = vocabulary.size() * numTopics;
 
         for (int documentIndex = 0; documentIndex < totalDocs; documentIndex++) {
             int [] words = documents[documentIndex].getWordArray();
@@ -134,7 +141,7 @@ public class LDAModel
      * @return the mass belonging to the word
      */
     protected double getTopicWeight(int topicDocumentCount, int wordIndexInVocab, int topicIndex) {
-        double denominator = topicTotals[topicIndex] + (topicTotals[topicIndex] * beta);
+        double denominator = topicTotals[topicIndex] + betaTotal;
         if (denominator == 0.0) {
             return 0.0;
         }
@@ -237,11 +244,7 @@ public class LDAModel
         for (int wordIndex = 0; wordIndex < vocabulary.size(); wordIndex++) {
             priorityQueue.add(wordTopicCount[wordIndex][topicIndex], wordIndex);
         }
-        List<String> result = new ArrayList<>();
-        for (int vocabIndex : priorityQueue.getElements()) {
-            result.add(vocabulary.getWordFromIndex(vocabIndex));
-        }
-        return result;
+        return priorityQueue.getElements().stream().map(vocabulary::getObjectFromIndex).collect(Collectors.toList());
     }
 
     /**

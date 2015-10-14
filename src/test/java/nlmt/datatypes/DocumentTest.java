@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nlmt.topicmodels;
+package nlmt.datatypes;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -30,12 +32,12 @@ import static org.junit.Assert.assertThat;
  */
 public class DocumentTest {
 
-    private Vocabulary vocabulary;
+    private IdentifierObjectMapper<String> vocabulary;
     private Document document;
 
     @Before
     public void setUp() {
-        vocabulary = new Vocabulary();
+        vocabulary = new IdentifierObjectMapper<>();
         document = new Document(vocabulary);
     }
 
@@ -49,24 +51,24 @@ public class DocumentTest {
     public void testReadDocumentAddsWordsToVocabulary() {
         String [] words = {"the", "cat", "sat"};
         document.readDocument(Arrays.asList(words));
-        assertThat(vocabulary.getIndexFromWord("the"), is(not(equalTo(-1))));
-        assertThat(vocabulary.getIndexFromWord("cat"), is(not(equalTo(-1))));
-        assertThat(vocabulary.getIndexFromWord("sat"), is(not(equalTo(-1))));
-        int theIndex = vocabulary.getIndexFromWord("the");
-        int catIndex = vocabulary.getIndexFromWord("cat");
-        int satIndex = vocabulary.getIndexFromWord("sat");
-        assertThat(vocabulary.getWordFromIndex(theIndex), is(equalTo("the")));
-        assertThat(vocabulary.getWordFromIndex(catIndex), is(equalTo("cat")));
-        assertThat(vocabulary.getWordFromIndex(satIndex), is(equalTo("sat")));
+        assertThat(vocabulary.getIndexFromObject("the"), is(not(equalTo(-1))));
+        assertThat(vocabulary.getIndexFromObject("cat"), is(not(equalTo(-1))));
+        assertThat(vocabulary.getIndexFromObject("sat"), is(not(equalTo(-1))));
+        int theIndex = vocabulary.getIndexFromObject("the");
+        int catIndex = vocabulary.getIndexFromObject("cat");
+        int satIndex = vocabulary.getIndexFromObject("sat");
+        assertThat(vocabulary.getObjectFromIndex(theIndex), is(equalTo("the")));
+        assertThat(vocabulary.getObjectFromIndex(catIndex), is(equalTo("cat")));
+        assertThat(vocabulary.getObjectFromIndex(satIndex), is(equalTo("sat")));
     }
 
     @Test
     public void testReadDocumentAddsWordsToWordArray() {
         String [] words = {"the", "cat", "sat"};
         document.readDocument(Arrays.asList(words));
-        int theIndex = vocabulary.getIndexFromWord("the");
-        int catIndex = vocabulary.getIndexFromWord("cat");
-        int satIndex = vocabulary.getIndexFromWord("sat");
+        int theIndex = vocabulary.getIndexFromObject("the");
+        int catIndex = vocabulary.getIndexFromObject("cat");
+        int satIndex = vocabulary.getIndexFromObject("sat");
         int [] expectedWordArray = {theIndex, catIndex, satIndex};
         assertThat(document.getWordArray(), is(equalTo(expectedWordArray)));
     }
@@ -133,5 +135,28 @@ public class DocumentTest {
         assertThat(document.getWordArray().length, is(equalTo(3)));
         assertThat(document.getWordArray(), is(equalTo(vocabList)));
         assertThat(document.getRawWords(), is(equalTo(words)));
+    }
+
+    @Test
+    public void testClearTopicsWorksCorrectly() {
+        String [] words = {"the", "cat", "sat"};
+        document.readDocument(Arrays.asList(words));
+        document.setTopicForWord(0, 1);
+        document.setTopicForWord(1, 2);
+        document.setTopicForWord(2, 3);
+        document.clearTopics();
+        int [] expectedTopicArrayArray = {-1, -1, -1};
+        assertThat(document.getTopicArray(), is(equalTo(expectedTopicArrayArray)));
+    }
+
+    @Test
+    public void testGetWordSetWorksCorrectly() {
+        String [] words = {"the", "cat", "sat"};
+        document.readDocument(Arrays.asList(words));
+        Set<Integer> expected = new HashSet<>();
+        expected.add(0);
+        expected.add(1);
+        expected.add(2);
+        assertThat(document.getWordSet(), is(equalTo(expected)));
     }
 }
