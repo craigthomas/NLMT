@@ -523,7 +523,8 @@ public class HierarchicalLDAModelTest {
 
     @Test
     public void testGetLevelProbabilitiesSimpleCaseLevel0() {
-        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, HierarchicalLDAModel.DEFAULT_GAMMA,
+                HierarchicalLDAModel.DEFAULT_ETA, HierarchicalLDAModel.DEFAULT_M, 2.0);
         List<List<String>> testDocuments = new ArrayList<>();
         testDocuments.add(Arrays.asList(document1));
         testDocuments.add(Arrays.asList(document1));
@@ -549,7 +550,8 @@ public class HierarchicalLDAModelTest {
 
     @Test
     public void testGetLevelProbabilitiesSimpleCaseLevel1() {
-        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, HierarchicalLDAModel.DEFAULT_GAMMA,
+                HierarchicalLDAModel.DEFAULT_ETA, HierarchicalLDAModel.DEFAULT_M, 2.0);
         List<List<String>> testDocuments = new ArrayList<>();
         testDocuments.add(Arrays.asList(document1));
         testDocuments.add(Arrays.asList(document1));
@@ -575,7 +577,8 @@ public class HierarchicalLDAModelTest {
 
     @Test
     public void testGetLevelProbabilitiesSimpleCaseLevel2() {
-        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, HierarchicalLDAModel.DEFAULT_GAMMA,
+                HierarchicalLDAModel.DEFAULT_ETA, HierarchicalLDAModel.DEFAULT_M, 2.0);
         List<List<String>> testDocuments = new ArrayList<>();
         testDocuments.add(Arrays.asList(document1));
         testDocuments.add(Arrays.asList(document1));

@@ -97,7 +97,7 @@ public class HierarchicalLDAModel
     public final static double [] DEFAULT_ETA = {2.0, 1.0, 0.5};
 
     // The default value of pi - favors more specific words
-    public final static double DEFAULT_PI = 2;
+    public final static double DEFAULT_PI = 1.0;
 
     // The default value of m - favors more specific words
     public final static double DEFAULT_M = 0.5;
