@@ -485,17 +485,47 @@ public class HierarchicalLDAModel
      * Returns a Pair with the left-most item containing a list of nodes that
      * the document belongs to in the topic hierarchy. The right-most item in
      * the Pair contains the distribution of the document over the topics. Both
-     * lists will contain <code>maxDepth</code> number of items.
+     * lists will contain <code>maxDepth</code> number of items. If there are
+     * no words in the document, will return empty lists for both items.
      *
      * @param document the List of Strings that represents the document
      * @param numIterations the number of times to perform gibbs sampling on the inference
      * @return a Pair of Lists, the left being the topic numbers, the right being the distributions
      */
     public Pair<List<Integer>, List<Double>> inference(List<String> document, int numIterations) {
+        if (numIterations < 1) {
+            throw new IllegalArgumentException("numIterations must be >= 1");
+        }
+
+        if (document.size() == 0) {
+            return Pair.of(new ArrayList<>(), new ArrayList<>());
+        }
+
         SparseDocument newDocument = new SparseDocument(vocabulary);
         newDocument.readDocument(document);
         HierarchicalLDAPath newDocumentPath = new HierarchicalLDAPath(rootNode, maxDepth);
         int temporaryDocumentId = documents.length;
+
+        // Allocate the new document to a random path
+        HierarchicalLDANode parent = rootNode;
+        for (int level = 1; level < maxDepth; level++) {
+            List<HierarchicalLDANode> children = parent.getChildren();
+            PMFSampler sampler = new PMFSampler(children.size());
+            for (HierarchicalLDANode child : children) {
+                double weight = child.getNumDocumentsVisitingNode() / (documents.length - 1 + gamma);
+                sampler.add(weight);
+            }
+            int pathComponent = sampler.sample();
+            newDocumentPath.addNode(children.get(pathComponent));
+            parent = children.get(pathComponent);
+        }
+
+        newDocumentPath.addDocument(temporaryDocumentId);
+        for (Word word : newDocument.getWordSet()) {
+            int randomLevel = random.nextInt(maxDepth);
+            newDocumentPath.getNode(randomLevel).addWord(word);
+            word.setTopic(randomLevel);
+        }
 
         for (int iteration = 0; iteration < numIterations; iteration++) {
             doGibbsSamplingSingleDocument(temporaryDocumentId, newDocument, newDocumentPath);

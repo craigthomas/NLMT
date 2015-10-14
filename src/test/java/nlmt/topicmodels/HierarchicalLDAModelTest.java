@@ -18,6 +18,7 @@ package nlmt.topicmodels;
 import nlmt.datatypes.IdentifierObjectMapper;
 import nlmt.datatypes.SparseDocument;
 import nlmt.datatypes.Word;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -664,5 +665,67 @@ public class HierarchicalLDAModelTest {
         path.addNode(child1);
         double [] expected = {0.08571428571428572, 0.08333333333333333, 0.041666666666666664};
         assertThat(hierarchicalLDAModel.getWordProbabilities(word, path), is(equalTo(expected)));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testInferenceWithZeroIterationsThrowsException() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.inference(new ArrayList<>(), 0);
+    }
+
+    @Test
+    public void testInferenceOnEmptyDocumentDoesNothing() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        List<Integer> expectedNodes = new ArrayList<>();
+        List<Double> expectedDistributions = new ArrayList<>();
+        assertThat(hierarchicalLDAModel.inference(new ArrayList<>(), 1), is(equalTo(Pair.of(expectedNodes, expectedDistributions))));
+    }
+
+    @Test
+    public void testSingleWordDocumentInferenceWorksCorrectlyWhenWordInRootNode() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        List<List<String>> documentList = new ArrayList<>();
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document2));
+        documentList.add(Arrays.asList(document3));
+        hierarchicalLDAModel.readDocuments(documentList);
+        HierarchicalLDANode child0 = hierarchicalLDAModel.rootNode.spawnChild(1);
+        HierarchicalLDANode child1 = child0.spawnChild(2);
+        HierarchicalLDAPath path = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[2].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[3].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[4].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[5].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[6].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[7].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[8].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[9].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[10].getWordSet().forEach(child0::addWord);
+        hierarchicalLDAModel.documents[11].getWordSet().forEach(child1::addWord);
+
+        List<String> testDocument = new ArrayList<>();
+        testDocument.add("test");
+
+        List<Double> expectedDistributions = new ArrayList<>();
+        expectedDistributions.add(1.0);
+        expectedDistributions.add(0.0);
+        expectedDistributions.add(0.0);
+
+        // We only care where the word distributions ended up. We have one word "test"
+        // that should end up in the root node, so just ignore the paths, since new paths may have been generated
+        // by the Gibbs sampler
+        Pair<List<Integer>, List<Double>> results = hierarchicalLDAModel.inference(testDocument, 3);
+        assertThat(results.getRight(), is(equalTo(expectedDistributions)));
     }
 }
