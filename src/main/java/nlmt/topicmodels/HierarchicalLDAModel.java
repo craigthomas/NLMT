@@ -23,7 +23,6 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.apache.commons.math3.special.Gamma.logGamma;
 
@@ -55,7 +54,7 @@ public class HierarchicalLDAModel
     private int maxDepth;
 
     // The gamma hyper-parameter - controls how likely documents will choose new paths
-    private double gamma;
+    protected double gamma;
 
     // The eta word-smoothing parameter - smaller values results in more topics
     private double [] eta;
@@ -486,13 +485,17 @@ public class HierarchicalLDAModel
      * the document belongs to in the topic hierarchy. The right-most item in
      * the Pair contains the distribution of the document over the topics. Both
      * lists will contain <code>maxDepth</code> number of items. If there are
-     * no words in the document, will return empty lists for both items.
+     * no words in the document, will return empty lists for both items. If
+     * <code>overrideGamma</code> is <code>true</code>, then gamma
+     * will be temporarily set to a very low number to prevent new nodes
+     * from being created.
      *
      * @param document the List of Strings that represents the document
      * @param numIterations the number of times to perform gibbs sampling on the inference
+     * @param overrideGamma if true, will prevent new node generation by making gamma very small
      * @return a Pair of Lists, the left being the topic numbers, the right being the distributions
      */
-    public Pair<List<Integer>, List<Double>> inference(List<String> document, int numIterations) {
+    public Pair<List<Integer>, List<Double>> inference(List<String> document, int numIterations, boolean overrideGamma) {
         if (numIterations < 1) {
             throw new IllegalArgumentException("numIterations must be >= 1");
         }
@@ -520,6 +523,7 @@ public class HierarchicalLDAModel
             parent = children.get(pathComponent);
         }
 
+        // Allocate each word in the document to a level in the path
         newDocumentPath.addDocument(temporaryDocumentId);
         for (Word word : newDocument.getWordSet()) {
             int randomLevel = random.nextInt(maxDepth);
@@ -527,10 +531,21 @@ public class HierarchicalLDAModel
             word.setTopic(randomLevel);
         }
 
+        // If the caller doesn't want new nodes generated, set gamma to a very low value
+        double oldGamma = gamma;
+        if (overrideGamma) {
+            gamma = 0.000000000001;
+        }
+
+        // Perform gibbs sampling but only for the current document
         for (int iteration = 0; iteration < numIterations; iteration++) {
             doGibbsSamplingSingleDocument(temporaryDocumentId, newDocument, newDocumentPath);
         }
 
+        // Restore the previous value of gamma
+        gamma = oldGamma;
+
+        // Figure out the word distributions
         List<Integer> pathNodeIds = Arrays.stream(newDocumentPath.getNodes()).map(node -> node.getId()).collect(Collectors.toList());
         Map<Integer, Integer> wordCountsByTopic = newDocument.getTopicCounts();
         int totalWords = wordCountsByTopic.values().stream().mapToInt(value -> value).sum();
@@ -538,6 +553,23 @@ public class HierarchicalLDAModel
         for (int level = 0; level < maxDepth; level++) {
             wordDistributions.add((double)(wordCountsByTopic.getOrDefault(level, 0) / totalWords));
         }
+
+        // Reset the old counts for the nodes and their documents by de-allocating the node from
+        // the path that it was associated with
+        Set<Word> wordSet = newDocument.getWordSet();
+        for (int level = 0; level < maxDepth; level++) {
+            HierarchicalLDANode node = newDocumentPath.getNode(level);
+            node.removeVisited(temporaryDocumentId);
+            for (Word word : wordSet) {
+                if (word.getTopic() == level) {
+                    node.removeWord(word);
+                    word.setTopic(-1);
+                }
+            }
+        }
+
+        // Delete any empty nodes that exist after removing the words and documents
+        HierarchicalLDANode.deleteEmptyNodes(nodeMapper);
         return Pair.of(pathNodeIds, wordDistributions);
     }
 }
