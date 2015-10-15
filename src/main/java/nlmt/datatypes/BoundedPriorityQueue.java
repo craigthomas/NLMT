@@ -15,6 +15,7 @@
  */
 package nlmt.datatypes;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,8 +28,8 @@ import java.util.List;
  * from the front of the queue (highest priority) to rear of the queue
  * (lowest priority).
  */
-public class BoundedPriorityQueue<T> {
-
+public class BoundedPriorityQueue<T extends Serializable> implements Serializable
+{
     private List<Integer> priorities;
     private List<T> elements;
     private int size;

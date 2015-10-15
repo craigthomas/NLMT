@@ -15,6 +15,7 @@
  */
 package nlmt.datatypes;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -24,7 +25,7 @@ import java.util.*;
  * it keeps track of what topics have been assigned to each
  * word in the document.
  */
-public class Document
+public class Document implements Serializable
 {
     // The vocabulary words along with topic assignments
     private List<Word> wordArray;

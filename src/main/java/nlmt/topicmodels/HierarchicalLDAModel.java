@@ -21,6 +21,7 @@ import nlmt.datatypes.Word;
 import nlmt.probfunctions.PMFSampler;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,7 +49,7 @@ import static org.apache.commons.math3.special.Gamma.logGamma;
  * the document to a node as normal Latent Dirichlet Allocation would work (the
  * number of topics is equal to the total length of the path).
  */
-public class HierarchicalLDAModel
+public class HierarchicalLDAModel implements Serializable
 {
     // Keeps track of how deep the tree can become
     private int maxDepth;

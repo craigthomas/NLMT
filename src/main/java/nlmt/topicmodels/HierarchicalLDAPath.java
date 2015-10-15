@@ -17,13 +17,14 @@ package nlmt.topicmodels;
 
 import nlmt.datatypes.IdentifierObjectMapper;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Represents a path through a Hierarchical LDA Tree.
  */
-public class HierarchicalLDAPath
+public class HierarchicalLDAPath implements Serializable
 {
     // The nodes in the path
     private HierarchicalLDANode [] nodes;

@@ -18,12 +18,15 @@ package nlmt.datatypes;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.*;
 import java.util.HashSet;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -174,5 +177,40 @@ public class IdentifierObjectMapperTest {
         assertThat(mapper.containsIndex(index1), is(true));
         assertThat(mapper.containsIndex(index2), is(false));
         assertThat(mapper.containsIndex(index3), is(true));
+    }
+
+    @Test
+    public void testSerialization() {
+        int index1 = mapper.addObject("word");
+        int index2 = mapper.addObject("that");
+        int index3 = mapper.addObject("another");
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutputStream.writeObject(mapper);
+            byte [] serializedObjectArray = byteArrayOutputStream.toByteArray();
+            objectOutputStream.close();
+            byteArrayOutputStream.close();
+
+            assertThat(serializedObjectArray.length, is(not(equalTo(0))));
+
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serializedObjectArray);
+            ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+            IdentifierObjectMapper<String> deserializedMapper = (IdentifierObjectMapper<String>) objectInputStream.readObject();
+            assertThat(deserializedMapper.getIndexKeys(), is(equalTo(mapper.getIndexKeys())));
+            assertThat(deserializedMapper.containsIndex(index1), is(true));
+            assertThat(deserializedMapper.containsIndex(index2), is(true));
+            assertThat(deserializedMapper.containsIndex(index3), is(true));
+            assertThat(deserializedMapper.getObjectFromIndex(index1), is(equalTo("word")));
+            assertThat(deserializedMapper.getObjectFromIndex(index2), is(equalTo("that")));
+            assertThat(deserializedMapper.getObjectFromIndex(index3), is(equalTo("another")));
+            assertThat(deserializedMapper.getIndexFromObject("word"), is(equalTo(index1)));
+            assertThat(deserializedMapper.getIndexFromObject("that"), is(equalTo(index2)));
+            assertThat(deserializedMapper.getIndexFromObject("another"), is(equalTo(index3)));
+        } catch (IOException e) {
+            assertFalse("IOException occurred: " + e.getMessage(), true);
+        } catch (ClassNotFoundException e) {
+            assertFalse("ClassNotFoundException occurred: " + e.getMessage(), true);
+        }
     }
 }

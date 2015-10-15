@@ -16,13 +16,15 @@
 
 package nlmt.datatypes;
 
+import java.io.Serializable;
+
 /**
  * The Word class keeps track of a word within a document. Each word contains
  * a vocabulary ID associated with it, the raw string used to store the word,
  * a topic associated with the word, and the total number of times the word
  * appears in a document (or corpus).
  */
-public class Word
+public class Word implements Serializable
 {
     // The vocabulary identifier for the word
     private int vocabularyId;
