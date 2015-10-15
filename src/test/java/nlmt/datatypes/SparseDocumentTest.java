@@ -69,6 +69,7 @@ public class SparseDocumentTest
         sparseDocument.readDocument(simpleDocument);
 
         IdentifierObjectMapper<String> vocabulary1 = new IdentifierObjectMapper<>();
+        vocabulary1.addObject("something");
         SparseDocument sparseDocument1 = new SparseDocument(vocabulary1);
         sparseDocument1.readDocument(simpleDocument);
 

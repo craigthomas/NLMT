@@ -75,6 +75,7 @@ public class DocumentTest {
         document.readDocument(simpleDocument);
 
         IdentifierObjectMapper<String> vocabulary1 = new IdentifierObjectMapper<>();
+        vocabulary1.addObject("something");
         Document document1 = new Document(vocabulary1);
         document1.readDocument(simpleDocument);
 

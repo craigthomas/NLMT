@@ -475,18 +475,23 @@ public class HierarchicalLDAModel implements Serializable
      * @param numWords the number of words to print per line
      */
     public String prettyPrintNode(HierarchicalLDANode node, int indentationLevel, int numWords) {
-        String indents = "";
-        String result = "";
+        StringBuilder result = new StringBuilder();
+        StringBuilder indents = new StringBuilder();
         for (int i = 0; i <= indentationLevel; i++) {
-            indents += "-";
+            indents.append("-");
         }
-        result += indents + " Node " + node.getId() + ": ";
-        result += node.getNumDocumentsVisitingNode() + " docs, words: ";
-        result += node.getTopWords(numWords, vocabulary) + "\n";
+        result.append(indents);
+        result.append(" Node ");
+        result.append(node.getId());
+        result.append(": ");
+        result.append(node.getNumDocumentsVisitingNode());
+        result.append(" docs, words: ");
+        result.append(node.getTopWords(numWords, vocabulary));
+        result.append("\n");
         for (HierarchicalLDANode child : node.getChildren()) {
-            result += prettyPrintNode(child, indentationLevel + 2, numWords);
+            result.append(prettyPrintNode(child, indentationLevel + 2, numWords));
         }
-        return result;
+        return result.toString();
     }
 
     /**
