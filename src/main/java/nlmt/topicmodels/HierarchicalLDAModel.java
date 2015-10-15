@@ -570,4 +570,46 @@ public class HierarchicalLDAModel implements Serializable
         HierarchicalLDANode.deleteEmptyNodes(nodeMapper);
         return Pair.of(pathNodeIds, wordDistributions);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        HierarchicalLDAModel that = (HierarchicalLDAModel) o;
+
+        if (maxDepth != that.maxDepth) return false;
+        if (Double.compare(that.gamma, gamma) != 0) return false;
+        if (Double.compare(that.m, m) != 0) return false;
+        if (Double.compare(that.pi, pi) != 0) return false;
+        if (!Arrays.equals(eta, that.eta)) return false;
+        // Probably incorrect - comparing Object[] arrays with Arrays.equals
+        if (!Arrays.equals(documents, that.documents)) return false;
+        if (!vocabulary.equals(that.vocabulary)) return false;
+        if (!nodeMapper.equals(that.nodeMapper)) return false;
+        // Probably incorrect - comparing Object[] arrays with Arrays.equals
+        if (!Arrays.equals(documentPaths, that.documentPaths)) return false;
+        return !(rootNode != null ? !rootNode.equals(that.rootNode) : that.rootNode != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result;
+        long temp;
+        result = maxDepth;
+        temp = Double.doubleToLongBits(gamma);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        result = 31 * result + Arrays.hashCode(eta);
+        temp = Double.doubleToLongBits(m);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(pi);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        result = 31 * result + (documents != null ? Arrays.hashCode(documents) : 0);
+        result = 31 * result + vocabulary.hashCode();
+        result = 31 * result + nodeMapper.hashCode();
+        result = 31 * result + (documentPaths != null ? Arrays.hashCode(documentPaths) : 0);
+        result = 31 * result + (rootNode != null ? rootNode.hashCode() : 0);
+        return result;
+    }
 }

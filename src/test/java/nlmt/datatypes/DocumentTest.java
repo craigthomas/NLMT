@@ -15,14 +15,17 @@
  */
 package nlmt.datatypes;
 
+import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.*;
 import java.util.*;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -67,6 +70,7 @@ public class DocumentTest {
         document = new Document(vocabulary);
         Document document1 = new Document(vocabulary);
         assertThat(document.equals(document1), is(true));
+        assertThat(document.hashCode() == document1.hashCode(), is(true));
     }
 
     @Test
@@ -80,6 +84,7 @@ public class DocumentTest {
         document1.readDocument(simpleDocument);
 
         assertThat(document.equals(document1), is(false));
+        assertThat(document.hashCode() == document1.hashCode(), is(false));
     }
 
     @Test
@@ -91,6 +96,7 @@ public class DocumentTest {
         document1.readDocument(simpleDocument);
 
         assertThat(document.equals(document1), is(true));
+        assertThat(document.hashCode() == document1.hashCode(), is(true));
     }
 
     @Test
@@ -104,6 +110,7 @@ public class DocumentTest {
         document1.readDocument(differentDocument);
 
         assertThat(document.equals(document1), is(false));
+        assertThat(document.hashCode() == document1.hashCode(), is(false));
     }
 
     @Test
@@ -218,4 +225,31 @@ public class DocumentTest {
         expected.add(2);
         assertThat(document.getWordSet(), is(equalTo(expected)));
     }
+
+    @Test
+    public void testSerializationRoundTrip() {
+        List<String> documentList = Arrays.asList("wordOne", "wordTwo", "wordThree", "wordThree");
+        document = new Document(vocabulary);
+        document.readDocument(documentList);
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutputStream.writeObject(document);
+            byte[] serializedObjectArray = byteArrayOutputStream.toByteArray();
+            objectOutputStream.close();
+            byteArrayOutputStream.close();
+
+            assertThat(serializedObjectArray.length, is(not(CoreMatchers.equalTo(0))));
+
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serializedObjectArray);
+            ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+            Document deserializedDocument = (Document) objectInputStream.readObject();
+            assertThat(document.equals(deserializedDocument), is(true));
+        } catch (IOException e) {
+            assertFalse("IOException occurred: " + e.getMessage(), true);
+        } catch (ClassNotFoundException e) {
+            assertFalse("ClassNotFoundException occurred: " + e.getMessage(), true);
+        }
+    }
+
 }

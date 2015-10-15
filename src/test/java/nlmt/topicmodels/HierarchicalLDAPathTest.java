@@ -16,14 +16,20 @@
 package nlmt.topicmodels;
 
 import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
 import nlmt.datatypes.IdentifierObjectMapper;
+import nlmt.datatypes.SparseDocument;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
@@ -54,6 +60,34 @@ public class HierarchicalLDAPathTest
     @Test(expected=IllegalArgumentException.class)
     public void testNullRootNodeThrowsException() {
         new HierarchicalLDAPath(null, 2);
+    }
+
+    @Test
+    public void testPathNotEqualNull() {
+        hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
+        assertThat(hierarchicalLDAPath.equals(null), is(false));
+    }
+
+    @Test
+    public void testSamePathIsEqual() {
+        hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
+        assertThat(hierarchicalLDAPath.equals(hierarchicalLDAPath), is(true));
+    }
+
+    @Test
+    public void testEmptyPathsAreEqual() {
+        hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
+        HierarchicalLDAPath hierarchicalLDAPath1 = new HierarchicalLDAPath(mockRootNode, 3);
+        assertThat(hierarchicalLDAPath.equals(hierarchicalLDAPath1), is(true));
+    }
+
+    @Test
+    public void testDifferentPathsAreNotEqual() {
+        hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
+        hierarchicalLDAPath.addNode(mockChildNode1);
+
+        HierarchicalLDAPath hierarchicalLDAPath1 = new HierarchicalLDAPath(mockRootNode, 3);
+        assertThat(hierarchicalLDAPath.equals(hierarchicalLDAPath1), is(false));
     }
 
     @Test
@@ -349,4 +383,32 @@ public class HierarchicalLDAPathTest
 
         assertThat(HierarchicalLDAPath.enumeratePaths(mockRootNode, 3), is(equalTo(expected)));
     }
+
+//    @Test
+//    public void testSerializationRoundTrip() {
+//        mockRootNode = new HierarchicalLDANode(3, nodeMapper);
+//        mockChildNode1 = new HierarchicalLDANode(3, nodeMapper);
+//        hierarchicalLDAPath = new HierarchicalLDAPath(mockRootNode, 3);
+//        hierarchicalLDAPath.addNode(mockChildNode1);
+//        try {
+//            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+//            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+//            objectOutputStream.writeObject(hierarchicalLDAPath);
+//            byte[] serializedObjectArray = byteArrayOutputStream.toByteArray();
+//            objectOutputStream.close();
+//            byteArrayOutputStream.close();
+//
+//            assertThat(serializedObjectArray.length, is(not(equalTo(0))));
+//
+//            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serializedObjectArray);
+//            ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+//            HierarchicalLDAPath deserializedPath = (HierarchicalLDAPath) objectInputStream.readObject();
+//            assertThat(hierarchicalLDAPath.equals(deserializedPath), is(true));
+//        } catch (IOException e) {
+//            assertFalse("IOException occurred: " + e.getMessage(), true);
+//        } catch (ClassNotFoundException e) {
+//            assertFalse("ClassNotFoundException occurred: " + e.getMessage(), true);
+//        }
+//    }
+
 }

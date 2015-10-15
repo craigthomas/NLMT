@@ -15,13 +15,18 @@
  */
 package nlmt.datatypes;
 
+import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -36,6 +41,58 @@ public class BoundedPriorityQueueTest {
         boundedPriorityQueue = new BoundedPriorityQueue<>(3);
         assertThat(boundedPriorityQueue.getElements().isEmpty(), is(true));
         assertThat(boundedPriorityQueue.getPriorities().isEmpty(), is(true));
+    }
+
+    @Test
+    public void testQueueNotEqualToNull() {
+        boundedPriorityQueue = new BoundedPriorityQueue<>(3);
+        assertThat(boundedPriorityQueue.equals(null), is(false));
+    }
+
+    @Test
+    public void testEmptyQueuesSameSizeAreEqual() {
+        boundedPriorityQueue = new BoundedPriorityQueue<>(3);
+        BoundedPriorityQueue<Integer> boundedPriorityQueue1 = new BoundedPriorityQueue<>(3);
+        assertThat(boundedPriorityQueue.equals(boundedPriorityQueue1), is(true));
+        assertThat(boundedPriorityQueue.hashCode() == boundedPriorityQueue1.hashCode(), is(true));
+    }
+
+    @Test
+    public void testEmptyQueuesDifferentSizeAreNotEqual() {
+        boundedPriorityQueue = new BoundedPriorityQueue<>(3);
+        BoundedPriorityQueue<Integer> boundedPriorityQueue1 = new BoundedPriorityQueue<>(2);
+        assertThat(boundedPriorityQueue.equals(boundedPriorityQueue1), is(false));
+        assertThat(boundedPriorityQueue.hashCode() == boundedPriorityQueue1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testQueuesSameElementsDifferentPrioritiesAreNotEqual() {
+        boundedPriorityQueue = new BoundedPriorityQueue<>(3);
+        BoundedPriorityQueue<Integer> boundedPriorityQueue1 = new BoundedPriorityQueue<>(3);
+        boundedPriorityQueue.add(1, 0);
+        boundedPriorityQueue1.add(2, 0);
+        assertThat(boundedPriorityQueue.equals(boundedPriorityQueue1), is(false));
+        assertThat(boundedPriorityQueue.hashCode() == boundedPriorityQueue1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testQueuesDifferentElementsSamePrioritiesAreNotEqual() {
+        boundedPriorityQueue = new BoundedPriorityQueue<>(3);
+        BoundedPriorityQueue<Integer> boundedPriorityQueue1 = new BoundedPriorityQueue<>(3);
+        boundedPriorityQueue.add(1, 0);
+        boundedPriorityQueue1.add(1, 1);
+        assertThat(boundedPriorityQueue.equals(boundedPriorityQueue1), is(false));
+        assertThat(boundedPriorityQueue.hashCode() == boundedPriorityQueue1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testQueuesSameElementsSamePrioritiesAreEqual() {
+        boundedPriorityQueue = new BoundedPriorityQueue<>(3);
+        BoundedPriorityQueue<Integer> boundedPriorityQueue1 = new BoundedPriorityQueue<>(3);
+        boundedPriorityQueue.add(1, 0);
+        boundedPriorityQueue1.add(1, 0);
+        assertThat(boundedPriorityQueue.equals(boundedPriorityQueue1), is(true));
+        assertThat(boundedPriorityQueue.hashCode() == boundedPriorityQueue1.hashCode(), is(true));
     }
 
     @Test
@@ -140,4 +197,32 @@ public class BoundedPriorityQueueTest {
         assertThat(boundedPriorityQueue.getElements(), is(equalTo(expectedIds)));
         assertThat(boundedPriorityQueue.getPriorities(), is(equalTo(expectedPriorities)));
     }
+
+    @Test
+    public void testSerializationRoundTrip() {
+        boundedPriorityQueue = new BoundedPriorityQueue<>(3);
+        boundedPriorityQueue.add(10, 10000);
+        boundedPriorityQueue.add(9, 9000);
+        boundedPriorityQueue.add(8, 8000);
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutputStream.writeObject(boundedPriorityQueue);
+            byte[] serializedObjectArray = byteArrayOutputStream.toByteArray();
+            objectOutputStream.close();
+            byteArrayOutputStream.close();
+
+            assertThat(serializedObjectArray.length, is(not(CoreMatchers.equalTo(0))));
+
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serializedObjectArray);
+            ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+            BoundedPriorityQueue<Integer> deserializedBoundedPriorityQueue = (BoundedPriorityQueue<Integer>) objectInputStream.readObject();
+            assertThat(boundedPriorityQueue.equals(deserializedBoundedPriorityQueue), is(true));
+        } catch (IOException e) {
+            assertFalse("IOException occurred: " + e.getMessage(), true);
+        } catch (ClassNotFoundException e) {
+            assertFalse("ClassNotFoundException occurred: " + e.getMessage(), true);
+        }
+    }
+
 }

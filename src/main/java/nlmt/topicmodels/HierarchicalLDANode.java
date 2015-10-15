@@ -30,6 +30,9 @@ import java.util.stream.Collectors;
  */
 public class HierarchicalLDANode implements Serializable
 {
+    // Stores the node's internal identifier
+    private UUID internalId;
+
     // The identifier for the node - becomes the topic number
     private int id;
 
@@ -76,8 +79,12 @@ public class HierarchicalLDANode implements Serializable
     }
 
     public HierarchicalLDANode(HierarchicalLDANode parent, int vocabularySize, IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
+        if (nodeMapper == null) {
+            throw new IllegalArgumentException("nodeMapper cannot be null");
+        }
         this.parent = parent;
         this.nodeMapper = nodeMapper;
+        internalId = UUID.randomUUID();
         children = new ArrayList<>();
         documentsVisitingNode = new HashSet<>();
         numChildren = 0;
@@ -363,5 +370,29 @@ public class HierarchicalLDANode implements Serializable
      */
     public double getPathWeight() {
         return pathWeight;
+    }
+
+    /**
+     * The uniqueness of a HierarchicalLDANode is guaranteed only by its
+     * internal identifier. Two HierarchicalLDANodes may have the exact same
+     * state, but will be considered different.
+     *
+     * @param o the other object to test
+     * @return true if the two nodes have the same UUID
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        HierarchicalLDANode that = (HierarchicalLDANode) o;
+
+        return internalId.equals(that.internalId);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return internalId.hashCode();
     }
 }

@@ -113,4 +113,23 @@ public class BoundedPriorityQueue<T extends Serializable> implements Serializabl
     public List<Integer> getPriorities() {
         return priorities;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        BoundedPriorityQueue<?> that = (BoundedPriorityQueue<?>) o;
+
+        return size == that.size && getPriorities().equals(that.getPriorities()) && getElements().equals(that.getElements());
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getPriorities().hashCode();
+        result = 31 * result + getElements().hashCode();
+        result = 31 * result + size;
+        return result;
+    }
 }

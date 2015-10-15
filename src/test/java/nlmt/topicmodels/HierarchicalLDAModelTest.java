@@ -115,25 +115,76 @@ public class HierarchicalLDAModelTest {
                 -1.0, HierarchicalLDAModel.DEFAULT_ETA, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
     }
 
-//    @Test
-//    public void testReadDocumentsWorksCorrectly() {
-//        hierarchicalLDAModel = new HierarchicalLDAModel();
-//        hierarchicalLDAModel.readDocuments(documents);
-//        assertThat(hierarchicalLDAModel.documents.length, is(equalTo(3)));
-//        assertThat(hierarchicalLDAModel.vocabulary.size(), is(equalTo(12)));
-//        int [] expectedDocument1 = {0, 1, 2, 3, 4};
-//        int [] expectedDocument2 = {5, 6, 7, 8, 5, 9};
-//        int [] expectedDocument3 = {5, 10, 11, 5, 6};
-//        assertThat(hierarchicalLDAModel.documents[0].getWordArray(), is(equalTo(expectedDocument1)));
-//        assertThat(hierarchicalLDAModel.documents[1].getWordArray(), is(equalTo(expectedDocument2)));
-//        assertThat(hierarchicalLDAModel.documents[2].getWordArray(), is(equalTo(expectedDocument3)));
-//        int [] expectedTopics1 = {-1, -1, -1, -1, -1};
-//        int [] expectedTopics2 = {-1, -1, -1, -1, -1, -1};
-//        int [] expectedTopics3 = {-1, -1, -1, -1, -1};
-//        assertThat(hierarchicalLDAModel.documents[0].getTopicArray(), is(equalTo(expectedTopics1)));
-//        assertThat(hierarchicalLDAModel.documents[1].getTopicArray(), is(equalTo(expectedTopics2)));
-//        assertThat(hierarchicalLDAModel.documents[2].getTopicArray(), is(equalTo(expectedTopics3)));
-//    }
+    @Test
+    public void testEqualsNullWorksCorrectly() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        assertThat(hierarchicalLDAModel.equals(null), is(false));
+    }
+
+    @Test
+    public void testEqualsOnInitIsTrue() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel();
+        assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(true));
+        assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(true));
+    }
+
+    @Test
+    public void testEqualsDifferentGammaIsFalse() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, 2.0,
+                HierarchicalLDAModel.DEFAULT_ETA, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
+        assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
+        assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testEqualsDifferentMaxDepthIsFalse() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
+                HierarchicalLDAModel.DEFAULT_ETA, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
+        assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
+        assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testEqualsDifferentEtaIsFalse() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
+                new double [] {0.1, 0.1, 0.1}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
+        assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
+        assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testEqualsDifferentMIsFalse() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
+                HierarchicalLDAModel.DEFAULT_ETA, 0.2, HierarchicalLDAModel.DEFAULT_PI);
+        assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
+        assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testEqualsDifferentPiIsFalse() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
+                HierarchicalLDAModel.DEFAULT_ETA, HierarchicalLDAModel.DEFAULT_M, 10.0);
+        assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
+        assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testEqualsDifferentDocumentsIsFalse() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(documents);
+
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel();
+        hierarchicalLDAModel1.readDocuments(fiveWordDocument);
+
+        assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
+        assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
+    }
 
     @Test
     public void testInitializeSetsRandomTopics() {

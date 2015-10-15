@@ -18,14 +18,18 @@ package nlmt.topicmodels;
 
 import nlmt.datatypes.IdentifierObjectMapper;
 import nlmt.datatypes.Word;
+import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.*;
 import java.util.*;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -39,6 +43,33 @@ public class HierarchicalLDANodeTest
     @Before
     public void setUp() {
         nodeMapper = new IdentifierObjectMapper<>();
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testNullNodeMapperThrowsException() {
+        new HierarchicalLDANode(3, null);
+    }
+
+    @Test
+    public void testNodeNotEqualToNull() {
+        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
+        assertThat(hierarchicalLDANode.equals(null), is(false));
+    }
+
+    @Test
+    public void testNodeEqualToItself() {
+        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
+        assertThat(hierarchicalLDANode.equals(hierarchicalLDANode), is(true));
+    }
+
+    @Test
+    public void testNodeNotEqualToDifferentNode() {
+        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
+
+        IdentifierObjectMapper<HierarchicalLDANode> nodeMapper1 = new IdentifierObjectMapper<>();
+        HierarchicalLDANode hierarchicalLDANode1 = new HierarchicalLDANode(3, nodeMapper1);
+
+        assertThat(hierarchicalLDANode.equals(hierarchicalLDANode1), is(false));
     }
 
     @Test
@@ -538,4 +569,32 @@ public class HierarchicalLDANodeTest
         expected.put(4, new ArrayList<>());
         assertThat(HierarchicalLDANode.generateMap(nodeMapper), is(equalTo(expected)));
     }
+
+//    @Test
+//    public void testSerializationRoundTrip() {
+//        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
+//        hierarchicalLDANode.setVisited(2);
+//        IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
+//        Word word = new Word("test", vocabulary.addObject("test"));
+//        hierarchicalLDANode.addWord(word);
+//        try {
+//            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+//            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+//            objectOutputStream.writeObject(hierarchicalLDANode);
+//            byte[] serializedObjectArray = byteArrayOutputStream.toByteArray();
+//            objectOutputStream.close();
+//            byteArrayOutputStream.close();
+//
+//            assertThat(serializedObjectArray.length, is(not(CoreMatchers.equalTo(0))));
+//
+//            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serializedObjectArray);
+//            ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+//            HierarchicalLDANode deserializedNode = (HierarchicalLDANode) objectInputStream.readObject();
+//            assertThat(hierarchicalLDANode.equals(deserializedNode), is(true));
+//        } catch (IOException e) {
+//            assertFalse("IOException occurred: " + e.getMessage(), true);
+//        } catch (ClassNotFoundException e) {
+//            assertFalse("ClassNotFoundException occurred: " + e.getMessage(), true);
+//        }
+//    }
 }

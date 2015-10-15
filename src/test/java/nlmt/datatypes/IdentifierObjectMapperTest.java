@@ -55,6 +55,7 @@ public class IdentifierObjectMapperTest {
     public void testEmptyMappersEqual() {
         IdentifierObjectMapper<String> mapper1 = new IdentifierObjectMapper<>();
         assertThat(mapper.equals(mapper1), is(true));
+        assertThat(mapper.hashCode() == mapper1.hashCode(), is(true));
     }
 
     @Test
@@ -63,6 +64,7 @@ public class IdentifierObjectMapperTest {
         IdentifierObjectMapper<String> mapper1 = new IdentifierObjectMapper<>();
         mapper1.addObject("test");
         assertThat(mapper.equals(mapper1), is(true));
+        assertThat(mapper.hashCode() == mapper1.hashCode(), is(true));
     }
 
     @Test
@@ -71,6 +73,7 @@ public class IdentifierObjectMapperTest {
         IdentifierObjectMapper<String> mapper1 = new IdentifierObjectMapper<>();
         mapper1.addObject("test1");
         assertThat(mapper.equals(mapper1), is(false));
+        assertThat(mapper.hashCode() == mapper1.hashCode(), is(false));
     }
 
     @Test
@@ -79,6 +82,7 @@ public class IdentifierObjectMapperTest {
         IdentifierObjectMapper<Integer> mapper1 = new IdentifierObjectMapper<>();
         mapper1.addObject(1);
         assertThat(mapper.equals(mapper1), is(false));
+        assertThat(mapper.hashCode() == mapper1.hashCode(), is(false));
     }
 
     @Test
@@ -215,10 +219,10 @@ public class IdentifierObjectMapperTest {
     }
 
     @Test
-    public void testSerialization() {
-        int index1 = mapper.addObject("word");
-        int index2 = mapper.addObject("that");
-        int index3 = mapper.addObject("another");
+    public void testSerializationRoundTrip() {
+        mapper.addObject("word");
+        mapper.addObject("that");
+        mapper.addObject("another");
         try {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
@@ -232,16 +236,7 @@ public class IdentifierObjectMapperTest {
             ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serializedObjectArray);
             ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
             IdentifierObjectMapper<String> deserializedMapper = (IdentifierObjectMapper<String>) objectInputStream.readObject();
-            assertThat(deserializedMapper.getIndexKeys(), is(equalTo(mapper.getIndexKeys())));
-            assertThat(deserializedMapper.containsIndex(index1), is(true));
-            assertThat(deserializedMapper.containsIndex(index2), is(true));
-            assertThat(deserializedMapper.containsIndex(index3), is(true));
-            assertThat(deserializedMapper.getObjectFromIndex(index1), is(equalTo("word")));
-            assertThat(deserializedMapper.getObjectFromIndex(index2), is(equalTo("that")));
-            assertThat(deserializedMapper.getObjectFromIndex(index3), is(equalTo("another")));
-            assertThat(deserializedMapper.getIndexFromObject("word"), is(equalTo(index1)));
-            assertThat(deserializedMapper.getIndexFromObject("that"), is(equalTo(index2)));
-            assertThat(deserializedMapper.getIndexFromObject("another"), is(equalTo(index3)));
+            assertThat(mapper.equals(deserializedMapper), is(true));
         } catch (IOException e) {
             assertFalse("IOException occurred: " + e.getMessage(), true);
         } catch (ClassNotFoundException e) {
