@@ -75,7 +75,7 @@ public class SparseDocument {
      * @return the topic for the word or -1 if not set or not found
      */
     public int getTopicForWord(int vocabularyWord) {
-        return (wordMap.containsKey(vocabularyWord)) ? wordMap.get(vocabularyWord).getTopic() : -1;
+        return wordMap.containsKey(vocabularyWord) ? wordMap.get(vocabularyWord).getTopic() : -1;
     }
 
     /**
@@ -86,7 +86,7 @@ public class SparseDocument {
      * @return the count of the number of times this word appears
      */
     public int getWordCount(int vocabularyWord) {
-        return (wordMap.containsKey(vocabularyWord)) ? wordMap.get(vocabularyWord).getTotalCount() : 0;
+        return wordMap.containsKey(vocabularyWord) ? wordMap.get(vocabularyWord).getTotalCount() : 0;
     }
 
     /**

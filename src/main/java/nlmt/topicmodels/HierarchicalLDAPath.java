@@ -191,8 +191,8 @@ public class HierarchicalLDAPath
      * @param nodeMapper the object responsible for mapping node ids to nodes
      */
     public void addPath(List<Integer> path, IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
-        int length = (path.size() < maxDepth) ? path.size() : maxDepth;
         clear();
+        int length = path.size() < maxDepth ? path.size() : maxDepth;
         for (int level = 0; level < length; level++) {
             int nodeId = path.get(level);
             if (nodeId != -1) {
