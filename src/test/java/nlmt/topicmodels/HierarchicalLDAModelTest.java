@@ -19,15 +19,18 @@ import nlmt.datatypes.IdentifierObjectMapper;
 import nlmt.datatypes.SparseDocument;
 import nlmt.datatypes.Word;
 import org.apache.commons.lang3.tuple.Pair;
+import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.*;
 import java.util.*;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -905,5 +908,50 @@ public class HierarchicalLDAModelTest {
         // path at the leaf node of that path
         Pair<List<Integer>, List<Double>> results = hierarchicalLDAModel.inference(testDocument, 10, true);
         assertThat(results, is(equalTo(Pair.of(expectedNodes, expectedDistributions))));
+    }
+
+    @Test
+    public void testSerialization() {
+        hierarchicalLDAModel = new HierarchicalLDAModel(3, 2.0,
+                new double [] {0.1, 0.1, 2.0}, 0.99, 1.0);
+        List<List<String>> documentList = new ArrayList<>();
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document2));
+        documentList.add(Arrays.asList(document3));
+        hierarchicalLDAModel.readDocuments(documentList);
+        HierarchicalLDANode child0 = hierarchicalLDAModel.rootNode.spawnChild(1);
+        HierarchicalLDANode child1 = child0.spawnChild(2);
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(child0::addWord);
+        hierarchicalLDAModel.documents[2].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+
+        hierarchicalLDAModel.rootNode.setVisited(2);
+        child0.setVisited(1);
+        child1.setVisited(0);
+
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutputStream.writeObject(hierarchicalLDAModel);
+            byte [] serializedObjectArray = byteArrayOutputStream.toByteArray();
+            objectOutputStream.close();
+            byteArrayOutputStream.close();
+
+            assertThat(serializedObjectArray.length, is(not(CoreMatchers.equalTo(0))));
+
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serializedObjectArray);
+            ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+            HierarchicalLDAModel deserializedModel = (HierarchicalLDAModel) objectInputStream.readObject();
+            assertThat(deserializedModel.gamma, is(equalTo(2.0)));
+            assertThat(deserializedModel.rootNode.getDocumentsVisitingNode().contains(2), is(true));
+            HierarchicalLDANode deserializedChild0 = deserializedModel.rootNode.getChildren().get(0);
+            HierarchicalLDANode deserializedChild0 = deserializedModel.rootNode.getChildren().get(0);
+
+        } catch (IOException e) {
+            assertFalse("IOException occurred: " + e.getMessage(), true);
+        } catch (ClassNotFoundException e) {
+            assertFalse("ClassNotFoundException occurred: " + e.getMessage(), true);
+        }
+
     }
 }

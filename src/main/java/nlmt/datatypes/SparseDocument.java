@@ -16,6 +16,7 @@
 
 package nlmt.datatypes;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,8 +24,8 @@ import java.util.stream.Collectors;
  * A SparseDocument contains only the count of the unique words in a document,
  * as well as the words themselves.
  */
-public class SparseDocument {
-
+public class SparseDocument implements Serializable
+{
     // Maps the ID of a word to a Word object
     private Map<Integer, Word> wordMap;
 

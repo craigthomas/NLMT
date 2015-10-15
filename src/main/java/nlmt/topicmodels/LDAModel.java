@@ -20,6 +20,7 @@ import nlmt.datatypes.Document;
 import nlmt.datatypes.IdentifierObjectMapper;
 import nlmt.probfunctions.PMFSampler;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
  * Simple implementation of Latent Dirichlet Allocation using Gibbs
  * Sampling.
  */
-public class LDAModel
+public class LDAModel implements Serializable
 {
     // The number of topics to produce, topicIndex will range from
     // 0 to numTopics

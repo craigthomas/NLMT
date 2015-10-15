@@ -15,6 +15,7 @@
  */
 package nlmt.probfunctions;
 
+import java.io.Serializable;
 import java.util.Random;
 
 import static java.lang.Math.exp;
@@ -37,7 +38,7 @@ import static java.lang.Math.exp;
  *
  * If the random value drawn was 1.543, then index 1 would be returned.
  */
-public class PMFSampler
+public class PMFSampler implements Serializable
 {
     private double [] weights;
     private double total;

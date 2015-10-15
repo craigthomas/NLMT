@@ -15,6 +15,7 @@
  */
 package nlmt.datatypes;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -24,8 +25,8 @@ import java.util.Set;
  * specific object. It also maintains the reverse mapping of an object
  * with a specific identifier.
  */
-public class IdentifierObjectMapper<T> {
-
+public class IdentifierObjectMapper<T extends Serializable> implements Serializable
+{
     // Maps an object to a number
     private Map<T, Integer> objectIndexMap;
 

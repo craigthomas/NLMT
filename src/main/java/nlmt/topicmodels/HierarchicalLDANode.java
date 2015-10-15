@@ -20,13 +20,15 @@ import nlmt.datatypes.IdentifierObjectMapper;
 import nlmt.datatypes.Word;
 
 import static java.lang.Math.log;
+
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * Implements a node on the tree formed by the Nested Chinese Restaurant Problem.
  */
-public class HierarchicalLDANode
+public class HierarchicalLDANode implements Serializable
 {
     // The identifier for the node - becomes the topic number
     private int id;
