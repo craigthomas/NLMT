@@ -91,7 +91,7 @@ public class Document
      * @param topicIndex the topic to assign
      */
     public void setTopicForWord(int wordIndex, int topicIndex) {
-        if (wordIndex > wordArray.size() - 1 || wordIndex < 0) {
+        if ((wordIndex > wordArray.size() - 1) || (wordIndex < 0)) {
             throw new IllegalArgumentException("wordIndex must be >= 0 or <= " + (wordArray.size() - 1));
         }
         wordArray.get(wordIndex).setTopic(topicIndex);

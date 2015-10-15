@@ -334,7 +334,7 @@ public class HierarchicalLDAModel
     protected void chooseLevelsForDocument(SparseDocument document, HierarchicalLDAPath path, boolean randomize) {
         Set<Word> words = document.getWordSet();
         for (Word word : words) {
-            int level = randomize ? random.nextInt(maxDepth) : chooseNewLevelForWord(document, word, path);
+            int level = (randomize) ? random.nextInt(maxDepth) : chooseNewLevelForWord(document, word, path);
             path.getNode(level).addWord(word);
             word.setTopic(level);
         }
@@ -515,9 +515,7 @@ public class HierarchicalLDAModel
 
         // If the caller doesn't want new nodes generated, set gamma to a very low value
         double oldGamma = gamma;
-        if (overrideGamma) {
-            gamma = 0.00000000000000001;
-        }
+        gamma = (overrideGamma) ? 0.00000000000000001 : gamma;
 
         // Read the document
         SparseDocument newDocument = new SparseDocument(vocabulary);
