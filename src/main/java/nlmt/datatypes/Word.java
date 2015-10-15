@@ -39,6 +39,9 @@ public class Word implements Serializable
     private int topic;
 
     public Word(String rawWord, int vocabularyId) {
+        if (rawWord == null) {
+            throw new IllegalArgumentException("rawWord cannot be null");
+        }
         this.vocabularyId = vocabularyId;
         this.rawWord = rawWord;
         totalCount = 1;
@@ -97,5 +100,27 @@ public class Word implements Serializable
      */
     public int getVocabularyId() {
         return vocabularyId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Word word = (Word) o;
+
+        if (getVocabularyId() != word.getVocabularyId()) return false;
+        if (getTotalCount() != word.getTotalCount()) return false;
+        return getTopic() == word.getTopic() && getRawWord().equals(word.getRawWord());
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getVocabularyId();
+        result = 31 * result + getRawWord().hashCode();
+        result = 31 * result + getTotalCount();
+        result = 31 * result + getTopic();
+        return result;
     }
 }

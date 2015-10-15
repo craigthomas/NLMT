@@ -942,11 +942,15 @@ public class HierarchicalLDAModelTest {
             ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serializedObjectArray);
             ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
             HierarchicalLDAModel deserializedModel = (HierarchicalLDAModel) objectInputStream.readObject();
+            assertThat(deserializedModel.documents[0], is(equalTo(hierarchicalLDAModel.documents[0])));
+            assertThat(deserializedModel.documents[1], is(equalTo(hierarchicalLDAModel.documents[1])));
+            assertThat(deserializedModel.documents[2], is(equalTo(hierarchicalLDAModel.documents[2])));
             assertThat(deserializedModel.gamma, is(equalTo(2.0)));
             assertThat(deserializedModel.rootNode.getDocumentsVisitingNode().contains(2), is(true));
             HierarchicalLDANode deserializedChild0 = deserializedModel.rootNode.getChildren().get(0);
-            HierarchicalLDANode deserializedChild0 = deserializedModel.rootNode.getChildren().get(0);
-
+            HierarchicalLDANode deserializedChild1 = deserializedModel.rootNode.getChildren().get(1);
+            assertThat(deserializedChild0.getDocumentsVisitingNode(), is(equalTo(child0.getDocumentsVisitingNode())));
+            assertThat(deserializedChild1.getDocumentsVisitingNode(), is(equalTo(child1.getDocumentsVisitingNode())));
         } catch (IOException e) {
             assertFalse("IOException occurred: " + e.getMessage(), true);
         } catch (ClassNotFoundException e) {

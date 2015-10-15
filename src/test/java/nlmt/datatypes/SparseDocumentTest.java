@@ -33,10 +33,70 @@ public class SparseDocumentTest
 {
     private SparseDocument sparseDocument;
     private IdentifierObjectMapper<String> vocabulary;
+    private List<String> simpleDocument;
 
     @Before
     public void setUp() {
         vocabulary = new IdentifierObjectMapper<>();
+        simpleDocument = new ArrayList<>();
+        simpleDocument.add("this");
+        simpleDocument.add("is");
+        simpleDocument.add("a");
+        simpleDocument.add("test");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testVocabularyNullOnInitThrowsException() {
+        new SparseDocument(null);
+    }
+
+    @Test
+    public void testDocumentEqualityNullDocument() {
+        sparseDocument = new SparseDocument(vocabulary);
+        assertThat(sparseDocument.equals(null), is(false));
+    }
+
+    @Test
+    public void testDocumentEqualityEmptyDocumentsReturnsTrue() {
+        sparseDocument = new SparseDocument(vocabulary);
+        SparseDocument sparseDocument1 = new SparseDocument(vocabulary);
+        assertThat(sparseDocument.equals(sparseDocument1), is(true));
+    }
+
+    @Test
+    public void testDocumentEqualityDifferentVocabulariesReturnsFalse() {
+        sparseDocument = new SparseDocument(vocabulary);
+        sparseDocument.readDocument(simpleDocument);
+
+        IdentifierObjectMapper<String> vocabulary1 = new IdentifierObjectMapper<>();
+        SparseDocument sparseDocument1 = new SparseDocument(vocabulary1);
+        sparseDocument1.readDocument(simpleDocument);
+
+        assertThat(sparseDocument.equals(sparseDocument1), is(false));
+    }
+
+    @Test
+    public void testDocumentEqualitySameVocabulariesReturnsTrue() {
+        sparseDocument = new SparseDocument(vocabulary);
+        sparseDocument.readDocument(simpleDocument);
+
+        SparseDocument sparseDocument1 = new SparseDocument(vocabulary);
+        sparseDocument1.readDocument(simpleDocument);
+
+        assertThat(sparseDocument.equals(sparseDocument1), is(true));
+    }
+
+    @Test
+    public void testDocumentEqualitySameVocabulariesDifferentWordsReturnsTrue() {
+        sparseDocument = new SparseDocument(vocabulary);
+        sparseDocument.readDocument(simpleDocument);
+
+        SparseDocument sparseDocument1 = new SparseDocument(vocabulary);
+        List<String> differentDocument = new ArrayList<>();
+        differentDocument.add("different");
+        sparseDocument1.readDocument(differentDocument);
+
+        assertThat(sparseDocument.equals(sparseDocument1), is(false));
     }
 
     @Test

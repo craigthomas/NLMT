@@ -34,6 +34,9 @@ public class SparseDocument implements Serializable
     private IdentifierObjectMapper<String> vocabulary;
 
     public SparseDocument(IdentifierObjectMapper<String> vocabulary) {
+        if (vocabulary == null) {
+            throw new IllegalArgumentException("vocabulary cannot be null");
+        }
         this.vocabulary = vocabulary;
         wordMap = new HashMap<>();
     }
@@ -144,5 +147,22 @@ public class SparseDocument implements Serializable
         return wordMap.values().stream()
                 .filter(word -> word.getTopic() == topic)
                 .collect(Collectors.groupingBy(Word::getVocabularyId, Collectors.summingInt(Word::getTotalCount)));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SparseDocument that = (SparseDocument) o;
+
+        return wordMap.equals(that.wordMap) && vocabulary.equals(that.vocabulary);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = wordMap.hashCode();
+        result = 31 * result + vocabulary.hashCode();
+        return result;
     }
 }

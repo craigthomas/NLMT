@@ -142,9 +142,28 @@ public class IdentifierObjectMapper<T extends Serializable> implements Serializa
      */
     public void deleteIndex(int index) {
         if (indexObjectMap.containsKey(index)) {
-            Object objectToDelete = indexObjectMap.get(index);
+            T objectToDelete = indexObjectMap.get(index);
             objectIndexMap.remove(objectToDelete);
             indexObjectMap.remove(index);
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        IdentifierObjectMapper<?> that = (IdentifierObjectMapper<?>) o;
+
+        return nextIndex == that.nextIndex && objectIndexMap.equals(that.objectIndexMap) && indexObjectMap.equals(that.indexObjectMap);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = objectIndexMap.hashCode();
+        result = 31 * result + indexObjectMap.hashCode();
+        result = 31 * result + nextIndex;
+        return result;
     }
 }

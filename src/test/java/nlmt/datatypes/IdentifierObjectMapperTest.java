@@ -47,6 +47,41 @@ public class IdentifierObjectMapperTest {
     }
 
     @Test
+    public void testMapperEqualityToNull() {
+        assertThat(mapper.equals(null), is(false));
+    }
+
+    @Test
+    public void testEmptyMappersEqual() {
+        IdentifierObjectMapper<String> mapper1 = new IdentifierObjectMapper<>();
+        assertThat(mapper.equals(mapper1), is(true));
+    }
+
+    @Test
+    public void testMappersWithSameObjectsEqual() {
+        mapper.addObject("test");
+        IdentifierObjectMapper<String> mapper1 = new IdentifierObjectMapper<>();
+        mapper1.addObject("test");
+        assertThat(mapper.equals(mapper1), is(true));
+    }
+
+    @Test
+    public void testMappersWithDifferentObjectsNotEqual() {
+        mapper.addObject("test");
+        IdentifierObjectMapper<String> mapper1 = new IdentifierObjectMapper<>();
+        mapper1.addObject("test1");
+        assertThat(mapper.equals(mapper1), is(false));
+    }
+
+    @Test
+    public void testMappersDifferentTypesNotEqual() {
+        mapper.addObject("test");
+        IdentifierObjectMapper<Integer> mapper1 = new IdentifierObjectMapper<>();
+        mapper1.addObject(1);
+        assertThat(mapper.equals(mapper1), is(false));
+    }
+
+    @Test
     public void testGetIndexFromObjectReturnsNegativeOneOnEmptyMapper() {
         assertThat(mapper.getIndexFromObject("nothing"), is(equalTo(-1)));
     }

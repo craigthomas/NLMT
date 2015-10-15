@@ -18,9 +18,7 @@ package nlmt.datatypes;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -34,17 +32,77 @@ public class DocumentTest {
 
     private IdentifierObjectMapper<String> vocabulary;
     private Document document;
+    private List<String> simpleDocument;
 
     @Before
     public void setUp() {
         vocabulary = new IdentifierObjectMapper<>();
         document = new Document(vocabulary);
+        simpleDocument = new ArrayList<>();
+        simpleDocument.add("this");
+        simpleDocument.add("is");
+        simpleDocument.add("a");
+        simpleDocument.add("test");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testDocumentInitWithNullVocabularyThrowsException() {
+        new Document(null);
     }
 
     @Test
     public void testDocumentArraysEmptyOnInit() {
         assertThat(document.getTopicArray().length, is(equalTo(0)));
         assertThat(document.getWordArray().length, is(equalTo(0)));
+    }
+
+    @Test
+    public void testDocumentEqualityNullDocument() {
+        document = new Document(vocabulary);
+        assertThat(document.equals(null), is(false));
+    }
+
+    @Test
+    public void testDocumentEqualityEmptyDocumentsReturnsTrue() {
+        document = new Document(vocabulary);
+        Document document1 = new Document(vocabulary);
+        assertThat(document.equals(document1), is(true));
+    }
+
+    @Test
+    public void testDocumentEqualityDifferentVocabulariesReturnsFalse() {
+        document = new Document(vocabulary);
+        document.readDocument(simpleDocument);
+
+        IdentifierObjectMapper<String> vocabulary1 = new IdentifierObjectMapper<>();
+        Document document1 = new Document(vocabulary1);
+        document1.readDocument(simpleDocument);
+
+        assertThat(document.equals(document1), is(false));
+    }
+
+    @Test
+    public void testDocumentEqualitySameVocabulariesReturnsTrue() {
+        document = new Document(vocabulary);
+        document.readDocument(simpleDocument);
+
+        Document document1 = new Document(vocabulary);
+        document1.readDocument(simpleDocument);
+
+        assertThat(document.equals(document1), is(true));
+    }
+
+    @Test
+    public void testDocumentEqualitySameVocabulariesDifferentWordsReturnsTrue() {
+        document = new Document(vocabulary);
+        document.readDocument(simpleDocument);
+
+        Document document1 = new Document(vocabulary);
+        List<String> differentDocument = new ArrayList<>();
+        differentDocument.add("different");
+        document1.readDocument(differentDocument);
+
+        assertThat(document.equals(document1), is(false));
     }
 
     @Test
