@@ -27,10 +27,15 @@ import java.util.List;
  * from the front of the queue (highest priority) to rear of the queue
  * (lowest priority).
  */
-public class BoundedPriorityQueue<T> {
-
+public class BoundedPriorityQueue<T>
+{
+    // The priorities for each element in the queue
     private List<Integer> priorities;
+
+    // The actual elements in the queue
     private List<T> elements;
+
+    // The total size of the queue
     private int size;
 
     public BoundedPriorityQueue(int size) {
@@ -51,26 +56,42 @@ public class BoundedPriorityQueue<T> {
      */
     public void add(int priority, T id) {
         if (priorities.isEmpty()) {
-            priorities.add(priority);
-            elements.add(id);
+            addAtPosition(0, priority, id);
             return;
         }
 
         for (int index = 0; index < priorities.size(); index++) {
             if (priority >= priorities.get(index)) {
-                priorities.add(index, priority);
-                elements.add(index, id);
-                if (priorities.size() == size) {
-                    priorities.remove(size - 1);
-                    elements.remove(size - 1);
-                }
+                addAtPosition(index, priority, id);
+                trimQueue();
                 return;
             }
         }
 
-        if (priorities.size() < size - 1) {
-            priorities.add(priority);
-            elements.add(id);
+        priorities.add(priority);
+        elements.add(id);
+        trimQueue();
+    }
+
+    /**
+     * Adds the element at the specified position.
+     *
+     * @param position the position in the queue to add the element to
+     * @param priority the priority of the element
+     * @param id the id of the element
+     */
+    private void addAtPosition(int position, int priority, T id) {
+        priorities.add(position, priority);
+        elements.add(position, id);
+    }
+
+    /**
+     * Trims the queue by removing items that are larger than the queue can hold.
+     */
+    private void trimQueue() {
+        if (priorities.size() == size) {
+            priorities.remove(size - 1);
+            elements.remove(size - 1);
         }
     }
 

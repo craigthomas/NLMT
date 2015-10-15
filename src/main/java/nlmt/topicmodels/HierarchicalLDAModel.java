@@ -85,7 +85,7 @@ public class HierarchicalLDAModel
     protected HierarchicalLDANode rootNode;
 
     // Used to sample from various distributions
-    PMFSampler pmfSampler;
+    private PMFSampler pmfSampler;
 
     // The default depth of the tree
     public final static int DEFAULT_MAX_DEPTH = 3;
@@ -161,54 +161,12 @@ public class HierarchicalLDAModel
      * document to one of the nodes in the path.
      */
     public void initialize() {
-
         for (int documentIndex = 0; documentIndex < documents.length; documentIndex++) {
-            rootNode.setVisited(documentIndex);
-        }
-
-        for (int documentIndex = 0; documentIndex < documents.length; documentIndex++) {
+            List<Integer> newPath = chooseRandomPath(true);
             documentPaths[documentIndex] = new HierarchicalLDAPath(rootNode, maxDepth);
-            HierarchicalLDAPath path = documentPaths[documentIndex];
-
-            // For each document, generate a path through the tree starting at the root node,
-            // to a depth of maxDepth. Starting at the root node, check the popularity rating
-            // of its children, and choose based on popularity the next node in the path
-            List<Integer> newPath = new ArrayList<>();
-            newPath.add(rootNode.getId());
-            HierarchicalLDANode parent = rootNode;
-            for (int level = 1; level < maxDepth; level++) {
-                if (parent == null || parent.getNumChildren() == 0) {
-                    newPath.add(-1);
-                } else {
-                    List<HierarchicalLDANode> children = parent.getChildren();
-                    PMFSampler sampler = new PMFSampler(children.size() + 1);
-                    for (HierarchicalLDANode child : children) {
-                        double weight = child.getNumDocumentsVisitingNode() / (documents.length - 1 + gamma);
-                        sampler.add(weight);
-                    }
-                    sampler.add(gamma / (documents.length - 1 + gamma));
-                    int pathComponent = sampler.sample();
-                    if (pathComponent == children.size()) {
-                        newPath.add(-1);
-                        parent = null;
-                    } else {
-                        newPath.add(children.get(pathComponent).getId());
-                        parent = children.get(pathComponent);
-                    }
-                }
-            }
-
-            // Generate the new path through the tree
-            path.addPath(newPath, nodeMapper);
-            path.addDocument(documentIndex);
-
-            // For every word in the document, assign it to a random node in the path
-            Set<Word> words = documents[documentIndex].getWordSet();
-            for (Word word : words) {
-                int level = random.nextInt(maxDepth);
-                path.getNode(level).addWord(word);
-                word.setTopic(level);
-            }
+            documentPaths[documentIndex].addPath(newPath, nodeMapper);
+            documentPaths[documentIndex].addDocument(documentIndex);
+            chooseLevelsForDocument(documents[documentIndex], documentPaths[documentIndex], true);
         }
     }
 
@@ -302,6 +260,47 @@ public class HierarchicalLDAModel
     }
 
     /**
+     * Generate a random path through the tree. The path is only based on the number of documents
+     * that have already visited the various nodes in the tree. The resulting object is a list
+     * of node ids through the randomly generated path. The new path is always rooted at the root
+     * node. If <code>allowNodeCreation</code> is <code>true</code>, then new nodes may be generated.
+     *
+     * @param allowNodeCreation if true, allows new nodes to be created
+     *
+     * @return a List of node ids through the randomly generated path
+     */
+    protected List<Integer> chooseRandomPath(boolean allowNodeCreation) {
+        List<Integer> newPath = new ArrayList<>();
+        newPath.add(rootNode.getId());
+        HierarchicalLDANode parent = rootNode;
+        int additionalChildren = allowNodeCreation ? 1 : 0;
+        for (int level = 1; level < maxDepth; level++) {
+            if (parent == null || parent.getNumChildren() == 0) {
+                newPath.add(-1);
+            } else {
+                List<HierarchicalLDANode> children = parent.getChildren();
+                PMFSampler sampler = new PMFSampler(children.size() + additionalChildren);
+                for (HierarchicalLDANode child : children) {
+                    double weight = child.getNumDocumentsVisitingNode() / (documents.length - 1 + gamma);
+                    sampler.add(weight);
+                }
+                if (allowNodeCreation) {
+                    sampler.add(gamma / (documents.length - 1 + gamma));
+                }
+                int pathComponent = sampler.sample();
+                if (pathComponent == children.size()) {
+                    newPath.add(-1);
+                    parent = null;
+                } else {
+                    newPath.add(children.get(pathComponent).getId());
+                    parent = children.get(pathComponent);
+                }
+            }
+        }
+        return newPath;
+    }
+
+    /**
      * Determines what topic the word should belong to given the current topic counts
      * in the specified document. It looks at the nodes (topics or topic clusters) in
      * the path, and chooses one based upon the word distributions. This works identically
@@ -323,6 +322,22 @@ public class HierarchicalLDAModel
             pmfSampler.add(wordProbabilities[level] * levelProbabilities[level]);
         }
         return pmfSampler.sample();
+    }
+
+    /**
+     * For each word in a document, assign it a level in the path. If randomize is true, then
+     * the level selection will be randomized.
+     *
+     * @param document the document with the words
+     * @param path the path through the tree
+     */
+    protected void chooseLevelsForDocument(SparseDocument document, HierarchicalLDAPath path, boolean randomize) {
+        Set<Word> words = document.getWordSet();
+        for (Word word : words) {
+            int level = (randomize) ? random.nextInt(maxDepth) : chooseNewLevelForWord(document, word, path);
+            path.getNode(level).addWord(word);
+            word.setTopic(level);
+        }
     }
 
     /**
@@ -414,16 +429,10 @@ public class HierarchicalLDAModel
             //word.setTopic(-1);
         }
 
-        // Assign the new path
+        // Assign the new path, and choose new levels for the words
         path.addPath(newPath, nodeMapper);
         path.addDocument(documentId);
-
-        // For every word in the document, assign a new level in the path
-        for (Word word : words) {
-            int newLevel = chooseNewLevelForWord(document, word, path);
-            word.setTopic(newLevel);
-            path.getNode(newLevel).addWord(word);
-        }
+        chooseLevelsForDocument(document, path, false);
     }
 
     /**
@@ -504,38 +513,21 @@ public class HierarchicalLDAModel
             return Pair.of(new ArrayList<>(), new ArrayList<>());
         }
 
-        SparseDocument newDocument = new SparseDocument(vocabulary);
-        newDocument.readDocument(document);
-        HierarchicalLDAPath newDocumentPath = new HierarchicalLDAPath(rootNode, maxDepth);
-        int temporaryDocumentId = documents.length;
-
-        // Allocate the new document to a random path
-        HierarchicalLDANode parent = rootNode;
-        for (int level = 1; level < maxDepth; level++) {
-            List<HierarchicalLDANode> children = parent.getChildren();
-            PMFSampler sampler = new PMFSampler(children.size());
-            for (HierarchicalLDANode child : children) {
-                double weight = child.getNumDocumentsVisitingNode() / (documents.length - 1 + gamma);
-                sampler.add(weight);
-            }
-            int pathComponent = sampler.sample();
-            newDocumentPath.addNode(children.get(pathComponent));
-            parent = children.get(pathComponent);
-        }
-
-        // Allocate each word in the document to a level in the path
-        newDocumentPath.addDocument(temporaryDocumentId);
-        for (Word word : newDocument.getWordSet()) {
-            int randomLevel = random.nextInt(maxDepth);
-            newDocumentPath.getNode(randomLevel).addWord(word);
-            word.setTopic(randomLevel);
-        }
-
         // If the caller doesn't want new nodes generated, set gamma to a very low value
         double oldGamma = gamma;
-        if (overrideGamma) {
-            gamma = 0.000000000001;
-        }
+        gamma = (overrideGamma) ? 0.00000000000000001 : gamma;
+
+        // Read the document
+        SparseDocument newDocument = new SparseDocument(vocabulary);
+        newDocument.readDocument(document);
+        int temporaryDocumentId = documents.length;
+
+        // Allocate the new document to a random path, and allocate words in the document to the path
+        HierarchicalLDAPath newDocumentPath = new HierarchicalLDAPath(rootNode, maxDepth);
+        List<Integer> newPath = chooseRandomPath(false);
+        newDocumentPath.addPath(newPath, nodeMapper);
+        newDocumentPath.addDocument(temporaryDocumentId);
+        chooseLevelsForDocument(newDocument, newDocumentPath, true);
 
         // Perform gibbs sampling but only for the current document
         for (int iteration = 0; iteration < numIterations; iteration++) {
@@ -546,7 +538,7 @@ public class HierarchicalLDAModel
         gamma = oldGamma;
 
         // Figure out the word distributions
-        List<Integer> pathNodeIds = Arrays.stream(newDocumentPath.getNodes()).map(node -> node.getId()).collect(Collectors.toList());
+        List<Integer> pathNodeIds = Arrays.stream(newDocumentPath.getNodes()).map(HierarchicalLDANode::getId).collect(Collectors.toList());
         Map<Integer, Integer> wordCountsByTopic = newDocument.getTopicCounts();
         int totalWords = wordCountsByTopic.values().stream().mapToInt(value -> value).sum();
         List<Double> wordDistributions = new ArrayList<>();
