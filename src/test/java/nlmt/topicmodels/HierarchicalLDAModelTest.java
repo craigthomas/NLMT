@@ -1027,6 +1027,30 @@ public class HierarchicalLDAModelTest {
     }
 
     @Test
+    public void testGetHierarchyComplexExampleWorksCorrectly() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.rootNode = new HierarchicalLDANode(null, 1);        // node 0
+        HierarchicalLDANode node1 = hierarchicalLDAModel.rootNode.spawnChild(1); // node 1
+        HierarchicalLDANode node2 = hierarchicalLDAModel.rootNode.spawnChild(1); // node 2
+        HierarchicalLDANode node3 = node2.spawnChild(2);                         // node 3
+        HierarchicalLDANode node4 = node3.spawnChild(3);                         // node 4
+
+        hierarchicalLDAModel.rootNode.setId(hierarchicalLDAModel.nodeMapper.addObject(hierarchicalLDAModel.rootNode));
+        node1.setId(hierarchicalLDAModel.nodeMapper.addObject(node1));
+        node2.setId(hierarchicalLDAModel.nodeMapper.addObject(node2));
+        node3.setId(hierarchicalLDAModel.nodeMapper.addObject(node3));
+        node4.setId(hierarchicalLDAModel.nodeMapper.addObject(node4));
+
+        Map<Integer, List<Integer>> expected = new HashMap<>();
+        expected.put(0, Arrays.asList(1, 2));
+        expected.put(1, new ArrayList<>());
+        expected.put(2, Collections.singletonList(3));
+        expected.put(3, Collections.singletonList(4));
+        expected.put(4, new ArrayList<>());
+        assertThat(hierarchicalLDAModel.getHierarchy(), is(equalTo(expected)));
+    }
+
+    @Test
     public void testSerializationRoundTrip() {
         hierarchicalLDAModel = new HierarchicalLDAModel(3, 2.0,
                 new double [] {0.1, 0.1, 2.0}, 0.99, 1.0);

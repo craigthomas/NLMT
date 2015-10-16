@@ -573,6 +573,15 @@ public class HierarchicalLDAModel implements Serializable
         return Pair.of(pathNodeIds, wordDistributions);
     }
 
+    /**
+     * Retrieves the hierarchy for the tree.
+     *
+     * @return the hierarchy for the tree
+     */
+    public Map<Integer, List<Integer>> getHierarchy() {
+        return HierarchicalLDANode.generateMap(nodeMapper);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
