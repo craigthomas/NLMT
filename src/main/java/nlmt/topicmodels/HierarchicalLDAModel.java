@@ -152,7 +152,9 @@ public class HierarchicalLDAModel implements Serializable
         }
 
         documentPaths = new HierarchicalLDAPath[documents.size()];
-        rootNode = new HierarchicalLDANode(vocabulary.size(), nodeMapper);
+        rootNode = new HierarchicalLDANode(null, vocabulary.size());
+        int rootId = nodeMapper.addObject(rootNode);
+        rootNode.setId(rootId);
     }
 
     /**

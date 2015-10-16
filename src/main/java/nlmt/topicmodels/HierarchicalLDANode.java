@@ -48,9 +48,6 @@ public class HierarchicalLDANode implements Serializable
     // The set of documents that have visited this node in a path
     protected Set<Integer> documentsVisitingNode;
 
-    // The mapper responsible for mapping nodes to indices
-    private IdentifierObjectMapper<HierarchicalLDANode> nodeMapper;
-
     // The total number of documents that have visited the node
     private int numDocumentsVisitingNode;
 
@@ -72,23 +69,15 @@ public class HierarchicalLDANode implements Serializable
      * Alternate constructor used to create a node with no parent. Nodes
      * without parents are considered to be root nodes.
      *
-     * @param nodeMapper the mapping of nodes to IDs
+     * @param parent the parent of this node
+     * @param vocabularySize the size of the vocabulary
      */
-    public HierarchicalLDANode(int vocabularySize, IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
-        this(null, vocabularySize, nodeMapper);
-    }
-
-    public HierarchicalLDANode(HierarchicalLDANode parent, int vocabularySize, IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
-        if (nodeMapper == null) {
-            throw new IllegalArgumentException("nodeMapper cannot be null");
-        }
+    public HierarchicalLDANode(HierarchicalLDANode parent, int vocabularySize) {
         this.parent = parent;
-        this.nodeMapper = nodeMapper;
         internalId = UUID.randomUUID();
         children = new ArrayList<>();
         documentsVisitingNode = new HashSet<>();
         numChildren = 0;
-        id = nodeMapper.addObject(this);
         numDocumentsVisitingNode = 0;
         level = 0;
         wordCounts = new int[vocabularySize];
@@ -120,7 +109,7 @@ public class HierarchicalLDANode implements Serializable
      * @return the newly spawned node
      */
     public HierarchicalLDANode spawnChild(int level) {
-        HierarchicalLDANode child = new HierarchicalLDANode(this, wordCounts.length, nodeMapper);
+        HierarchicalLDANode child = new HierarchicalLDANode(this, wordCounts.length);
         child.setLevel(level);
         children.add(child);
         numChildren++;
@@ -195,6 +184,15 @@ public class HierarchicalLDANode implements Serializable
      */
     public int getId() {
         return id;
+    }
+
+    /**
+     * Sets the Id of this node (which is basically the topic number).
+     *
+     * @param id the topic number for the node
+     */
+    public void setId(int id) {
+        this.id = id;
     }
 
     /**

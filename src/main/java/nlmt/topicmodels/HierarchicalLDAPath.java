@@ -200,7 +200,10 @@ public class HierarchicalLDAPath implements Serializable
             if (nodeId != -1) {
                 addNode(nodeMapper.getObjectFromIndex(nodeId));
             } else {
-                addNode(getCurrentNode().spawnChild(level));
+                HierarchicalLDANode newNode = getCurrentNode().spawnChild(level);
+                int newNodeId = nodeMapper.addObject(newNode);
+                newNode.setId(newNodeId);
+                addNode(newNode);
             }
         }
     }
