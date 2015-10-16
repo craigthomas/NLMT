@@ -17,13 +17,15 @@ package nlmt.topicmodels;
 
 import nlmt.datatypes.IdentifierObjectMapper;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
  * Represents a path through a Hierarchical LDA Tree.
  */
-public class HierarchicalLDAPath
+public class HierarchicalLDAPath implements Serializable
 {
     // The nodes in the path
     private HierarchicalLDANode [] nodes;
@@ -198,8 +200,33 @@ public class HierarchicalLDAPath
             if (nodeId != -1) {
                 addNode(nodeMapper.getObjectFromIndex(nodeId));
             } else {
-                addNode(getCurrentNode().spawnChild(level));
+                HierarchicalLDANode newNode = getCurrentNode().spawnChild(level);
+                int newNodeId = nodeMapper.addObject(newNode);
+                newNode.setId(newNodeId);
+                addNode(newNode);
             }
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        HierarchicalLDAPath that = (HierarchicalLDAPath) o;
+
+        if (maxDepth != that.maxDepth) return false;
+        if (currentDepth != that.currentDepth) return false;
+        // Probably incorrect - comparing Object[] arrays with Arrays.equals
+        return Arrays.equals(getNodes(), that.getNodes());
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getNodes() != null ? Arrays.hashCode(getNodes()) : 0;
+        result = 31 * result + maxDepth;
+        result = 31 * result + currentDepth;
+        return result;
     }
 }

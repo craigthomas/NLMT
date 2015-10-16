@@ -21,6 +21,7 @@ import nlmt.datatypes.Word;
 import nlmt.probfunctions.PMFSampler;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,7 +49,7 @@ import static org.apache.commons.math3.special.Gamma.logGamma;
  * the document to a node as normal Latent Dirichlet Allocation would work (the
  * number of topics is equal to the total length of the path).
  */
-public class HierarchicalLDAModel
+public class HierarchicalLDAModel implements Serializable
 {
     // Keeps track of how deep the tree can become
     private int maxDepth;
@@ -151,7 +152,9 @@ public class HierarchicalLDAModel
         }
 
         documentPaths = new HierarchicalLDAPath[documents.size()];
-        rootNode = new HierarchicalLDANode(vocabulary.size(), nodeMapper);
+        rootNode = new HierarchicalLDANode(null, vocabulary.size());
+        int rootId = nodeMapper.addObject(rootNode);
+        rootNode.setId(rootId);
     }
 
     /**
@@ -474,18 +477,23 @@ public class HierarchicalLDAModel
      * @param numWords the number of words to print per line
      */
     public String prettyPrintNode(HierarchicalLDANode node, int indentationLevel, int numWords) {
-        String indents = "";
-        String result = "";
+        StringBuilder result = new StringBuilder();
+        StringBuilder indents = new StringBuilder();
         for (int i = 0; i <= indentationLevel; i++) {
-            indents += "-";
+            indents.append("-");
         }
-        result += indents + " Node " + node.getId() + ": ";
-        result += node.getNumDocumentsVisitingNode() + " docs, words: ";
-        result += node.getTopWords(numWords, vocabulary) + "\n";
+        result.append(indents);
+        result.append(" Node ");
+        result.append(node.getId());
+        result.append(": ");
+        result.append(node.getNumDocumentsVisitingNode());
+        result.append(" docs, words: ");
+        result.append(node.getTopWords(numWords, vocabulary));
+        result.append("\n");
         for (HierarchicalLDANode child : node.getChildren()) {
-            result += prettyPrintNode(child, indentationLevel + 2, numWords);
+            result.append(prettyPrintNode(child, indentationLevel + 2, numWords));
         }
-        return result;
+        return result.toString();
     }
 
     /**
@@ -563,5 +571,47 @@ public class HierarchicalLDAModel
         // Delete any empty nodes that exist after removing the words and documents
         HierarchicalLDANode.deleteEmptyNodes(nodeMapper);
         return Pair.of(pathNodeIds, wordDistributions);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        HierarchicalLDAModel that = (HierarchicalLDAModel) o;
+
+        if (maxDepth != that.maxDepth) return false;
+        if (Double.compare(that.gamma, gamma) != 0) return false;
+        if (Double.compare(that.m, m) != 0) return false;
+        if (Double.compare(that.pi, pi) != 0) return false;
+        if (!Arrays.equals(eta, that.eta)) return false;
+        // Probably incorrect - comparing Object[] arrays with Arrays.equals
+        if (!Arrays.equals(documents, that.documents)) return false;
+        if (!vocabulary.equals(that.vocabulary)) return false;
+        if (!nodeMapper.equals(that.nodeMapper)) return false;
+        // Probably incorrect - comparing Object[] arrays with Arrays.equals
+        if (!Arrays.equals(documentPaths, that.documentPaths)) return false;
+        return !(rootNode != null ? !rootNode.equals(that.rootNode) : that.rootNode != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result;
+        long temp;
+        result = maxDepth;
+        temp = Double.doubleToLongBits(gamma);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        result = 31 * result + Arrays.hashCode(eta);
+        temp = Double.doubleToLongBits(m);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(pi);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        result = 31 * result + (documents != null ? Arrays.hashCode(documents) : 0);
+        result = 31 * result + vocabulary.hashCode();
+        result = 31 * result + nodeMapper.hashCode();
+        result = 31 * result + (documentPaths != null ? Arrays.hashCode(documentPaths) : 0);
+        result = 31 * result + (rootNode != null ? rootNode.hashCode() : 0);
+        return result;
     }
 }

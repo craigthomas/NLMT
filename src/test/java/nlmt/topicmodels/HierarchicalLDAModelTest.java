@@ -19,15 +19,18 @@ import nlmt.datatypes.IdentifierObjectMapper;
 import nlmt.datatypes.SparseDocument;
 import nlmt.datatypes.Word;
 import org.apache.commons.lang3.tuple.Pair;
+import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.*;
 import java.util.*;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -112,25 +115,89 @@ public class HierarchicalLDAModelTest {
                 -1.0, HierarchicalLDAModel.DEFAULT_ETA, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
     }
 
-//    @Test
-//    public void testReadDocumentsWorksCorrectly() {
-//        hierarchicalLDAModel = new HierarchicalLDAModel();
-//        hierarchicalLDAModel.readDocuments(documents);
-//        assertThat(hierarchicalLDAModel.documents.length, is(equalTo(3)));
-//        assertThat(hierarchicalLDAModel.vocabulary.size(), is(equalTo(12)));
-//        int [] expectedDocument1 = {0, 1, 2, 3, 4};
-//        int [] expectedDocument2 = {5, 6, 7, 8, 5, 9};
-//        int [] expectedDocument3 = {5, 10, 11, 5, 6};
-//        assertThat(hierarchicalLDAModel.documents[0].getWordArray(), is(equalTo(expectedDocument1)));
-//        assertThat(hierarchicalLDAModel.documents[1].getWordArray(), is(equalTo(expectedDocument2)));
-//        assertThat(hierarchicalLDAModel.documents[2].getWordArray(), is(equalTo(expectedDocument3)));
-//        int [] expectedTopics1 = {-1, -1, -1, -1, -1};
-//        int [] expectedTopics2 = {-1, -1, -1, -1, -1, -1};
-//        int [] expectedTopics3 = {-1, -1, -1, -1, -1};
-//        assertThat(hierarchicalLDAModel.documents[0].getTopicArray(), is(equalTo(expectedTopics1)));
-//        assertThat(hierarchicalLDAModel.documents[1].getTopicArray(), is(equalTo(expectedTopics2)));
-//        assertThat(hierarchicalLDAModel.documents[2].getTopicArray(), is(equalTo(expectedTopics3)));
-//    }
+    @Test
+    public void testEqualsNullWorksCorrectly() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        assertThat(hierarchicalLDAModel.equals(null), is(false));
+    }
+
+    @Test
+    public void testEqualsOnInitIsTrue() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel();
+        assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(true));
+        assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(true));
+    }
+
+    @Test
+    public void testEqualsDifferentGammaIsFalse() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, 2.0,
+                HierarchicalLDAModel.DEFAULT_ETA, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
+        assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
+        assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testEqualsDifferentMaxDepthIsFalse() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
+                HierarchicalLDAModel.DEFAULT_ETA, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
+        assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
+        assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testEqualsDifferentEtaIsFalse() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
+                new double [] {0.1, 0.1, 0.1}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
+        assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
+        assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testEqualsDifferentMIsFalse() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
+                HierarchicalLDAModel.DEFAULT_ETA, 0.2, HierarchicalLDAModel.DEFAULT_PI);
+        assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
+        assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testEqualsDifferentPiIsFalse() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
+                HierarchicalLDAModel.DEFAULT_ETA, HierarchicalLDAModel.DEFAULT_M, 10.0);
+        assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
+        assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testEqualsDifferentDocumentsIsFalse() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(documents);
+
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel();
+        hierarchicalLDAModel1.readDocuments(fiveWordDocument);
+
+        assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
+        assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testEqualsDifferentPathsIsFalse() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(documents);
+
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel();
+        hierarchicalLDAModel1.readDocuments(documents);
+        hierarchicalLDAModel1.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel1.rootNode, 3);
+
+        assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
+        assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
+    }
 
     @Test
     public void testInitializeSetsRandomTopics() {
@@ -156,7 +223,8 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, HierarchicalLDAModel.DEFAULT_GAMMA,
                 new double [] {0.1, 0.1, 0.1}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
         hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
-        HierarchicalLDANode testNode = new HierarchicalLDANode(5, nodeMapper);
+        HierarchicalLDANode testNode = new HierarchicalLDANode(null, 5);
+        nodeMapper.addObject(testNode);
         hierarchicalLDAModel.documents[0].setTopicForWord(0, 1);
         hierarchicalLDAModel.documents[0].setTopicForWord(1, 1);
         hierarchicalLDAModel.documents[0].setTopicForWord(2, 1);
@@ -181,7 +249,7 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, 0.1,
                 new double [] {0.1, 0.1, 0.1}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
         hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
-        HierarchicalLDANode testNode = new HierarchicalLDANode(5, nodeMapper);
+        HierarchicalLDANode testNode = new HierarchicalLDANode(null, 5);
         hierarchicalLDAModel.documents[0].setTopicForWord(0, 1);
         hierarchicalLDAModel.documents[0].setTopicForWord(1, 1);
         hierarchicalLDAModel.documents[0].setTopicForWord(2, 1);
@@ -207,6 +275,10 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel.readDocuments(fiveWordDocument);
         hierarchicalLDAModel.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
         HierarchicalLDANode testNode = hierarchicalLDAModel.rootNode.spawnChild(1);
+
+        hierarchicalLDAModel.rootNode.setId(hierarchicalLDAModel.nodeMapper.addObject(hierarchicalLDAModel.rootNode));
+        testNode.setId(hierarchicalLDAModel.nodeMapper.addObject(testNode));
+
         hierarchicalLDAModel.documentPaths[0].addNode(testNode);
         hierarchicalLDAModel.rootNode.setVisited(0);
         testNode.setVisited(0);
@@ -221,6 +293,10 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel.readDocuments(fiveWordDocument);
         hierarchicalLDAModel.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
         HierarchicalLDANode testNode = hierarchicalLDAModel.rootNode.spawnChild(1);
+
+        hierarchicalLDAModel.rootNode.setId(hierarchicalLDAModel.nodeMapper.addObject(hierarchicalLDAModel.rootNode));
+        testNode.setId(hierarchicalLDAModel.nodeMapper.addObject(testNode));
+
         hierarchicalLDAModel.documentPaths[0].addNode(testNode);
         hierarchicalLDAModel.documents[0].setTopicForWord(0, 1);
         hierarchicalLDAModel.documents[0].setTopicForWord(1, 1);
@@ -243,6 +319,10 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
         HierarchicalLDANode testNode = hierarchicalLDAModel.rootNode.spawnChild(1);
         hierarchicalLDAModel.documentPaths[0].addNode(testNode);
+
+        hierarchicalLDAModel.rootNode.setId(hierarchicalLDAModel.nodeMapper.addObject(hierarchicalLDAModel.rootNode));
+        testNode.setId(hierarchicalLDAModel.nodeMapper.addObject(testNode));
+
         for (SparseDocument document : hierarchicalLDAModel.documents) {
             document.getWordSet().forEach(testNode::addWord);
         }
@@ -261,6 +341,10 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
         hierarchicalLDAModel.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
         HierarchicalLDANode testNode = hierarchicalLDAModel.rootNode.spawnChild(1);
+
+        hierarchicalLDAModel.rootNode.setId(hierarchicalLDAModel.nodeMapper.addObject(hierarchicalLDAModel.rootNode));
+        testNode.setId(hierarchicalLDAModel.nodeMapper.addObject(testNode));
+
         hierarchicalLDAModel.documentPaths[0].addNode(testNode);
         for (SparseDocument document : hierarchicalLDAModel.documents) {
             document.getWordSet().forEach(testNode::addWord);
@@ -279,6 +363,10 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
         hierarchicalLDAModel.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
         HierarchicalLDANode testNode = hierarchicalLDAModel.rootNode.spawnChild(1);
+
+        hierarchicalLDAModel.rootNode.setId(hierarchicalLDAModel.nodeMapper.addObject(hierarchicalLDAModel.rootNode));
+        testNode.setId(hierarchicalLDAModel.nodeMapper.addObject(testNode));
+
         hierarchicalLDAModel.documentPaths[0].addNode(testNode);
         hierarchicalLDAModel.documents[0].setTopicForWord(0, 1);
         hierarchicalLDAModel.documents[0].setTopicForWord(1, 1);
@@ -315,6 +403,7 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel = new HierarchicalLDAModel(3, 1.0,
                 new double [] {1.0, 1.0, 1.0}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
         hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
+
         hierarchicalLDAModel.rootNode.setVisited(0);
         hierarchicalLDAModel.rootNode.setVisited(1);
         hierarchicalLDAModel.rootNode.propagatePathWeight(0.0, HierarchicalLDAModel.DEFAULT_GAMMA, HierarchicalLDAModel.DEFAULT_MAX_DEPTH);
@@ -371,6 +460,10 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel.readDocuments(documents);
         hierarchicalLDAModel.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
         HierarchicalLDANode testNode = hierarchicalLDAModel.rootNode.spawnChild(1);
+
+        hierarchicalLDAModel.rootNode.setId(hierarchicalLDAModel.nodeMapper.addObject(hierarchicalLDAModel.rootNode));
+        testNode.setId(hierarchicalLDAModel.nodeMapper.addObject(testNode));
+
         hierarchicalLDAModel.documentPaths[0].addNode(testNode);
         hierarchicalLDAModel.rootNode.setVisited(0);
         hierarchicalLDAModel.rootNode.setVisited(1);
@@ -388,6 +481,10 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
         hierarchicalLDAModel.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
         HierarchicalLDANode testNode = hierarchicalLDAModel.rootNode.spawnChild(1);
+
+        hierarchicalLDAModel.rootNode.setId(hierarchicalLDAModel.nodeMapper.addObject(hierarchicalLDAModel.rootNode));
+        testNode.setId(hierarchicalLDAModel.nodeMapper.addObject(testNode));
+
         hierarchicalLDAModel.documentPaths[0].addNode(testNode);
         hierarchicalLDAModel.documents[0].setTopicForWord(0, 1);
         hierarchicalLDAModel.documents[0].setTopicForWord(1, 1);
@@ -415,6 +512,10 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel.readDocuments(fiveWordDocumentTwice);
         hierarchicalLDAModel.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
         HierarchicalLDANode testNode = hierarchicalLDAModel.rootNode.spawnChild(1);
+
+        hierarchicalLDAModel.rootNode.setId(hierarchicalLDAModel.nodeMapper.addObject(hierarchicalLDAModel.rootNode));
+        testNode.setId(hierarchicalLDAModel.nodeMapper.addObject(testNode));
+
         hierarchicalLDAModel.documentPaths[0].addNode(testNode);
         hierarchicalLDAModel.documents[0].setTopicForWord(0, 1);
         hierarchicalLDAModel.documents[0].setTopicForWord(1, 1);
@@ -438,10 +539,14 @@ public class HierarchicalLDAModelTest {
     @Test
     public void testGetTopicsReturnsEmptyMapWhenNoDocuments() {
         hierarchicalLDAModel = new HierarchicalLDAModel();
-        hierarchicalLDAModel.rootNode = new HierarchicalLDANode(3, nodeMapper);   // node 0
+        hierarchicalLDAModel.rootNode = new HierarchicalLDANode(null, 3);         // node 0
         HierarchicalLDANode node1 = hierarchicalLDAModel.rootNode.spawnChild(1);  // node 1
-        hierarchicalLDAModel.rootNode.spawnChild(1);                              // node 2
-        node1.spawnChild(2);                                                      // node 3
+        HierarchicalLDANode node2 = hierarchicalLDAModel.rootNode.spawnChild(1);  // node 2
+        HierarchicalLDANode node3 = node1.spawnChild(2);                          // node 3
+        hierarchicalLDAModel.nodeMapper.addObject(hierarchicalLDAModel.rootNode);
+        hierarchicalLDAModel.nodeMapper.addObject(node1);
+        hierarchicalLDAModel.nodeMapper.addObject(node2);
+        hierarchicalLDAModel.nodeMapper.addObject(node3);
         Map<Integer, List<String>> expected = new HashMap<>();
         assertThat(hierarchicalLDAModel.getTopics(5, 1), is(equalTo(expected)));
     }
@@ -485,6 +590,12 @@ public class HierarchicalLDAModelTest {
         HierarchicalLDANode node2 = hierarchicalLDAModel.rootNode.spawnChild(1);
         HierarchicalLDANode node3 = hierarchicalLDAModel.rootNode.spawnChild(1);
         HierarchicalLDANode node4 = hierarchicalLDAModel.rootNode.spawnChild(1);
+
+        hierarchicalLDAModel.rootNode.setId(hierarchicalLDAModel.nodeMapper.addObject(hierarchicalLDAModel.rootNode));
+        node1.setId(hierarchicalLDAModel.nodeMapper.addObject(node1));
+        node1.setId(hierarchicalLDAModel.nodeMapper.addObject(node1));
+        node1.setId(hierarchicalLDAModel.nodeMapper.addObject(node1));
+        node1.setId(hierarchicalLDAModel.nodeMapper.addObject(node1));
 
         hierarchicalLDAModel.rootNode.setVisited(0);
         hierarchicalLDAModel.rootNode.setVisited(1);
@@ -612,6 +723,9 @@ public class HierarchicalLDAModelTest {
         HierarchicalLDAPath path = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
         path.addNode(hierarchicalLDAModel.rootNode.spawnChild(1));
         HierarchicalLDANode child0 = hierarchicalLDAModel.rootNode.getChildren().get(0);
+
+        hierarchicalLDAModel.rootNode.setId(hierarchicalLDAModel.nodeMapper.addObject(hierarchicalLDAModel.rootNode));
+        child0.setId(hierarchicalLDAModel.nodeMapper.addObject(child0));
 
         hierarchicalLDAModel.rootNode.setVisited(0);
         hierarchicalLDAModel.rootNode.setVisited(1);
@@ -741,6 +855,11 @@ public class HierarchicalLDAModelTest {
         hierarchicalLDAModel.readDocuments(documentList);
         HierarchicalLDANode child0 = hierarchicalLDAModel.rootNode.spawnChild(1);
         HierarchicalLDANode child1 = child0.spawnChild(2);
+
+        hierarchicalLDAModel.rootNode.setId(hierarchicalLDAModel.nodeMapper.addObject(hierarchicalLDAModel.rootNode));
+        child0.setId(hierarchicalLDAModel.nodeMapper.addObject(child0));
+        child1.setId(hierarchicalLDAModel.nodeMapper.addObject(child1));
+
         new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
         hierarchicalLDAModel.documents[0].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
         hierarchicalLDAModel.documents[1].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
@@ -905,5 +1024,50 @@ public class HierarchicalLDAModelTest {
         // path at the leaf node of that path
         Pair<List<Integer>, List<Double>> results = hierarchicalLDAModel.inference(testDocument, 10, true);
         assertThat(results, is(equalTo(Pair.of(expectedNodes, expectedDistributions))));
+    }
+
+    @Test
+    public void testSerializationRoundTrip() {
+        hierarchicalLDAModel = new HierarchicalLDAModel(3, 2.0,
+                new double [] {0.1, 0.1, 2.0}, 0.99, 1.0);
+        List<List<String>> documentList = new ArrayList<>();
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document2));
+        documentList.add(Arrays.asList(document3));
+        hierarchicalLDAModel.readDocuments(documentList);
+        HierarchicalLDANode child0 = hierarchicalLDAModel.rootNode.spawnChild(1);
+        HierarchicalLDANode child1 = child0.spawnChild(2);
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(child0::addWord);
+        hierarchicalLDAModel.documents[2].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+
+        hierarchicalLDAModel.rootNode.setVisited(2);
+        child0.setVisited(1);
+        child1.setVisited(0);
+
+        hierarchicalLDAModel.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        hierarchicalLDAModel.documentPaths[0].addNode(child0);
+        hierarchicalLDAModel.documentPaths[0].addNode(child1);
+
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutputStream.writeObject(hierarchicalLDAModel);
+            byte [] serializedObjectArray = byteArrayOutputStream.toByteArray();
+            objectOutputStream.close();
+            byteArrayOutputStream.close();
+
+            assertThat(serializedObjectArray.length, is(not(CoreMatchers.equalTo(0))));
+
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serializedObjectArray);
+            ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+            HierarchicalLDAModel deserializedModel = (HierarchicalLDAModel) objectInputStream.readObject();
+            assertThat(hierarchicalLDAModel.equals(deserializedModel), is(true));
+        } catch (IOException e) {
+            assertFalse("IOException occurred: " + e.getMessage(), true);
+        } catch (ClassNotFoundException e) {
+            assertFalse("ClassNotFoundException occurred: " + e.getMessage(), true);
+        }
+
     }
 }

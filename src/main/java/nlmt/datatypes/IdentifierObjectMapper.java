@@ -15,6 +15,7 @@
  */
 package nlmt.datatypes;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -24,8 +25,8 @@ import java.util.Set;
  * specific object. It also maintains the reverse mapping of an object
  * with a specific identifier.
  */
-public class IdentifierObjectMapper<T> {
-
+public class IdentifierObjectMapper<T extends Serializable> implements Serializable
+{
     // Maps an object to a number
     private Map<T, Integer> objectIndexMap;
 
@@ -141,9 +142,28 @@ public class IdentifierObjectMapper<T> {
      */
     public void deleteIndex(int index) {
         if (indexObjectMap.containsKey(index)) {
-            Object objectToDelete = indexObjectMap.get(index);
+            T objectToDelete = indexObjectMap.get(index);
             objectIndexMap.remove(objectToDelete);
             indexObjectMap.remove(index);
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        IdentifierObjectMapper<?> that = (IdentifierObjectMapper<?>) o;
+
+        return nextIndex == that.nextIndex && objectIndexMap.equals(that.objectIndexMap) && indexObjectMap.equals(that.indexObjectMap);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = objectIndexMap.hashCode();
+        result = 31 * result + indexObjectMap.hashCode();
+        result = 31 * result + nextIndex;
+        return result;
     }
 }

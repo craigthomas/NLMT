@@ -18,12 +18,15 @@ package nlmt.datatypes;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.*;
 import java.util.HashSet;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -41,6 +44,45 @@ public class IdentifierObjectMapperTest {
     @Test
     public void testMapperEmptyOnInit() {
         assertThat(mapper.size(), is(equalTo(0)));
+    }
+
+    @Test
+    public void testMapperEqualityToNull() {
+        assertThat(mapper.equals(null), is(false));
+    }
+
+    @Test
+    public void testEmptyMappersEqual() {
+        IdentifierObjectMapper<String> mapper1 = new IdentifierObjectMapper<>();
+        assertThat(mapper.equals(mapper1), is(true));
+        assertThat(mapper.hashCode() == mapper1.hashCode(), is(true));
+    }
+
+    @Test
+    public void testMappersWithSameObjectsEqual() {
+        mapper.addObject("test");
+        IdentifierObjectMapper<String> mapper1 = new IdentifierObjectMapper<>();
+        mapper1.addObject("test");
+        assertThat(mapper.equals(mapper1), is(true));
+        assertThat(mapper.hashCode() == mapper1.hashCode(), is(true));
+    }
+
+    @Test
+    public void testMappersWithDifferentObjectsNotEqual() {
+        mapper.addObject("test");
+        IdentifierObjectMapper<String> mapper1 = new IdentifierObjectMapper<>();
+        mapper1.addObject("test1");
+        assertThat(mapper.equals(mapper1), is(false));
+        assertThat(mapper.hashCode() == mapper1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testMappersDifferentTypesNotEqual() {
+        mapper.addObject("test");
+        IdentifierObjectMapper<Integer> mapper1 = new IdentifierObjectMapper<>();
+        mapper1.addObject(1);
+        assertThat(mapper.equals(mapper1), is(false));
+        assertThat(mapper.hashCode() == mapper1.hashCode(), is(false));
     }
 
     @Test
@@ -174,5 +216,31 @@ public class IdentifierObjectMapperTest {
         assertThat(mapper.containsIndex(index1), is(true));
         assertThat(mapper.containsIndex(index2), is(false));
         assertThat(mapper.containsIndex(index3), is(true));
+    }
+
+    @Test
+    public void testSerializationRoundTrip() {
+        mapper.addObject("word");
+        mapper.addObject("that");
+        mapper.addObject("another");
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutputStream.writeObject(mapper);
+            byte [] serializedObjectArray = byteArrayOutputStream.toByteArray();
+            objectOutputStream.close();
+            byteArrayOutputStream.close();
+
+            assertThat(serializedObjectArray.length, is(not(equalTo(0))));
+
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serializedObjectArray);
+            ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+            IdentifierObjectMapper<String> deserializedMapper = (IdentifierObjectMapper<String>) objectInputStream.readObject();
+            assertThat(mapper.equals(deserializedMapper), is(true));
+        } catch (IOException e) {
+            assertFalse("IOException occurred: " + e.getMessage(), true);
+        } catch (ClassNotFoundException e) {
+            assertFalse("ClassNotFoundException occurred: " + e.getMessage(), true);
+        }
     }
 }

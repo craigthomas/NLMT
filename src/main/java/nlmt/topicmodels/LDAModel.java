@@ -20,6 +20,7 @@ import nlmt.datatypes.Document;
 import nlmt.datatypes.IdentifierObjectMapper;
 import nlmt.probfunctions.PMFSampler;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
  * Simple implementation of Latent Dirichlet Allocation using Gibbs
  * Sampling.
  */
-public class LDAModel
+public class LDAModel implements Serializable
 {
     // The number of topics to produce, topicIndex will range from
     // 0 to numTopics
@@ -91,6 +92,9 @@ public class LDAModel
         documents = new Document[0];
         random = new Random();
         pmfSampler = new PMFSampler(numTopics);
+        documentTopicCount = new int[0][numTopics];
+        wordTopicCount = new int[0][numTopics];
+        topicTotals = new int[numTopics];
     }
 
     /**
@@ -345,5 +349,43 @@ public class LDAModel
             }
         }
         return (allEmpty) ? new double[numTopics] : documentPMFSampler.getProbabilities();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        LDAModel ldaModel = (LDAModel) o;
+
+        if (numTopics != ldaModel.numTopics) return false;
+        if (Double.compare(ldaModel.alpha, alpha) != 0) return false;
+        if (Double.compare(ldaModel.beta, beta) != 0) return false;
+        if (Double.compare(ldaModel.betaTotal, betaTotal) != 0) return false;
+        if (!Arrays.deepEquals(documentTopicCount, ldaModel.documentTopicCount)) return false;
+        if (!Arrays.deepEquals(wordTopicCount, ldaModel.wordTopicCount)) return false;
+        if (!Arrays.equals(topicTotals, ldaModel.topicTotals)) return false;
+        // Probably incorrect - comparing Object[] arrays with Arrays.equals
+        return Arrays.equals(documents, ldaModel.documents) && vocabulary.equals(ldaModel.vocabulary);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result;
+        long temp;
+        result = numTopics;
+        temp = Double.doubleToLongBits(alpha);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(beta);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(betaTotal);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        result = 31 * result + Arrays.deepHashCode(documentTopicCount);
+        result = 31 * result + Arrays.deepHashCode(wordTopicCount);
+        result = 31 * result + Arrays.hashCode(topicTotals);
+        result = 31 * result + Arrays.hashCode(documents);
+        result = 31 * result + vocabulary.hashCode();
+        return result;
     }
 }

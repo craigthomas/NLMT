@@ -15,6 +15,7 @@
  */
 package nlmt.datatypes;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +28,7 @@ import java.util.List;
  * from the front of the queue (highest priority) to rear of the queue
  * (lowest priority).
  */
-public class BoundedPriorityQueue<T>
+public class BoundedPriorityQueue<T extends Serializable> implements Serializable
 {
     // The priorities for each element in the queue
     private List<Integer> priorities;
@@ -111,5 +112,24 @@ public class BoundedPriorityQueue<T>
      */
     public List<Integer> getPriorities() {
         return priorities;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        BoundedPriorityQueue<?> that = (BoundedPriorityQueue<?>) o;
+
+        return size == that.size && getPriorities().equals(that.getPriorities()) && getElements().equals(that.getElements());
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getPriorities().hashCode();
+        result = 31 * result + getElements().hashCode();
+        result = 31 * result + size;
+        return result;
     }
 }

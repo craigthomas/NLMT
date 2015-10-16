@@ -15,14 +15,17 @@
  */
 package nlmt.topicmodels;
 
+import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.*;
 import java.util.*;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -49,6 +52,50 @@ public class LDAModelTest {
     @Test(expected=IllegalArgumentException.class)
     public void testNumTopicsLessThan1ThrowsException() {
         ldaModel = new LDAModel(0);
+    }
+
+    @Test
+    public void testModelNotEqualNull() {
+        ldaModel = new LDAModel(3);
+        assertThat(ldaModel.equals(null), is(false));
+    }
+
+    @Test
+    public void testModelEqualsItself() {
+        ldaModel = new LDAModel(3);
+        assertThat(ldaModel.equals(ldaModel), is(true));
+    }
+
+    @Test
+    public void testTwoInitModelsAreEqual() {
+        ldaModel = new LDAModel(3);
+        LDAModel ldaModel1 = new LDAModel(3);
+        assertThat(ldaModel.equals(ldaModel1), is(true));
+        assertThat(ldaModel.hashCode() == ldaModel1.hashCode(), is(true));
+    }
+
+    @Test
+    public void testTwoModelsDifferentNumTopicsNotEqual() {
+        ldaModel = new LDAModel(2);
+        LDAModel ldaModel1 = new LDAModel(3);
+        assertThat(ldaModel.equals(ldaModel1), is(false));
+        assertThat(ldaModel.hashCode() == ldaModel1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testTwoModelsDifferentAlphaNotEqual() {
+        ldaModel = new LDAModel(2, 2.0, 1.0);
+        LDAModel ldaModel1 = new LDAModel(2, 3.0, 1.0);
+        assertThat(ldaModel.equals(ldaModel1), is(false));
+        assertThat(ldaModel.hashCode() == ldaModel1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testTwoModelsDifferentBetaNotEqual() {
+        ldaModel = new LDAModel(2, 3.0, 3.0);
+        LDAModel ldaModel1 = new LDAModel(2, 3.0, 4.0);
+        assertThat(ldaModel.equals(ldaModel1), is(false));
+        assertThat(ldaModel.hashCode() == ldaModel1.hashCode(), is(false));
     }
 
     @Test
@@ -581,5 +628,36 @@ public class LDAModelTest {
 
         double [] probabilities = ldaModel.inference(Arrays.asList(unseenWords), 100);
         assertThat(probabilities, is(equalTo(expectedProbabilities)));
+    }
+
+    @Test
+    public void testSerializationRoundTrip() {
+        ldaModel = new LDAModel(3);
+        List<List<String>> documentList = new ArrayList<>();
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document2));
+        documentList.add(Arrays.asList(document3));
+        ldaModel.readDocuments(documentList);
+
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutputStream.writeObject(ldaModel);
+            byte [] serializedObjectArray = byteArrayOutputStream.toByteArray();
+            objectOutputStream.close();
+            byteArrayOutputStream.close();
+
+            assertThat(serializedObjectArray.length, is(not(CoreMatchers.equalTo(0))));
+
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serializedObjectArray);
+            ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+            LDAModel deserializedModel = (LDAModel) objectInputStream.readObject();
+            assertThat(ldaModel.equals(deserializedModel), is(true));
+        } catch (IOException e) {
+            assertFalse("IOException occurred: " + e.getMessage(), true);
+        } catch (ClassNotFoundException e) {
+            assertFalse("ClassNotFoundException occurred: " + e.getMessage(), true);
+        }
+
     }
 }

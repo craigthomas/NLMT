@@ -18,14 +18,18 @@ package nlmt.topicmodels;
 
 import nlmt.datatypes.IdentifierObjectMapper;
 import nlmt.datatypes.Word;
+import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.*;
 import java.util.*;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -39,41 +43,41 @@ public class HierarchicalLDANodeTest
     @Before
     public void setUp() {
         nodeMapper = new IdentifierObjectMapper<>();
+        hierarchicalLDANode = new HierarchicalLDANode(null, 3);
     }
 
     @Test
-    public void testNewNodeAddedToNodeMapper() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
-        assertThat(nodeMapper.contains(hierarchicalLDANode), is(true));
-        assertThat(nodeMapper.getIndexFromObject(hierarchicalLDANode), is(equalTo(hierarchicalLDANode.getId())));
-        assertThat(nodeMapper.getObjectFromIndex(hierarchicalLDANode.getId()), is(equalTo(hierarchicalLDANode)));
+    public void testNodeNotEqualToNull() {
+        assertThat(hierarchicalLDANode.equals(null), is(false));
     }
 
     @Test
-    public void testAlternateConstructorResultsInRootNode() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
-        assertThat(hierarchicalLDANode.getParent(), is(nullValue()));
-        assertThat(hierarchicalLDANode.isRoot(), is(true));
+    public void testNodeEqualToItself() {
+        assertThat(hierarchicalLDANode.equals(hierarchicalLDANode), is(true));
+    }
+
+    @Test
+    public void testNodeNotEqualToDifferentNode() {
+        HierarchicalLDANode hierarchicalLDANode1 = new HierarchicalLDANode(null, 3);
+        assertThat(hierarchicalLDANode.equals(hierarchicalLDANode1), is(false));
     }
 
     @Test
     public void testCreationWithParentIsNotRootNode() {
-        HierarchicalLDANode root = new HierarchicalLDANode(3, nodeMapper);
-        hierarchicalLDANode = new HierarchicalLDANode(root, 3, nodeMapper);
+        HierarchicalLDANode root = new HierarchicalLDANode(null, 3);
+        hierarchicalLDANode = new HierarchicalLDANode(root, 3);
         assertThat(hierarchicalLDANode.getParent(), is(root));
         assertThat(hierarchicalLDANode.isRoot(), is(false));
     }
 
     @Test
     public void testVisitedEmptyOnInit() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         assertThat(hierarchicalLDANode.documentsVisitingNode.isEmpty(), is(true));
         assertThat(hierarchicalLDANode.getNumDocumentsVisitingNode(), is(equalTo(0)));
     }
 
     @Test
     public void testSetVisitedWorksCorrectly() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         hierarchicalLDANode.setVisited(0);
         hierarchicalLDANode.setVisited(4);
         hierarchicalLDANode.setVisited(2);
@@ -87,7 +91,6 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testSetVisitedDoubleSetSameDocumentWorksCorrectly() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         hierarchicalLDANode.setVisited(0);
         hierarchicalLDANode.setVisited(0);
         hierarchicalLDANode.setVisited(0);
@@ -99,7 +102,6 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testRemoveVisitedRemoveSingleWorksCorrectly() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         hierarchicalLDANode.setVisited(0);
         hierarchicalLDANode.setVisited(4);
         hierarchicalLDANode.setVisited(2);
@@ -113,7 +115,6 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testRemoveVisitedRemoveItemNotInSetWorksCorrectly() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         hierarchicalLDANode.setVisited(0);
         hierarchicalLDANode.setVisited(4);
         hierarchicalLDANode.setVisited(2);
@@ -128,7 +129,6 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testRemoveVisitedRemoveAllWorksCorrectly() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         hierarchicalLDANode.setVisited(0);
         hierarchicalLDANode.setVisited(4);
         hierarchicalLDANode.setVisited(2);
@@ -142,7 +142,6 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testNodeHasNoChildrenOnInit() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         List<HierarchicalLDANode> expected = new ArrayList<>();
         assertThat(hierarchicalLDANode.getChildren(), is(equalTo(expected)));
         assertThat(hierarchicalLDANode.getNumChildren(), is(equalTo(0)));
@@ -150,20 +149,17 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testNodeIsLevel0OnInit() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         assertThat(hierarchicalLDANode.getLevel(), is(equalTo(0)));
     }
 
     @Test
     public void testNodeSetLevelWorksCorrectly() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         hierarchicalLDANode.setLevel(1);
         assertThat(hierarchicalLDANode.getLevel(), is(equalTo(1)));
     }
 
     @Test
     public void testSpawnCorrectlyAddsChildToChildren() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         HierarchicalLDANode child = hierarchicalLDANode.spawnChild(1);
         assertThat(hierarchicalLDANode.getChildren().contains(child), is(true));
         assertThat(hierarchicalLDANode.getNumChildren(), is(equalTo(1)));
@@ -172,7 +168,6 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testSpawnMultipleChildrenWorksCorrectly() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         HierarchicalLDANode child1 = hierarchicalLDANode.spawnChild(1);
         HierarchicalLDANode child2 = hierarchicalLDANode.spawnChild(1);
         HierarchicalLDANode child3 = hierarchicalLDANode.spawnChild(1);
@@ -183,20 +178,17 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testGetDocumentsVisitingNodeIsEmptyOnInit() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         assertThat(hierarchicalLDANode.getDocumentsVisitingNode().isEmpty(), is(true));
         assertThat(hierarchicalLDANode.getNumDocumentsVisitingNode(), is(equalTo(0)));
     }
 
     @Test
     public void testGetTotalWordCountIsEmptyOnInit() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         assertThat(hierarchicalLDANode.getTotalWordCount(), is(equalTo(0)));
     }
 
     @Test
     public void testAddWordWorksCorrectly() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
         Word word = new Word("test", vocabulary.addObject("test"));
         word.setTotalCount(3);
@@ -209,7 +201,6 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testDoubleAddWordToDocumentsWorksCorrectly() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
         Word word = new Word("test", vocabulary.addObject("test"));
         word.setTotalCount(3);
@@ -223,7 +214,6 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testRemoveWordWorksCorrectly() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
         Word word = new Word("test", vocabulary.addObject("test"));
         word.setTotalCount(3);
@@ -237,7 +227,6 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testDoubleAddWordRemoveOneWorksCorrectly() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
         Word word = new Word("test", vocabulary.addObject("test"));
         word.setTotalCount(3);
@@ -253,7 +242,6 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testRemoveFromParentWorksCorrectlySingleChild() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         HierarchicalLDANode child = hierarchicalLDANode.spawnChild(1);
         assertThat(hierarchicalLDANode.getChildren().contains(child), is(true));
         child.removeFromParent();
@@ -263,7 +251,6 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testRemoveFromParentWorksCorrectlyMultipleChildren() {
-        hierarchicalLDANode = new HierarchicalLDANode(3, nodeMapper);
         HierarchicalLDANode child1 = hierarchicalLDANode.spawnChild(1);
         HierarchicalLDANode child2 = hierarchicalLDANode.spawnChild(1);
         HierarchicalLDANode child3 = hierarchicalLDANode.spawnChild(1);
@@ -287,7 +274,8 @@ public class HierarchicalLDANodeTest
     @Test
     public void testDeleteEmptyNodesSingleNodeNoDocumentsNoWords() {
         IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
-        HierarchicalLDANode node = new HierarchicalLDANode(1, nodeMapper);
+        HierarchicalLDANode node = new HierarchicalLDANode(null, 1);
+        nodeMapper.addObject(node);
         assertThat(nodeMapper.contains(node), is(true));
         assertThat(nodeMapper.size(), is(equalTo(1)));
         HierarchicalLDANode.deleteEmptyNodes(nodeMapper);
@@ -298,7 +286,8 @@ public class HierarchicalLDANodeTest
     @Test
     public void testDeleteEmptyNodesSingleNodeOneDocumentsNoWords() {
         IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
-        HierarchicalLDANode node = new HierarchicalLDANode(1, nodeMapper);
+        HierarchicalLDANode node = new HierarchicalLDANode(null, 1);
+        nodeMapper.addObject(node);
         node.setVisited(0);
         assertThat(nodeMapper.contains(node), is(true));
         assertThat(nodeMapper.size(), is(equalTo(1)));
@@ -311,7 +300,8 @@ public class HierarchicalLDANodeTest
     public void testDeleteEmptyNodesSingleNodeWithDocuments() {
         IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
         IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
-        HierarchicalLDANode node = new HierarchicalLDANode(1, nodeMapper);
+        HierarchicalLDANode node = new HierarchicalLDANode(null, 1);
+        nodeMapper.addObject(node);
         Word word = new Word("test", vocabulary.addObject("test"));
         node.setVisited(1);
         node.addWord(word);
@@ -325,8 +315,10 @@ public class HierarchicalLDANodeTest
     @Test
     public void testDeleteEmptyNodesTwoNodesBothEmpty() {
         IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
-        HierarchicalLDANode node1 = new HierarchicalLDANode(1, nodeMapper);
-        HierarchicalLDANode node2 = new HierarchicalLDANode(1, nodeMapper);
+        HierarchicalLDANode node1 = new HierarchicalLDANode(null, 1);
+        HierarchicalLDANode node2 = new HierarchicalLDANode(null, 1);
+        nodeMapper.addObject(node1);
+        nodeMapper.addObject(node2);
         assertThat(nodeMapper.contains(node1), is(true));
         assertThat(nodeMapper.contains(node2), is(true));
         assertThat(nodeMapper.size(), is(equalTo(2)));
@@ -341,10 +333,12 @@ public class HierarchicalLDANodeTest
         IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
         Word word = new Word("test", vocabulary.addObject("test"));
         IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
-        HierarchicalLDANode node1 = new HierarchicalLDANode(1, nodeMapper);
+        HierarchicalLDANode node1 = new HierarchicalLDANode(null, 1);
         node1.setVisited(1);
         node1.addWord(word);
-        HierarchicalLDANode node2 = new HierarchicalLDANode(1, nodeMapper);
+        HierarchicalLDANode node2 = new HierarchicalLDANode(null, 1);
+        nodeMapper.addObject(node1);
+        nodeMapper.addObject(node2);
         assertThat(nodeMapper.contains(node1), is(true));
         assertThat(nodeMapper.contains(node2), is(true));
         assertThat(nodeMapper.size(), is(equalTo(2)));
@@ -359,12 +353,14 @@ public class HierarchicalLDANodeTest
         IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
         Word word = new Word("test", vocabulary.addObject("test"));
         IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
-        HierarchicalLDANode node1 = new HierarchicalLDANode(1, nodeMapper);
+        HierarchicalLDANode node1 = new HierarchicalLDANode(null, 1);
         node1.setVisited(1);
         node1.addWord(word);
-        HierarchicalLDANode node2 = new HierarchicalLDANode(1, nodeMapper);
+        HierarchicalLDANode node2 = new HierarchicalLDANode(null, 1);
         node2.setVisited(1);
         node2.addWord(word);
+        nodeMapper.addObject(node1);
+        nodeMapper.addObject(node2);
         assertThat(nodeMapper.contains(node1), is(true));
         assertThat(nodeMapper.contains(node2), is(true));
         assertThat(nodeMapper.size(), is(equalTo(2)));
@@ -379,10 +375,12 @@ public class HierarchicalLDANodeTest
         IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
         Word word = new Word("test", vocabulary.addObject("test"));
         IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
-        HierarchicalLDANode node1 = new HierarchicalLDANode(1, nodeMapper);
+        HierarchicalLDANode node1 = new HierarchicalLDANode(null, 1);
         node1.setVisited(1);
         node1.addWord(word);
         HierarchicalLDANode node2 = node1.spawnChild(1);
+        nodeMapper.addObject(node1);
+        nodeMapper.addObject(node2);
         assertThat(nodeMapper.contains(node1), is(true));
         assertThat(nodeMapper.contains(node2), is(true));
         assertThat(nodeMapper.size(), is(equalTo(2)));
@@ -396,17 +394,15 @@ public class HierarchicalLDANodeTest
 
     @Test(expected=IllegalArgumentException.class)
     public void testGetTopWordsThrowsExceptionOnBadNumWords() {
-        IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
         IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
-        HierarchicalLDANode node1 = new HierarchicalLDANode(1, nodeMapper);
+        HierarchicalLDANode node1 = new HierarchicalLDANode(null, 1);
         node1.getTopWords(0, vocabulary);
     }
 
     @Test
     public void testGetTopWordsWorksCorrectly() {
-        IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
         IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
-        HierarchicalLDANode node1 = new HierarchicalLDANode(10, nodeMapper);
+        HierarchicalLDANode node1 = new HierarchicalLDANode(null, 10);
         Word word1 = new Word("word1", vocabulary.addObject("word1"));
         word1.setTotalCount(3);
         Word word2 = new Word("word2", vocabulary.addObject("word2"));
@@ -444,9 +440,8 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testGetTopWordsReturnsFullSortedListWhenMoreWordsRequestedThanActualWords() {
-        IdentifierObjectMapper<HierarchicalLDANode> nodeMapper = new IdentifierObjectMapper<>();
         IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
-        HierarchicalLDANode node1 = new HierarchicalLDANode(10, nodeMapper);
+        HierarchicalLDANode node1 = new HierarchicalLDANode(null, 10);
         Word word1 = new Word("word1", vocabulary.addObject("word1"));
         word1.setTotalCount(3);
         Word word2 = new Word("word2", vocabulary.addObject("word2"));
@@ -484,7 +479,6 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testWordsInNodeEmptyOnInit() {
-        hierarchicalLDANode = new HierarchicalLDANode(1, nodeMapper);
         assertThat(hierarchicalLDANode.getWordsInNode(), is(equalTo(new HashSet<>())));
     }
 
@@ -493,7 +487,7 @@ public class HierarchicalLDANodeTest
         IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
         Word word1 = new Word("wordOne", vocabulary.addObject("wordOne"));
         Word word2 = new Word("wordTwo", vocabulary.addObject("wordTwo"));
-        hierarchicalLDANode = new HierarchicalLDANode(2, nodeMapper);
+        hierarchicalLDANode = new HierarchicalLDANode(null, 2);
         hierarchicalLDANode.addWord(word1);
         hierarchicalLDANode.addWord(word2);
         assertThat(hierarchicalLDANode.getWordsInNode().size(), is(equalTo(2)));
@@ -506,7 +500,7 @@ public class HierarchicalLDANodeTest
         IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
         Word word1 = new Word("wordOne", vocabulary.addObject("wordOne"));
         Word word2 = new Word("wordTwo", vocabulary.addObject("wordTwo"));
-        hierarchicalLDANode = new HierarchicalLDANode(2, nodeMapper);
+        hierarchicalLDANode = new HierarchicalLDANode(null, 2);
         hierarchicalLDANode.addWord(word1);
         hierarchicalLDANode.addWord(word2);
         hierarchicalLDANode.removeWord(word2);
@@ -517,7 +511,7 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testGenerateMapReturnsEmptyWhenRootNodeIsSingleNode() {
-        hierarchicalLDANode = new HierarchicalLDANode(1, nodeMapper);
+        nodeMapper.addObject(hierarchicalLDANode);
         Map<Integer, List<Integer>> expected = new HashMap<>();
         expected.put(0, new ArrayList<>());
         assertThat(HierarchicalLDANode.generateMap(nodeMapper), is(equalTo(expected)));
@@ -525,11 +519,16 @@ public class HierarchicalLDANodeTest
 
     @Test
     public void testGenerateMapComplexExampleWorksCorrectly() {
-        hierarchicalLDANode = new HierarchicalLDANode(1, nodeMapper);  // node 0
-        hierarchicalLDANode.spawnChild(1);                             // node 1
+        hierarchicalLDANode = new HierarchicalLDANode(null, 1);        // node 0
+        HierarchicalLDANode node1 = hierarchicalLDANode.spawnChild(1); // node 1
         HierarchicalLDANode node2 = hierarchicalLDANode.spawnChild(1); // node 2
         HierarchicalLDANode node3 = node2.spawnChild(2);               // node 3
-        node3.spawnChild(3);                                           // node 4
+        HierarchicalLDANode node4 = node3.spawnChild(3);               // node 4
+        hierarchicalLDANode.setId(nodeMapper.addObject(hierarchicalLDANode));
+        node1.setId(nodeMapper.addObject(node1));
+        node2.setId(nodeMapper.addObject(node2));
+        node3.setId(nodeMapper.addObject(node3));
+        node4.setId(nodeMapper.addObject(node4));
         Map<Integer, List<Integer>> expected = new HashMap<>();
         expected.put(0, Arrays.asList(1, 2));
         expected.put(1, new ArrayList<>());
@@ -537,5 +536,32 @@ public class HierarchicalLDANodeTest
         expected.put(3, Collections.singletonList(4));
         expected.put(4, new ArrayList<>());
         assertThat(HierarchicalLDANode.generateMap(nodeMapper), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testSerializationRoundTrip() {
+        hierarchicalLDANode.setVisited(2);
+        IdentifierObjectMapper<String> vocabulary = new IdentifierObjectMapper<>();
+        Word word = new Word("test", vocabulary.addObject("test"));
+        hierarchicalLDANode.addWord(word);
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutputStream.writeObject(hierarchicalLDANode);
+            byte[] serializedObjectArray = byteArrayOutputStream.toByteArray();
+            objectOutputStream.close();
+            byteArrayOutputStream.close();
+
+            assertThat(serializedObjectArray.length, is(not(CoreMatchers.equalTo(0))));
+
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serializedObjectArray);
+            ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+            HierarchicalLDANode deserializedNode = (HierarchicalLDANode) objectInputStream.readObject();
+            assertThat(hierarchicalLDANode.equals(deserializedNode), is(true));
+        } catch (IOException e) {
+            assertFalse("IOException occurred: " + e.getMessage(), true);
+        } catch (ClassNotFoundException e) {
+            assertFalse("ClassNotFoundException occurred: " + e.getMessage(), true);
+        }
     }
 }

@@ -16,10 +16,15 @@
 
 package nlmt.datatypes;
 
+import org.junit.Before;
 import org.junit.Test;
+
+import java.io.*;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -29,41 +34,110 @@ public class WordTest {
 
     private Word word;
 
+    @Before
+    public void setUp() {
+        word = new Word("test", 0);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testRawWordNullOnInitThrowsException() {
+        new Word(null, 0);
+    }
+
+    @Test
+    public void testWordNotEqualToNull() {
+        assertThat(word.equals(null), is(false));
+    }
+
+    @Test
+    public void testWordEqualityWorksWhenAllEqual() {
+        Word word1 = new Word("test", 0);
+        assertThat(word.equals(word1), is(true));
+        assertThat(word.hashCode() == word1.hashCode(), is(true));
+    }
+
+    @Test
+    public void testWordDifferentVocabularyIdsNotEqual() {
+        Word word1 = new Word("test", 1);
+        assertThat(word.equals(word1), is(false));
+        assertThat(word.hashCode() == word1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testWordDifferentRawWordsNotEqual() {
+        Word word1 = new Word("test1", 0);
+        assertThat(word.equals(word1), is(false));
+        assertThat(word.hashCode() == word1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testWordDifferentTopicAssignmentsNotEqual() {
+        Word word1 = new Word("test", 0);
+        word1.setTopic(1);
+        assertThat(word.equals(word1), is(false));
+        assertThat(word.hashCode() == word1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testWordDifferentCountsNotEqual() {
+        Word word1 = new Word("test", 0);
+        word1.setTotalCount(2);
+        assertThat(word.equals(word1), is(false));
+        assertThat(word.hashCode() == word1.hashCode(), is(false));
+    }
+
     @Test
     public void testTotalCountOneOnInit() {
-        word = new Word("test", 0);
         assertThat(word.getTotalCount(), is(equalTo(1)));
     }
 
     @Test
     public void testTopicIsNegativeOneOnInit() {
-        word = new Word("test", 0);
         assertThat(word.getTopic(), is(equalTo(-1)));
     }
 
     @Test
     public void testRawWordSetCorrectlyOnInit() {
-        word = new Word("test", 0);
         assertThat(word.getRawWord(), is(equalTo("test")));
     }
 
     @Test
     public void testVocabularyIdSetCorrectlyOnInit() {
-        word = new Word("test", 0);
         assertThat(word.getVocabularyId(), is(equalTo(0)));
     }
 
     @Test
     public void testSetAndGetTotalCountWorksCorrectly() {
-        word = new Word("test", 0);
         word.setTotalCount(13);
         assertThat(word.getTotalCount(), is(equalTo(13)));
     }
 
     @Test
     public void testSetAndGetTopicWorksCorrectly() {
-        word = new Word("test", 0);
         word.setTopic(13);
         assertThat(word.getTopic(), is(equalTo(13)));
+    }
+
+    @Test
+    public void testSerializationRoundTrip() {
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutputStream.writeObject(word);
+            byte[] serializedObjectArray = byteArrayOutputStream.toByteArray();
+            objectOutputStream.close();
+            byteArrayOutputStream.close();
+
+            assertThat(serializedObjectArray.length, is(not(equalTo(0))));
+
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serializedObjectArray);
+            ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+            Word deserializedWord = (Word) objectInputStream.readObject();
+            assertThat(word.equals(deserializedWord), is(true));
+        } catch (IOException e) {
+            assertFalse("IOException occurred: " + e.getMessage(), true);
+        } catch (ClassNotFoundException e) {
+            assertFalse("ClassNotFoundException occurred: " + e.getMessage(), true);
+        }
     }
 }

@@ -16,6 +16,7 @@
 
 package nlmt.datatypes;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,8 +24,8 @@ import java.util.stream.Collectors;
  * A SparseDocument contains only the count of the unique words in a document,
  * as well as the words themselves.
  */
-public class SparseDocument {
-
+public class SparseDocument implements Serializable
+{
     // Maps the ID of a word to a Word object
     private Map<Integer, Word> wordMap;
 
@@ -33,6 +34,9 @@ public class SparseDocument {
     private IdentifierObjectMapper<String> vocabulary;
 
     public SparseDocument(IdentifierObjectMapper<String> vocabulary) {
+        if (vocabulary == null) {
+            throw new IllegalArgumentException("vocabulary cannot be null");
+        }
         this.vocabulary = vocabulary;
         wordMap = new HashMap<>();
     }
@@ -143,5 +147,22 @@ public class SparseDocument {
         return wordMap.values().stream()
                 .filter(word -> word.getTopic() == topic)
                 .collect(Collectors.groupingBy(Word::getVocabularyId, Collectors.summingInt(Word::getTotalCount)));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SparseDocument that = (SparseDocument) o;
+
+        return wordMap.equals(that.wordMap) && vocabulary.equals(that.vocabulary);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = wordMap.hashCode();
+        result = 31 * result + vocabulary.hashCode();
+        return result;
     }
 }

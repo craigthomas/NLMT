@@ -15,6 +15,7 @@
  */
 package nlmt.datatypes;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -24,7 +25,7 @@ import java.util.*;
  * it keeps track of what topics have been assigned to each
  * word in the document.
  */
-public class Document
+public class Document implements Serializable
 {
     // The vocabulary words along with topic assignments
     private List<Word> wordArray;
@@ -34,6 +35,9 @@ public class Document
     private IdentifierObjectMapper<String> vocabulary;
 
     public Document(IdentifierObjectMapper<String> vocabulary) {
+        if (vocabulary == null) {
+            throw new IllegalArgumentException("vocabulary cannot be null");
+        }
         wordArray = new ArrayList<>();
         this.vocabulary = vocabulary;
     }
@@ -91,6 +95,7 @@ public class Document
      * @param topicIndex the topic to assign
      */
     public void setTopicForWord(int wordIndex, int topicIndex) {
+
         if ((wordIndex > wordArray.size() - 1) || (wordIndex < 0)) {
             throw new IllegalArgumentException("wordIndex must be >= 0 or <= " + (wordArray.size() - 1));
         }
@@ -112,6 +117,23 @@ public class Document
     public Set<Integer> getWordSet() {
         Set<Integer> result = new HashSet<>();
         wordArray.stream().mapToInt(Word::getVocabularyId).forEach(result::add);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Document document = (Document) o;
+
+        return Arrays.equals(getWordArray(), document.getWordArray()) && vocabulary.equals(document.vocabulary);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Arrays.hashCode(getWordArray());
+        result = 31 * result + vocabulary.hashCode();
         return result;
     }
 }

@@ -19,11 +19,14 @@ package nlmt.datatypes;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -33,10 +36,75 @@ public class SparseDocumentTest
 {
     private SparseDocument sparseDocument;
     private IdentifierObjectMapper<String> vocabulary;
+    private List<String> simpleDocument;
 
     @Before
     public void setUp() {
         vocabulary = new IdentifierObjectMapper<>();
+        simpleDocument = new ArrayList<>();
+        simpleDocument.add("this");
+        simpleDocument.add("is");
+        simpleDocument.add("a");
+        simpleDocument.add("test");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testVocabularyNullOnInitThrowsException() {
+        new SparseDocument(null);
+    }
+
+    @Test
+    public void testDocumentEqualityNullDocument() {
+        sparseDocument = new SparseDocument(vocabulary);
+        assertThat(sparseDocument.equals(null), is(false));
+    }
+
+    @Test
+    public void testDocumentEqualityEmptyDocumentsReturnsTrue() {
+        sparseDocument = new SparseDocument(vocabulary);
+        SparseDocument sparseDocument1 = new SparseDocument(vocabulary);
+        assertThat(sparseDocument.equals(sparseDocument1), is(true));
+        assertThat(sparseDocument.hashCode() == sparseDocument1.hashCode(), is(true));
+    }
+
+    @Test
+    public void testDocumentEqualityDifferentVocabulariesReturnsFalse() {
+        sparseDocument = new SparseDocument(vocabulary);
+        sparseDocument.readDocument(simpleDocument);
+
+        IdentifierObjectMapper<String> vocabulary1 = new IdentifierObjectMapper<>();
+        vocabulary1.addObject("something");
+        SparseDocument sparseDocument1 = new SparseDocument(vocabulary1);
+        sparseDocument1.readDocument(simpleDocument);
+
+        assertThat(sparseDocument.equals(sparseDocument1), is(false));
+        assertThat(sparseDocument.hashCode() == sparseDocument1.hashCode(), is(false));
+    }
+
+    @Test
+    public void testDocumentEqualitySameVocabulariesReturnsTrue() {
+        sparseDocument = new SparseDocument(vocabulary);
+        sparseDocument.readDocument(simpleDocument);
+
+        SparseDocument sparseDocument1 = new SparseDocument(vocabulary);
+        sparseDocument1.readDocument(simpleDocument);
+
+        assertThat(sparseDocument.equals(sparseDocument1), is(true));
+        assertThat(sparseDocument.hashCode() == sparseDocument1.hashCode(), is(true));
+    }
+
+    @Test
+    public void testDocumentEqualitySameVocabulariesDifferentWordsReturnsTrue() {
+        sparseDocument = new SparseDocument(vocabulary);
+        sparseDocument.readDocument(simpleDocument);
+
+        SparseDocument sparseDocument1 = new SparseDocument(vocabulary);
+        List<String> differentDocument = new ArrayList<>();
+        differentDocument.add("different");
+        sparseDocument1.readDocument(differentDocument);
+
+        assertThat(sparseDocument.equals(sparseDocument1), is(false));
+        assertThat(sparseDocument.hashCode() == sparseDocument1.hashCode(), is(false));
     }
 
     @Test
@@ -208,5 +276,31 @@ public class SparseDocumentTest
         expectedWordCounts.put(vocabulary.getIndexFromObject("wordTwo"), 1);
         expectedWordCounts.put(vocabulary.getIndexFromObject("wordThree"), 2);
         assertThat(sparseDocument.getWordCountsByTopic(2), is(equalTo(expectedWordCounts)));
+    }
+
+    @Test
+    public void testSerializationRoundTrip() {
+        List<String> document = Arrays.asList("wordOne", "wordTwo", "wordThree", "wordThree");
+        sparseDocument = new SparseDocument(vocabulary);
+        sparseDocument.readDocument(document);
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutputStream.writeObject(sparseDocument);
+            byte[] serializedObjectArray = byteArrayOutputStream.toByteArray();
+            objectOutputStream.close();
+            byteArrayOutputStream.close();
+
+            assertThat(serializedObjectArray.length, is(not(equalTo(0))));
+
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serializedObjectArray);
+            ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+            SparseDocument deserializedSparseDocument = (SparseDocument) objectInputStream.readObject();
+            assertThat(sparseDocument.equals(deserializedSparseDocument), is(true));
+        } catch (IOException e) {
+            assertFalse("IOException occurred: " + e.getMessage(), true);
+        } catch (ClassNotFoundException e) {
+            assertFalse("ClassNotFoundException occurred: " + e.getMessage(), true);
+        }
     }
 }

@@ -16,13 +16,15 @@
 
 package nlmt.datatypes;
 
+import java.io.Serializable;
+
 /**
  * The Word class keeps track of a word within a document. Each word contains
  * a vocabulary ID associated with it, the raw string used to store the word,
  * a topic associated with the word, and the total number of times the word
  * appears in a document (or corpus).
  */
-public class Word
+public class Word implements Serializable
 {
     // The vocabulary identifier for the word
     private int vocabularyId;
@@ -37,6 +39,9 @@ public class Word
     private int topic;
 
     public Word(String rawWord, int vocabularyId) {
+        if (rawWord == null) {
+            throw new IllegalArgumentException("rawWord cannot be null");
+        }
         this.vocabularyId = vocabularyId;
         this.rawWord = rawWord;
         totalCount = 1;
@@ -95,5 +100,27 @@ public class Word
      */
     public int getVocabularyId() {
         return vocabularyId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Word word = (Word) o;
+
+        if (getVocabularyId() != word.getVocabularyId()) return false;
+        if (getTotalCount() != word.getTotalCount()) return false;
+        return getTopic() == word.getTopic() && getRawWord().equals(word.getRawWord());
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getVocabularyId();
+        result = 31 * result + getRawWord().hashCode();
+        result = 31 * result + getTotalCount();
+        result = 31 * result + getTopic();
+        return result;
     }
 }
