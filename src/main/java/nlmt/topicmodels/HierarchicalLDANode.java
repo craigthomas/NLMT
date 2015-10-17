@@ -106,6 +106,7 @@ public class HierarchicalLDANode implements Serializable
     /**
      * Spawns a new child on for this node, and returns the spawned child.
      *
+     * @param level the new level for the node (between 0 and maxDepth)
      * @return the newly spawned node
      */
     public HierarchicalLDANode spawnChild(int level) {
@@ -279,6 +280,8 @@ public class HierarchicalLDANode implements Serializable
 
     /**
      * Scans the specified <code>nodeMapper</code> for nodes that have 0 documents and deletes them.
+     *
+     * @param nodeMapper the IdentifierObjectMapper responsible for mapping nodes to ids
      */
     public static void deleteEmptyNodes(IdentifierObjectMapper<HierarchicalLDANode> nodeMapper) {
         List<Integer> nodesToDelete = new ArrayList<>();

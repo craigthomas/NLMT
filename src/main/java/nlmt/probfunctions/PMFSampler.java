@@ -32,9 +32,9 @@ import static java.lang.Math.exp;
  * The total sum of all the weights is 1.8. It would then draw a random number
  * between 0 and 1.8 and compare it to the following values:
  *
- * Sample 1 - index 0 - must be > 0.0 and <= 1.2
- * Sample 2 - index 1 - must be > 1.2 and <= 1.7
- * Sample 3 - index 2 - must be > 1.7 and <= 1.8
+ * Sample 1 - index 0 - must be greater than 0.0 and less than or equal to 1.2
+ * Sample 2 - index 1 - must be greater 1.2 and less than or equal to 1.7
+ * Sample 3 - index 2 - must be greater 1.7 and less than or equal to 1.8
  *
  * If the random value drawn was 1.543, then index 1 would be returned.
  */
