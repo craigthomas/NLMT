@@ -179,6 +179,8 @@ public class HierarchicalLDAModel implements Serializable
      * documents that have visited the node.
      *
      * @param wordCountsAtLevel the total word counts for all vocabulary words in the document at this level
+     * @param documentWords the set of Word objects appearing in this document
+     * @param eta the value of eta for this level
      * @param node the node with the words
      * @return the log likelihood of choosing this node
      */
@@ -224,6 +226,7 @@ public class HierarchicalLDAModel implements Serializable
      * should be created (e.g. [0, 3, -1]).
      *
      * @param document the SparseDocument to consider
+     * @param path the path that the document currently takes through the tree
      * @param pathToConsider the path nodes to consider
      * @return the log-likelihood of the path
      */
@@ -250,6 +253,7 @@ public class HierarchicalLDAModel implements Serializable
      * paths is specified by a series of node ids (e.g. [1, 4, 9]).
      *
      * @param document the SparseDocument to check
+     * @param path the path that the document currently takes throug hthe tree
      * @param paths a list of paths
      * @return the index of the path chosen from the list
      */
@@ -333,6 +337,7 @@ public class HierarchicalLDAModel implements Serializable
      *
      * @param document the document with the words
      * @param path the path through the tree
+     * @param randomize if true, level selection for words will be random
      */
     protected void chooseLevelsForDocument(SparseDocument document, HierarchicalLDAPath path, boolean randomize) {
         Set<Word> words = document.getWordSet();
@@ -463,6 +468,7 @@ public class HierarchicalLDAModel implements Serializable
      * Returns a string representation of the tree starting at the root.
      *
      * @param numWords the number of words to print per line
+     * @return returns a String representation of the tree
      */
     public String prettyPrintTree(int numWords) {
         return prettyPrintNode(rootNode, 0, numWords);
@@ -475,6 +481,7 @@ public class HierarchicalLDAModel implements Serializable
      * @param node the node to be considered as the root node
      * @param indentationLevel the current indentation level
      * @param numWords the number of words to print per line
+     * @return returns a String representation of the node
      */
     public String prettyPrintNode(HierarchicalLDANode node, int indentationLevel, int numWords) {
         StringBuilder result = new StringBuilder();

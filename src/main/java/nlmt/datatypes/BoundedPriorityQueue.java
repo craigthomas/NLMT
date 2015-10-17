@@ -39,6 +39,12 @@ public class BoundedPriorityQueue<T extends Serializable> implements Serializabl
     // The total size of the queue
     private int size;
 
+    /**
+     * The default constructor for the BoundedPriorityQueue. The size parameter
+     * sets how many items the queue will hold.
+     *
+     * @param size the size of the queue
+     */
     public BoundedPriorityQueue(int size) {
         this.size = size + 1;
         priorities = new ArrayList<>(size);
