@@ -137,7 +137,7 @@ public class HierarchicalLDAModel implements Serializable
 
     /**
      * Read in a list of documents. Each document is assumed to be a
-     * list of Strings. Stopwords and other pre-processing should be
+     * list of Strings. Stop-words and other pre-processing should be
      * done prior to reading documents. The documents should be read before
      * running doGibbsSampling.
      *
@@ -148,7 +148,7 @@ public class HierarchicalLDAModel implements Serializable
 
         for (int i = 0; i < documents.size(); i++) {
             this.documents[i] = new SparseDocument(vocabulary);
-            this.documents[i].readDocument(documents.get(i));
+            this.documents[i].readDocument(documents.get(i), true);
         }
 
         documentPaths = new HierarchicalLDAPath[documents.size()];
@@ -534,7 +534,7 @@ public class HierarchicalLDAModel implements Serializable
 
         // Read the document
         SparseDocument newDocument = new SparseDocument(vocabulary);
-        newDocument.readDocument(document);
+        newDocument.readDocument(document, false);
         int temporaryDocumentId = documents.length;
 
         // Allocate the new document to a random path, and allocate words in the document to the path
@@ -554,23 +554,35 @@ public class HierarchicalLDAModel implements Serializable
 
         // Figure out the word distributions
         List<Integer> pathNodeIds = Arrays.stream(newDocumentPath.getNodes()).map(HierarchicalLDANode::getId).collect(Collectors.toList());
+        List<Double> wordDistributions = new ArrayList<>();
         Map<Integer, Integer> wordCountsByTopic = newDocument.getTopicCounts();
         int totalWords = wordCountsByTopic.values().stream().mapToInt(value -> value).sum();
-        List<Double> wordDistributions = new ArrayList<>();
-        for (int level = 0; level < maxDepth; level++) {
-            wordDistributions.add((double)(wordCountsByTopic.getOrDefault(level, 0) / totalWords));
-        }
 
-        // Reset the old counts for the nodes and their documents by de-allocating the node from
-        // the path that it was associated with
-        Set<Word> wordSet = newDocument.getWordSet();
-        for (int level = 0; level < maxDepth; level++) {
-            HierarchicalLDANode node = newDocumentPath.getNode(level);
-            node.removeVisited(temporaryDocumentId);
-            for (Word word : wordSet) {
-                if (word.getTopic() == level) {
-                    node.removeWord(word);
-                    word.setTopic(-1);
+        // If the document contained no valid words, then return empty distributions, and a
+        // path that is all nulls
+        if (totalWords == 0) {
+            wordDistributions = new ArrayList<>();
+            pathNodeIds = new ArrayList<>();
+            for (int level = 0; level < maxDepth; level++) {
+                wordDistributions.add(0.0);
+                pathNodeIds.add(-1);
+            }
+        } else {
+            for (int level = 0; level < maxDepth; level++) {
+                wordDistributions.add((double) (wordCountsByTopic.getOrDefault(level, 0) / totalWords));
+            }
+
+            // Reset the old counts for the nodes and their documents by de-allocating the node from
+            // the path that it was associated with
+            Set<Word> wordSet = newDocument.getWordSet();
+            for (int level = 0; level < maxDepth; level++) {
+                HierarchicalLDANode node = newDocumentPath.getNode(level);
+                node.removeVisited(temporaryDocumentId);
+                for (Word word : wordSet) {
+                    if (word.getTopic() == level) {
+                        node.removeWord(word);
+                        word.setTopic(-1);
+                    }
                 }
             }
         }
