@@ -1027,6 +1027,79 @@ public class HierarchicalLDAModelTest {
     }
 
     @Test
+    public void testSingleWordDocumentInferenceWithUnseenWords() {
+        // We need equal probabilities of seeing a word at any level of the tree
+        // Control gamma so that no new nodes are really generated
+        hierarchicalLDAModel = new HierarchicalLDAModel(3, HierarchicalLDAModel.DEFAULT_GAMMA,
+                new double [] {0.1, 0.1, 2.0}, 0.99, 1.0);
+        List<List<String>> documentList = new ArrayList<>();
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document1));
+        documentList.add(Arrays.asList(document2));
+        documentList.add(Arrays.asList(document3));
+        hierarchicalLDAModel.readDocuments(documentList);
+        HierarchicalLDANode child0 = hierarchicalLDAModel.rootNode.spawnChild(1);
+        HierarchicalLDANode child1 = child0.spawnChild(2);
+        hierarchicalLDAModel.documents[0].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[1].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[2].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[3].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[4].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[5].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[6].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[7].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[8].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[9].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[10].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[11].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[12].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[13].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[14].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[15].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[16].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[17].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[18].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[19].getWordSet().forEach(child1::addWord);
+        hierarchicalLDAModel.documents[20].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+        hierarchicalLDAModel.documents[21].getWordSet().forEach(hierarchicalLDAModel.rootNode::addWord);
+
+        List<String> testDocument = new ArrayList<>();
+        testDocument.add("does");
+        testDocument.add("not");
+        testDocument.add("exist");
+
+        List<Double> expectedDistributions = new ArrayList<>();
+        expectedDistributions.add(0.0);
+        expectedDistributions.add(0.0);
+        expectedDistributions.add(0.0);
+        List<Integer> expectedNodes = new ArrayList<>();
+        expectedNodes.add(-1);
+        expectedNodes.add(-1);
+        expectedNodes.add(-1);
+
+        Pair<List<Integer>, List<Double>> results = hierarchicalLDAModel.inference(testDocument, 10, true);
+        assertThat(results, is(equalTo(Pair.of(expectedNodes, expectedDistributions))));
+    }
+
+    @Test
     public void testGetHierarchyComplexExampleWorksCorrectly() {
         hierarchicalLDAModel = new HierarchicalLDAModel();
         hierarchicalLDAModel.rootNode = new HierarchicalLDANode(null, 1);        // node 0

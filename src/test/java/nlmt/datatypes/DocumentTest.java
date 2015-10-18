@@ -76,12 +76,12 @@ public class DocumentTest {
     @Test
     public void testDocumentEqualityDifferentVocabulariesReturnsFalse() {
         document = new Document(vocabulary);
-        document.readDocument(simpleDocument);
+        document.readDocument(simpleDocument, true);
 
         IdentifierObjectMapper<String> vocabulary1 = new IdentifierObjectMapper<>();
         vocabulary1.addObject("something");
         Document document1 = new Document(vocabulary1);
-        document1.readDocument(simpleDocument);
+        document1.readDocument(simpleDocument, true);
 
         assertThat(document.equals(document1), is(false));
         assertThat(document.hashCode() == document1.hashCode(), is(false));
@@ -90,10 +90,10 @@ public class DocumentTest {
     @Test
     public void testDocumentEqualitySameVocabulariesReturnsTrue() {
         document = new Document(vocabulary);
-        document.readDocument(simpleDocument);
+        document.readDocument(simpleDocument, true);
 
         Document document1 = new Document(vocabulary);
-        document1.readDocument(simpleDocument);
+        document1.readDocument(simpleDocument, true);
 
         assertThat(document.equals(document1), is(true));
         assertThat(document.hashCode() == document1.hashCode(), is(true));
@@ -102,12 +102,12 @@ public class DocumentTest {
     @Test
     public void testDocumentEqualitySameVocabulariesDifferentWordsReturnsTrue() {
         document = new Document(vocabulary);
-        document.readDocument(simpleDocument);
+        document.readDocument(simpleDocument, true);
 
         Document document1 = new Document(vocabulary);
         List<String> differentDocument = new ArrayList<>();
         differentDocument.add("different");
-        document1.readDocument(differentDocument);
+        document1.readDocument(differentDocument, false);
 
         assertThat(document.equals(document1), is(false));
         assertThat(document.hashCode() == document1.hashCode(), is(false));
@@ -116,7 +116,7 @@ public class DocumentTest {
     @Test
     public void testReadDocumentAddsWordsToVocabulary() {
         String [] words = {"the", "cat", "sat"};
-        document.readDocument(Arrays.asList(words));
+        document.readDocument(Arrays.asList(words), true);
         assertThat(vocabulary.getIndexFromObject("the"), is(not(equalTo(-1))));
         assertThat(vocabulary.getIndexFromObject("cat"), is(not(equalTo(-1))));
         assertThat(vocabulary.getIndexFromObject("sat"), is(not(equalTo(-1))));
@@ -131,7 +131,7 @@ public class DocumentTest {
     @Test
     public void testReadDocumentAddsWordsToWordArray() {
         String [] words = {"the", "cat", "sat"};
-        document.readDocument(Arrays.asList(words));
+        document.readDocument(Arrays.asList(words), true);
         int theIndex = vocabulary.getIndexFromObject("the");
         int catIndex = vocabulary.getIndexFromObject("cat");
         int satIndex = vocabulary.getIndexFromObject("sat");
@@ -142,14 +142,14 @@ public class DocumentTest {
     @Test
     public void testGetRawWordsWorksCorrectly() {
         String [] words = {"the", "cat", "sat"};
-        document.readDocument(Arrays.asList(words));
+        document.readDocument(Arrays.asList(words), true);
         assertThat(document.getRawWords(), is(equalTo(words)));
     }
 
     @Test
     public void testTopicArrayAllNegativeOnesWhenDocumentRead() {
         String [] words = {"the", "cat", "sat"};
-        document.readDocument(Arrays.asList(words));
+        document.readDocument(Arrays.asList(words), true);
         int [] expectedTopicArrayArray = {-1, -1, -1};
         assertThat(document.getTopicArray(), is(equalTo(expectedTopicArrayArray)));
     }
@@ -157,7 +157,7 @@ public class DocumentTest {
     @Test
     public void testTopicArraySetSingleCorrectly() {
         String [] words = {"the", "cat", "sat"};
-        document.readDocument(Arrays.asList(words));
+        document.readDocument(Arrays.asList(words), true);
         document.setTopicForWord(0, 1);
         int [] expectedTopicArrayArray = {1, -1, -1};
         assertThat(document.getTopicArray(), is(equalTo(expectedTopicArrayArray)));
@@ -166,7 +166,7 @@ public class DocumentTest {
     @Test
     public void testTopicArraySetAllCorrectly() {
         String [] words = {"the", "cat", "sat"};
-        document.readDocument(Arrays.asList(words));
+        document.readDocument(Arrays.asList(words), true);
         document.setTopicForWord(0, 1);
         document.setTopicForWord(1, 2);
         document.setTopicForWord(2, 3);
@@ -177,14 +177,14 @@ public class DocumentTest {
     @Test(expected=IllegalArgumentException.class)
     public void testSetTopicOnNegativeWordIndexThrowsException() {
         String [] words = {"the", "cat", "sat"};
-        document.readDocument(Arrays.asList(words));
+        document.readDocument(Arrays.asList(words), true);
         document.setTopicForWord(-1, 1);
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testSetTopicOnWordIndexTooLargeThrowsException() {
         String [] words = {"the", "cat", "sat"};
-        document.readDocument(Arrays.asList(words));
+        document.readDocument(Arrays.asList(words), true);
         document.setTopicForWord(3, 1);
     }
 
@@ -197,7 +197,7 @@ public class DocumentTest {
     public void testGetWordsOnDocumentAllSameWord() {
         String [] words = {"the", "the", "the"};
         int [] vocabList = {0, 0, 0};
-        document.readDocument(Arrays.asList(words));
+        document.readDocument(Arrays.asList(words), true);
         assertThat(document.getWordArray().length, is(equalTo(3)));
         assertThat(document.getWordArray(), is(equalTo(vocabList)));
         assertThat(document.getRawWords(), is(equalTo(words)));
@@ -206,7 +206,7 @@ public class DocumentTest {
     @Test
     public void testClearTopicsWorksCorrectly() {
         String [] words = {"the", "cat", "sat"};
-        document.readDocument(Arrays.asList(words));
+        document.readDocument(Arrays.asList(words), true);
         document.setTopicForWord(0, 1);
         document.setTopicForWord(1, 2);
         document.setTopicForWord(2, 3);
@@ -218,7 +218,7 @@ public class DocumentTest {
     @Test
     public void testGetWordSetWorksCorrectly() {
         String [] words = {"the", "cat", "sat"};
-        document.readDocument(Arrays.asList(words));
+        document.readDocument(Arrays.asList(words), true);
         Set<Integer> expected = new HashSet<>();
         expected.add(0);
         expected.add(1);
@@ -227,10 +227,30 @@ public class DocumentTest {
     }
 
     @Test
+    public void testReadDocumentVocabularyWordsOnlyDoesNotAddWordsToDocument() {
+        String [] words = {"the", "cat", "sat"};
+        document.readDocument(Arrays.asList(words), false);
+        Set<Integer> expected = new HashSet<>();
+        assertThat(document.getWordSet(), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testReadDocumentVocabularyWordsOnlyAddsSomeWordsToDocument() {
+        String [] words = {"the", "cat", "sat"};
+        vocabulary.addObject("the");
+        vocabulary.addObject("sat");
+        document.readDocument(Arrays.asList(words), false);
+        Set<Integer> expected = new HashSet<>();
+        expected.add(vocabulary.getIndexFromObject("the"));
+        expected.add(vocabulary.getIndexFromObject("sat"));
+        assertThat(document.getWordSet(), is(equalTo(expected)));
+    }
+
+    @Test
     public void testSerializationRoundTrip() {
         List<String> documentList = Arrays.asList("wordOne", "wordTwo", "wordThree", "wordThree");
         document = new Document(vocabulary);
-        document.readDocument(documentList);
+        document.readDocument(documentList, false);
         try {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);

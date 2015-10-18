@@ -16,6 +16,7 @@
 
 package nlmt.datatypes;
 
+import org.hamcrest.core.IsEqual;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -70,12 +71,12 @@ public class SparseDocumentTest
     @Test
     public void testDocumentEqualityDifferentVocabulariesReturnsFalse() {
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(simpleDocument);
+        sparseDocument.readDocument(simpleDocument, true);
 
         IdentifierObjectMapper<String> vocabulary1 = new IdentifierObjectMapper<>();
         vocabulary1.addObject("something");
         SparseDocument sparseDocument1 = new SparseDocument(vocabulary1);
-        sparseDocument1.readDocument(simpleDocument);
+        sparseDocument1.readDocument(simpleDocument, true);
 
         assertThat(sparseDocument.equals(sparseDocument1), is(false));
         assertThat(sparseDocument.hashCode() == sparseDocument1.hashCode(), is(false));
@@ -84,10 +85,10 @@ public class SparseDocumentTest
     @Test
     public void testDocumentEqualitySameVocabulariesReturnsTrue() {
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(simpleDocument);
+        sparseDocument.readDocument(simpleDocument, true);
 
         SparseDocument sparseDocument1 = new SparseDocument(vocabulary);
-        sparseDocument1.readDocument(simpleDocument);
+        sparseDocument1.readDocument(simpleDocument, true);
 
         assertThat(sparseDocument.equals(sparseDocument1), is(true));
         assertThat(sparseDocument.hashCode() == sparseDocument1.hashCode(), is(true));
@@ -96,12 +97,12 @@ public class SparseDocumentTest
     @Test
     public void testDocumentEqualitySameVocabulariesDifferentWordsReturnsTrue() {
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(simpleDocument);
+        sparseDocument.readDocument(simpleDocument, true);
 
         SparseDocument sparseDocument1 = new SparseDocument(vocabulary);
         List<String> differentDocument = new ArrayList<>();
         differentDocument.add("different");
-        sparseDocument1.readDocument(differentDocument);
+        sparseDocument1.readDocument(differentDocument, true);
 
         assertThat(sparseDocument.equals(sparseDocument1), is(false));
         assertThat(sparseDocument.hashCode() == sparseDocument1.hashCode(), is(false));
@@ -112,7 +113,7 @@ public class SparseDocumentTest
         List<String> document = Arrays.asList("wordOne", "wordTwo", "wordThree", "wordThree");
         Set<String> expectedWords = new HashSet<>(Arrays.asList("wordOne", "wordTwo", "wordThree"));
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(document);
+        sparseDocument.readDocument(document, true);
         assertThat(sparseDocument.getWordSet().stream().map(Word::getRawWord).collect(Collectors.toSet()), is(equalTo(expectedWords)));
         assertThat(sparseDocument.getWordCount(vocabulary.getIndexFromObject("wordOne")), is(equalTo(1)));
         assertThat(sparseDocument.getWordCount(vocabulary.getIndexFromObject("wordTwo")), is(equalTo(1)));
@@ -123,7 +124,7 @@ public class SparseDocumentTest
     public void testSetTopicForWordSingleWordWorksCorrectly() {
         List<String> document = Arrays.asList("wordOne");
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(document);
+        sparseDocument.readDocument(document, true);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordOne"), 31);
         assertThat(sparseDocument.getTopicForWord(vocabulary.getIndexFromObject("wordOne")), is(equalTo(31)));
     }
@@ -132,7 +133,7 @@ public class SparseDocumentTest
     public void testSetTopicForNonExistentWordDoesNothing() {
         List<String> document = Arrays.asList("wordOne");
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(document);
+        sparseDocument.readDocument(document, true);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordOne"), 31);
         sparseDocument.setTopicForWord(1111, 2);
         assertThat(sparseDocument.getTopicForWord(vocabulary.getIndexFromObject("wordOne")), is(equalTo(31)));
@@ -142,7 +143,7 @@ public class SparseDocumentTest
     public void testGetTopicForNonExistentWordReturnsNegativeOne() {
         List<String> document = Arrays.asList("wordOne");
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(document);
+        sparseDocument.readDocument(document, true);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordOne"), 31);
         assertThat(sparseDocument.getTopicForWord(1111), is(equalTo(-1)));
     }
@@ -151,7 +152,7 @@ public class SparseDocumentTest
     public void testGetCountForNonExistentWordReturnsZero() {
         List<String> document = Arrays.asList("wordOne");
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(document);
+        sparseDocument.readDocument(document, true);
         assertThat(sparseDocument.getWordCount(1111), is(equalTo(0)));
     }
 
@@ -159,7 +160,7 @@ public class SparseDocumentTest
     public void testGetTopicsWorksCorrectly() {
         List<String> document = Arrays.asList("wordOne", "wordTwo", "wordThree");
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(document);
+        sparseDocument.readDocument(document, true);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordOne"), 1);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordTwo"), 2);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordThree"), 3);
@@ -177,7 +178,7 @@ public class SparseDocumentTest
     public void testGetTopicCountsReturnsNegativeOneCountWhenNoTopicsAssigned() {
         List<String> document = Arrays.asList("wordOne", "wordTwo", "wordThree");
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(document);
+        sparseDocument.readDocument(document, true);
         Map<Integer, Integer> expectedTopicCounts = new HashMap<>();
         expectedTopicCounts.put(-1, 3);
         assertThat(sparseDocument.getTopicCounts(), is(equalTo(expectedTopicCounts)));
@@ -187,7 +188,7 @@ public class SparseDocumentTest
     public void testGetTopicCountsWorksCorrectlyWhenTopicsAssigned() {
         List<String> document = Arrays.asList("wordOne", "wordTwo", "wordThree", "wordThree");
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(document);
+        sparseDocument.readDocument(document, true);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordOne"), 1);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordTwo"), 2);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordThree"), 3);
@@ -202,7 +203,7 @@ public class SparseDocumentTest
     public void testGetWordTopicCountWorksCorrectly() {
         List<String> document = Arrays.asList("wordOne", "wordTwo", "wordThree", "wordThree");
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(document);
+        sparseDocument.readDocument(document, true);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordOne"), 1);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordTwo"), 2);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordThree"), 3);
@@ -216,7 +217,7 @@ public class SparseDocumentTest
     public void testGetWordTopicCountEmptyOnNonExistentWord() {
         List<String> document = Arrays.asList("wordOne", "wordTwo", "wordThree", "wordThree");
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(document);
+        sparseDocument.readDocument(document, true);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordOne"), 1);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordTwo"), 2);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordThree"), 3);
@@ -229,7 +230,7 @@ public class SparseDocumentTest
     public void testGetWordTopicNegativeOneWhenNotInitialized() {
         List<String> document = Arrays.asList("wordOne", "wordTwo", "wordThree", "wordThree");
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(document);
+        sparseDocument.readDocument(document, true);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordTwo"), 2);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordThree"), 3);
         Word word = new Word("wordOne", vocabulary.getIndexFromObject("wordOne"));
@@ -242,7 +243,7 @@ public class SparseDocumentTest
     public void testGetWordCountsByTopicCorrectlyWhenTopicsAssigned() {
         List<String> document = Arrays.asList("wordOne", "wordTwo", "wordThree", "wordThree");
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(document);
+        sparseDocument.readDocument(document, true);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordOne"), 1);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordTwo"), 2);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordThree"), 3);
@@ -255,7 +256,7 @@ public class SparseDocumentTest
     public void testGetWordCountsByTopicIsEmptyOnNonExistentTopic() {
         List<String> document = Arrays.asList("wordOne", "wordTwo", "wordThree", "wordThree");
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(document);
+        sparseDocument.readDocument(document, true);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordOne"), 1);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordTwo"), 2);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordThree"), 3);
@@ -267,7 +268,7 @@ public class SparseDocumentTest
     public void testGetWordCountsByTopicMultipleWordsSameTopic() {
         List<String> document = Arrays.asList("wordOne", "wordTwo", "wordThree", "wordThree");
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(document);
+        sparseDocument.readDocument(document, true);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordOne"), 2);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordTwo"), 2);
         sparseDocument.setTopicForWord(vocabulary.getIndexFromObject("wordThree"), 2);
@@ -279,10 +280,32 @@ public class SparseDocumentTest
     }
 
     @Test
+    public void testReadDocumentVocabularyWordsOnlyDoesNotAddWordsToDocument() {
+        String [] words = {"the", "cat", "sat"};
+        sparseDocument = new SparseDocument(vocabulary);
+        sparseDocument.readDocument(Arrays.asList(words), false);
+        Set<Integer> expected = new HashSet<>();
+        assertThat(sparseDocument.getWordSet(), is(IsEqual.equalTo(expected)));
+    }
+
+    @Test
+    public void testReadDocumentVocabularyWordsOnlyAddsSomeWordsToDocument() {
+        String [] words = {"the", "cat", "sat"};
+        vocabulary.addObject("the");
+        vocabulary.addObject("sat");
+        sparseDocument = new SparseDocument(vocabulary);
+        sparseDocument.readDocument(Arrays.asList(words), false);
+        Set<Integer> expected = new HashSet<>();
+        expected.add(vocabulary.getIndexFromObject("the"));
+        expected.add(vocabulary.getIndexFromObject("sat"));
+        assertThat(sparseDocument.getWordSet().stream().map(Word::getVocabularyId).collect(Collectors.toSet()), is(IsEqual.equalTo(expected)));
+    }
+
+    @Test
     public void testSerializationRoundTrip() {
         List<String> document = Arrays.asList("wordOne", "wordTwo", "wordThree", "wordThree");
         sparseDocument = new SparseDocument(vocabulary);
-        sparseDocument.readDocument(document);
+        sparseDocument.readDocument(document, false);
         try {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);

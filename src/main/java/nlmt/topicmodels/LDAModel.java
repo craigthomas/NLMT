@@ -99,7 +99,7 @@ public class LDAModel implements Serializable
 
     /**
      * Read in a list of documents. Each document is assumed to be a
-     * list of Strings. Stopwords and other pre-processing should be
+     * list of Strings. Stop-words and other pre-processing should be
      * done prior to reading documents. The documents should be read before
      * running doGibbsSampling.
      *
@@ -110,7 +110,7 @@ public class LDAModel implements Serializable
 
         for (int i = 0; i < documents.size(); i++) {
             this.documents[i] = new Document(vocabulary);
-            this.documents[i].readDocument(documents.get(i));
+            this.documents[i].readDocument(documents.get(i), true);
         }
     }
 
@@ -309,7 +309,7 @@ public class LDAModel implements Serializable
         }
 
         Document newDocument = new Document(vocabulary);
-        newDocument.readDocument(document);
+        newDocument.readDocument(document, false);
         int [] localTopicDocumentCount = new int[numTopics];
         int [] words = newDocument.getWordArray();
 
@@ -327,13 +327,11 @@ public class LDAModel implements Serializable
         for (int iteration = 0; iteration < numIterations; iteration++) {
             int [] topics = newDocument.getTopicArray();
             for (int wordIndexInDoc = 0; wordIndexInDoc < words.length; wordIndexInDoc++) {
-                if (words[wordIndexInDoc] < wordTopicCount.length) {
-                    localTopicDocumentCount[topics[wordIndexInDoc]]--;
-                    newDocument.setTopicForWord(wordIndexInDoc, -1);
-                    int newTopic = getNewTopic(words[wordIndexInDoc], localTopicDocumentCount);
-                    newDocument.setTopicForWord(wordIndexInDoc, newTopic);
-                    localTopicDocumentCount[newTopic]++;
-                }
+                localTopicDocumentCount[topics[wordIndexInDoc]]--;
+                newDocument.setTopicForWord(wordIndexInDoc, -1);
+                int newTopic = getNewTopic(words[wordIndexInDoc], localTopicDocumentCount);
+                newDocument.setTopicForWord(wordIndexInDoc, newTopic);
+                localTopicDocumentCount[newTopic]++;
             }
         }
 

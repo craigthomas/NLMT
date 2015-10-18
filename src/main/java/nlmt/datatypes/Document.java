@@ -46,14 +46,20 @@ public class Document implements Serializable
      * Each document is a List of Strings that represent the
      * words in the document. For each word, add it to the vocabulary,
      * and then add the vocabulary number assigned to the word to
-     * the wordArray for the document.
+     * the wordArray for the document. If <code>addWordsToVocabulary</code> is
+     * <code>true</code>, then any previously unseen words will be added to
+     * the vocabulary.
      *
      * @param words the list of words in the document
+     * @param addWordsToVocabulary if true, then previously unseen words will be added to the vocabulary
      */
-    public void readDocument(List<String> words) {
+    public void readDocument(List<String> words, boolean addWordsToVocabulary) {
         for (String word : words) {
-            vocabulary.addObject(word);
-            wordArray.add(new Word(word, vocabulary.getIndexFromObject(word)));
+            boolean vocabularyContainsWord = vocabulary.contains(word);
+            if ((vocabularyContainsWord) || (!vocabularyContainsWord && addWordsToVocabulary)) {
+                vocabulary.addObject(word);
+                wordArray.add(new Word(word, vocabulary.getIndexFromObject(word)));
+            }
         }
     }
 
