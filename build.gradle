@@ -4,7 +4,6 @@ apply plugin: 'jacoco'
 apply plugin: 'maven'
 apply plugin: 'com.github.kt3k.coveralls'
 
-name = 'Natural Language Modeling Toolkit'
 version = '0.1.0'
 group = 'nlmt'
 description = 'This project contains a number of simple language modeling tools. ' +
