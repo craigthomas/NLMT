@@ -4,8 +4,14 @@ apply plugin: 'jacoco'
 apply plugin: 'maven'
 apply plugin: 'com.github.kt3k.coveralls'
 
-version = '1.0'
+version = '0.1.0'
 group = 'nlmt'
+description = 'This project contains a number of simple language modeling tools. ' +
+        'The tools contained in the toolkit are meant to be used for rapid prototypes. ' +
+        'Currently, most algorithms are single threaded. For highly distributed ' +
+        'environments, please see other projects such as Apache Spark. The toolkit ' +
+        'is designed to be easy to use and understand in order to get you up and ' +
+        'performing language analyses within minutes.'
 
 task wrapper(type: Wrapper) {
     gradleVersion = '2.7'
@@ -43,6 +49,7 @@ dependencies {
     compile 'org.apache.commons:commons-lang3:3.4'
     compile 'commons-collections:commons-collections:3.2.1'
     compile 'org.apache.commons:commons-math3:3.5'
+    compile 'commons-io:commons-io:2.4'
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:1.10.19'
 }
