@@ -5,7 +5,7 @@ apply plugin: 'maven'
 apply plugin: 'com.github.kt3k.coveralls'
 
 version = '0.1.0'
-group = 'nlmt'
+group = 'com.github.craigthomas'
 description = 'This project contains a number of simple language modeling tools. ' +
         'The tools contained in the toolkit are meant to be used for rapid prototypes. ' +
         'Currently, most algorithms are single threaded. For highly distributed ' +
