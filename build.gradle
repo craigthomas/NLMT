@@ -1,17 +1,27 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.0.1'
+    }
+}
+
+plugins {
+    id "com.jfrog.bintray" version "1.4"
+}
+
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'jacoco'
 apply plugin: 'maven'
+apply plugin: 'maven-publish'
 apply plugin: 'com.github.kt3k.coveralls'
 
-version = '0.1.0'
+version = '0.1.1'
 group = 'com.github.craigthomas'
-description = 'This project contains a number of simple language modeling tools. ' +
-        'The tools contained in the toolkit are meant to be used for rapid prototypes. ' +
-        'Currently, most algorithms are single threaded. For highly distributed ' +
-        'environments, please see other projects such as Apache Spark. The toolkit ' +
-        'is designed to be easy to use and understand in order to get you up and ' +
-        'performing language analyses within minutes.'
+description = 'Natural Language Modeling Toolkit'
 
 task wrapper(type: Wrapper) {
     gradleVersion = '2.7'
@@ -19,6 +29,7 @@ task wrapper(type: Wrapper) {
 
 repositories {
     mavenCentral()
+    jcenter()
 }
 
 sourceSets {
@@ -31,16 +42,6 @@ sourceSets {
         java {
             srcDir 'main/test'
         }
-    }
-}
-
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.0.1'
     }
 }
 
@@ -72,6 +73,38 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 }
 
 artifacts {
-    archives sourcesJar
-    archives javadocJar
+    archives sourcesJar, javadocJar
+}
+
+bintray {
+    user = System.getenv('BINTRAY_USER')
+    key = System.getenv('BINTRAY_KEY')
+    dryRun = false
+    pkg {
+        repo = 'maven'
+        name = rootProject.name
+        desc = project.description
+        websiteUrl = 'https://github.com/craigthomas/NLMT'
+        issueTrackerUrl = 'https://github.com/craigthomas/NLMT/issues'
+        licenses = ['Apache-2.0']
+        vcsUrl = 'https://github.com/craigthomas/NLMT.git'
+        publish = true
+        version {
+            name = project.version
+            desc = project.description
+            released = new Date()
+            vcsTag = 'v0.1.1'
+        }
+    }
+}
+
+publishing {
+    publications {
+        nlmt1(MavenPublication) {
+            from components.java
+            groupId project.group
+            artifactId rootProject.name
+            version project.version
+        }
+    }
 }

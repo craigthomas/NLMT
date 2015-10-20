@@ -5,6 +5,7 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/669b4ba9c6fe47e4b767e3abc309b7a8)](https://www.codacy.com/app/craig-thomas/NLMT) 
 [![Dependency Status](https://www.versioneye.com/user/projects/55d83bc18d9c4b001b000008/badge.svg)](https://www.versioneye.com/user/projects/55d83bc18d9c4b001b000008)
 [![Apache 2 License](https://img.shields.io/badge/license-apache_2-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.txt)
+[![GitHub version](https://badge.fury.io/gh/craigthomas%2Fnlmt.svg)](https://bintray.com/craigthomas/maven/nlmt/view)
 
 # What is it?
 
