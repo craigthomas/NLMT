@@ -116,6 +116,12 @@ public class HierarchicalLDAModelTest {
     }
 
     @Test
+    public void testEqualsSameObjectWorksCorrectly() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel), is(true));
+    }
+
+    @Test
     public void testEqualsNullWorksCorrectly() {
         hierarchicalLDAModel = new HierarchicalLDAModel();
         assertThat(hierarchicalLDAModel.equals(null), is(false));
@@ -150,7 +156,7 @@ public class HierarchicalLDAModelTest {
     @Test
     public void testEqualsDifferentEtaIsFalse() {
         hierarchicalLDAModel = new HierarchicalLDAModel();
-        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, HierarchicalLDAModel.DEFAULT_GAMMA,
                 new double [] {0.1, 0.1, 0.1}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
         assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
         assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
@@ -159,7 +165,7 @@ public class HierarchicalLDAModelTest {
     @Test
     public void testEqualsDifferentMIsFalse() {
         hierarchicalLDAModel = new HierarchicalLDAModel();
-        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, HierarchicalLDAModel.DEFAULT_GAMMA,
                 HierarchicalLDAModel.DEFAULT_ETA, 0.2, HierarchicalLDAModel.DEFAULT_PI);
         assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
         assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
@@ -168,7 +174,7 @@ public class HierarchicalLDAModelTest {
     @Test
     public void testEqualsDifferentPiIsFalse() {
         hierarchicalLDAModel = new HierarchicalLDAModel();
-        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, HierarchicalLDAModel.DEFAULT_GAMMA,
                 HierarchicalLDAModel.DEFAULT_ETA, HierarchicalLDAModel.DEFAULT_M, 10.0);
         assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
         assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
