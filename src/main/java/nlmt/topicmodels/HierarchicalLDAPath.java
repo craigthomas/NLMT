@@ -210,13 +210,13 @@ public class HierarchicalLDAPath implements Serializable
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) { return true; }
+        if (o == null || getClass() != o.getClass()) { return false; }
 
         HierarchicalLDAPath that = (HierarchicalLDAPath) o;
 
-        if (maxDepth != that.maxDepth) return false;
-        if (currentDepth != that.currentDepth) return false;
+        if (maxDepth != that.maxDepth) { return false; }
+        if (currentDepth != that.currentDepth) { return false; }
         // Probably incorrect - comparing Object[] arrays with Arrays.equals
         return Arrays.equals(getNodes(), that.getNodes());
 
@@ -224,7 +224,7 @@ public class HierarchicalLDAPath implements Serializable
 
     @Override
     public int hashCode() {
-        int result = getNodes() != null ? Arrays.hashCode(getNodes()) : 0;
+        int result = (getNodes() != null) ? Arrays.hashCode(getNodes()) : 0;
         result = 31 * result + maxDepth;
         result = 31 * result + currentDepth;
         return result;

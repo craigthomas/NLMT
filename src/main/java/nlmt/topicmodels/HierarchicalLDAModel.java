@@ -154,6 +154,11 @@ public class HierarchicalLDAModel implements Serializable
         documentPaths = new HierarchicalLDAPath[documents.size()];
         rootNode = new HierarchicalLDANode(null, vocabulary.size());
         int rootId = nodeMapper.addObject(rootNode);
+
+        for (int i = 0; i < documents.size(); i++) {
+            documentPaths[i] = new HierarchicalLDAPath(rootNode, maxDepth);
+        }
+
         rootNode.setId(rootId);
     }
 
@@ -356,7 +361,7 @@ public class HierarchicalLDAModel implements Serializable
      * @param path the path to check
      * @return the Array of probabilities for the word at each level
      */
-    public double [] getWordProbabilities(Word word, HierarchicalLDAPath path) {
+    protected double [] getWordProbabilities(Word word, HierarchicalLDAPath path) {
         double [] probabilities = new double [maxDepth];
         for (int level = 0; level < maxDepth; level++) {
             HierarchicalLDANode node = path.getNode(level);
@@ -373,7 +378,7 @@ public class HierarchicalLDAModel implements Serializable
      * @param documentTopicCounts the counts of the number of words in each level
      * @return an array of probabilities for each level
      */
-    public double [] getLevelProbabilities(Map<Integer, Integer> documentTopicCounts) {
+    protected double [] getLevelProbabilities(Map<Integer, Integer> documentTopicCounts) {
         double [] probabilities = new double [maxDepth];
         int totalWordCount = documentTopicCounts.values().stream().mapToInt(v -> v).sum();
         double remainingStickLength = 1.0;
@@ -601,25 +606,82 @@ public class HierarchicalLDAModel implements Serializable
         return HierarchicalLDANode.generateMap(nodeMapper);
     }
 
+    /**
+     * Retrieves the number of documents in each each node of the tree.
+     *
+     * @return a Map that links the node identifier to the number of documents it contains
+     */
+    public Map<Integer, Integer> getNumDocumentsForNodes() {
+        Map<Integer, Integer> result = new HashMap<>();
+        for (Integer nodeId : nodeMapper.getIndexKeys()) {
+            result.put(nodeId, nodeMapper.getObjectFromIndex(nodeId).getNumDocumentsVisitingNode());
+        }
+        return result;
+    }
+
+    /**
+     * Returns the path that the specified document took down the tree. If the
+     * supplied <code>documentIndex</code> is invalid, will return a path
+     * consisting of -1 values.
+     *
+     * @param documentIndex the index of the document in the original list of documents
+     * @return the path the document took down the tree
+     */
+    public List<Integer> getPathForDocument(int documentIndex) {
+        List<Integer> result = new ArrayList<>();
+        for (int level = 0; level < maxDepth; level++) {
+            if ((documentIndex >= documents.length) || (documentIndex < 0)) {
+                result.add(-1);
+            } else {
+                HierarchicalLDANode node = documentPaths[documentIndex].getNode(level);
+                if (node != null) {
+                    result.add(node.getId());
+                } else {
+                    result.add(-1);
+                }
+            }
+        }
+        return result;
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if ((o == null) || (getClass() != o.getClass())) {
+            return false;
+        }
 
         HierarchicalLDAModel that = (HierarchicalLDAModel) o;
 
-        if (maxDepth != that.maxDepth) return false;
-        if (Double.compare(that.gamma, gamma) != 0) return false;
-        if (Double.compare(that.m, m) != 0) return false;
-        if (Double.compare(that.pi, pi) != 0) return false;
-        if (!Arrays.equals(eta, that.eta)) return false;
+        if (maxDepth != that.maxDepth) {
+            return false;
+        }
+        if (Double.compare(that.gamma, gamma) != 0) {
+            return false;
+        }
+        if (Double.compare(that.m, m) != 0) {
+            return false;
+        }
+        if (Double.compare(that.pi, pi) != 0) {
+            return false;
+        }
+        if (!Arrays.equals(eta, that.eta)) {
+            return false;
+        }
         // Probably incorrect - comparing Object[] arrays with Arrays.equals
-        if (!Arrays.equals(documents, that.documents)) return false;
-        if (!vocabulary.equals(that.vocabulary)) return false;
-        if (!nodeMapper.equals(that.nodeMapper)) return false;
+        if (!Arrays.equals(documents, that.documents)) {
+            return false;
+        }
+        if (!vocabulary.equals(that.vocabulary)) {
+            return false;
+        }
+        if (!nodeMapper.equals(that.nodeMapper)) {
+            return false;
+        }
         // Probably incorrect - comparing Object[] arrays with Arrays.equals
-        if (!Arrays.equals(documentPaths, that.documentPaths)) return false;
-        return !(rootNode != null ? !rootNode.equals(that.rootNode) : that.rootNode != null);
+        return Arrays.equals(documentPaths, that.documentPaths) && !(rootNode != null ? !rootNode.equals(that.rootNode) : that.rootNode != null);
 
     }
 
