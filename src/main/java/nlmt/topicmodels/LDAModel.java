@@ -351,18 +351,18 @@ public class LDAModel implements Serializable
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) { return true; }
+        if ((o == null) || (getClass() != o.getClass())) { return false; }
 
         LDAModel ldaModel = (LDAModel) o;
 
-        if (numTopics != ldaModel.numTopics) return false;
-        if (Double.compare(ldaModel.alpha, alpha) != 0) return false;
-        if (Double.compare(ldaModel.beta, beta) != 0) return false;
-        if (Double.compare(ldaModel.betaTotal, betaTotal) != 0) return false;
-        if (!Arrays.deepEquals(documentTopicCount, ldaModel.documentTopicCount)) return false;
-        if (!Arrays.deepEquals(wordTopicCount, ldaModel.wordTopicCount)) return false;
-        if (!Arrays.equals(topicTotals, ldaModel.topicTotals)) return false;
+        if (numTopics != ldaModel.numTopics) { return false; }
+        if (Double.compare(ldaModel.alpha, alpha) != 0) { return false; }
+        if (Double.compare(ldaModel.beta, beta) != 0) { return false; }
+        if (Double.compare(ldaModel.betaTotal, betaTotal) != 0) { return false; }
+        if (!Arrays.deepEquals(documentTopicCount, ldaModel.documentTopicCount)) { return false; }
+        if (!Arrays.deepEquals(wordTopicCount, ldaModel.wordTopicCount)) { return false; }
+        if (!Arrays.equals(topicTotals, ldaModel.topicTotals)) { return false; }
         // Probably incorrect - comparing Object[] arrays with Arrays.equals
         return Arrays.equals(documents, ldaModel.documents) && vocabulary.equals(ldaModel.vocabulary);
 

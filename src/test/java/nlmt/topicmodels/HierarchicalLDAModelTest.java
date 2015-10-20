@@ -116,6 +116,12 @@ public class HierarchicalLDAModelTest {
     }
 
     @Test
+    public void testEqualsSameObjectWorksCorrectly() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel), is(true));
+    }
+
+    @Test
     public void testEqualsNullWorksCorrectly() {
         hierarchicalLDAModel = new HierarchicalLDAModel();
         assertThat(hierarchicalLDAModel.equals(null), is(false));
@@ -150,7 +156,7 @@ public class HierarchicalLDAModelTest {
     @Test
     public void testEqualsDifferentEtaIsFalse() {
         hierarchicalLDAModel = new HierarchicalLDAModel();
-        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, HierarchicalLDAModel.DEFAULT_GAMMA,
                 new double [] {0.1, 0.1, 0.1}, HierarchicalLDAModel.DEFAULT_M, HierarchicalLDAModel.DEFAULT_PI);
         assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
         assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
@@ -159,7 +165,7 @@ public class HierarchicalLDAModelTest {
     @Test
     public void testEqualsDifferentMIsFalse() {
         hierarchicalLDAModel = new HierarchicalLDAModel();
-        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, HierarchicalLDAModel.DEFAULT_GAMMA,
                 HierarchicalLDAModel.DEFAULT_ETA, 0.2, HierarchicalLDAModel.DEFAULT_PI);
         assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
         assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
@@ -168,7 +174,7 @@ public class HierarchicalLDAModelTest {
     @Test
     public void testEqualsDifferentPiIsFalse() {
         hierarchicalLDAModel = new HierarchicalLDAModel();
-        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(2, HierarchicalLDAModel.DEFAULT_GAMMA,
+        HierarchicalLDAModel hierarchicalLDAModel1 = new HierarchicalLDAModel(HierarchicalLDAModel.DEFAULT_MAX_DEPTH, HierarchicalLDAModel.DEFAULT_GAMMA,
                 HierarchicalLDAModel.DEFAULT_ETA, HierarchicalLDAModel.DEFAULT_M, 10.0);
         assertThat(hierarchicalLDAModel.equals(hierarchicalLDAModel1), is(false));
         assertThat(hierarchicalLDAModel.hashCode() == hierarchicalLDAModel1.hashCode(), is(false));
@@ -1121,6 +1127,89 @@ public class HierarchicalLDAModelTest {
         expected.put(3, Collections.singletonList(4));
         expected.put(4, new ArrayList<>());
         assertThat(hierarchicalLDAModel.getHierarchy(), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testGetNumDocumentsForNodesEmptyOnInit() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(documents);
+        Map<Integer, Integer> numDocumentsCount = hierarchicalLDAModel.getNumDocumentsForNodes();
+        assertThat(numDocumentsCount.containsKey(0), is(true));
+        assertThat(numDocumentsCount.get(0), is(equalTo(0)));
+    }
+
+    @Test
+    public void testGetNumDocumentsForNodesThatHaveValuesWorksCorrectly() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(documents);
+        hierarchicalLDAModel.rootNode.setVisited(0);
+        hierarchicalLDAModel.rootNode.setVisited(1);
+        Map<Integer, Integer> numDocumentsCount = hierarchicalLDAModel.getNumDocumentsForNodes();
+        assertThat(numDocumentsCount.containsKey(0), is(true));
+        assertThat(numDocumentsCount.get(0), is(equalTo(2)));
+    }
+
+    @Test
+    public void testGetNumDocumentsForMultipleNodesThatHaveValuesWorksCorrectly() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(documents);
+        hierarchicalLDAModel.rootNode.setVisited(0);
+        hierarchicalLDAModel.rootNode.setVisited(1);
+        HierarchicalLDANode child0 = hierarchicalLDAModel.rootNode.spawnChild(1);
+        child0.setId(hierarchicalLDAModel.nodeMapper.addObject(child0));
+        child0.setVisited(1);
+        Map<Integer, Integer> numDocumentsCount = hierarchicalLDAModel.getNumDocumentsForNodes();
+        assertThat(numDocumentsCount.containsKey(0), is(true));
+        assertThat(numDocumentsCount.containsKey(1), is(true));
+        assertThat(numDocumentsCount.get(0), is(equalTo(2)));
+        assertThat(numDocumentsCount.get(1), is(equalTo(1)));
+    }
+
+    @Test
+    public void testGetPathForDocumentOutsideOfRangeIsNegativeOnes() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(documents);
+        List<Integer> expected = Arrays.asList(-1, -1, -1);
+        assertThat(hierarchicalLDAModel.getPathForDocument(-1), is(equalTo(expected)));
+        assertThat(hierarchicalLDAModel.getPathForDocument(5), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testGetPathForDocumentAllNegativeOnesOnInit() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(documents);
+        List<Integer> expected = Arrays.asList(0, -1, -1);
+        assertThat(hierarchicalLDAModel.getPathForDocument(0), is(equalTo(expected)));
+        assertThat(hierarchicalLDAModel.getPathForDocument(1), is(equalTo(expected)));
+        assertThat(hierarchicalLDAModel.getPathForDocument(2), is(equalTo(expected)));
+    }
+
+    @Test
+    public void testGetPathForDocumentWorksCorrectly() {
+        hierarchicalLDAModel = new HierarchicalLDAModel();
+        hierarchicalLDAModel.readDocuments(documents);
+        HierarchicalLDANode child0 = hierarchicalLDAModel.rootNode.spawnChild(1);
+        HierarchicalLDANode child1 = child0.spawnChild(2);
+        HierarchicalLDANode child2 = child0.spawnChild(2);
+
+        child0.setId(hierarchicalLDAModel.nodeMapper.addObject(child0));
+        child1.setId(hierarchicalLDAModel.nodeMapper.addObject(child1));
+        child2.setId(hierarchicalLDAModel.nodeMapper.addObject(child2));
+
+        hierarchicalLDAModel.documentPaths[0] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        hierarchicalLDAModel.documentPaths[0].addPath(Arrays.asList(0, 1, 2), hierarchicalLDAModel.nodeMapper);
+
+        hierarchicalLDAModel.documentPaths[1] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        hierarchicalLDAModel.documentPaths[1].addPath(Arrays.asList(0, 1, 3), hierarchicalLDAModel.nodeMapper);
+
+        hierarchicalLDAModel.documentPaths[2] = new HierarchicalLDAPath(hierarchicalLDAModel.rootNode, 3);
+        hierarchicalLDAModel.documentPaths[2].addPath(Arrays.asList(0, 1, 0), hierarchicalLDAModel.nodeMapper);
+
+        assertThat(hierarchicalLDAModel.getPathForDocument(-1), is(equalTo(Arrays.asList(-1, -1, -1))));
+        assertThat(hierarchicalLDAModel.getPathForDocument(0), is(equalTo(Arrays.asList(0, 1, 2))));
+        assertThat(hierarchicalLDAModel.getPathForDocument(1), is(equalTo(Arrays.asList(0, 1, 3))));
+        assertThat(hierarchicalLDAModel.getPathForDocument(2), is(equalTo(Arrays.asList(0, 1, 0))));
+        assertThat(hierarchicalLDAModel.getPathForDocument(3), is(equalTo(Arrays.asList(-1, -1, -1))));
     }
 
     @Test

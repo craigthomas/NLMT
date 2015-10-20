@@ -104,13 +104,13 @@ public class Word implements Serializable
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) { return true; }
+        if ((o == null) || (getClass() != o.getClass())) { return false; }
 
         Word word = (Word) o;
 
-        if (getVocabularyId() != word.getVocabularyId()) return false;
-        if (getTotalCount() != word.getTotalCount()) return false;
+        if (getVocabularyId() != word.getVocabularyId()) { return false; }
+        if (getTotalCount() != word.getTotalCount()) { return false; }
         return getTopic() == word.getTopic() && getRawWord().equals(word.getRawWord());
 
     }

@@ -16,7 +16,10 @@
 package nlmt.probfunctions;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import static java.lang.Math.exp;
 
@@ -139,24 +142,12 @@ public class PMFSampler implements Serializable
      * @return a PMFSampler containing the normalized log likelihoods
      */
     public static PMFSampler normalizeLogLikelihoods(double [] logLikelihoods) {
-        double biggest = Double.NEGATIVE_INFINITY;
-        for (double logLikelihood : logLikelihoods) {
-            if (logLikelihood > biggest) {
-                biggest = logLikelihood;
-            }
-        }
-
-        PMFSampler sampler = new PMFSampler(logLikelihoods.length);
-        double sum = 0.0;
-        for (int index = 0; index < logLikelihoods.length; index++) {
-            logLikelihoods[index] = exp(logLikelihoods[index] - biggest);
-            sum += logLikelihoods[index];
-        }
-
-        for (double logLikelihood : logLikelihoods) {
-            sampler.add(logLikelihood / sum);
-        }
-
+        Double biggestInArray = Arrays.stream(logLikelihoods).summaryStatistics().getMax();
+        Double biggest = (biggestInArray.equals(Double.NaN)) ? Double.NEGATIVE_INFINITY : biggestInArray;
+        List<Double> likelihoods = Arrays.stream(logLikelihoods).map(v -> exp(v - biggest)).boxed().collect(Collectors.toList());
+        double sum = likelihoods.stream().mapToDouble(v -> v).sum();
+        PMFSampler sampler = new PMFSampler(likelihoods.size());
+        likelihoods.stream().forEach(v -> sampler.add(v / sum));
         return sampler;
     }
 }
