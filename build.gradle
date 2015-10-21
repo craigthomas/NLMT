@@ -1,15 +1,13 @@
 buildscript {
     repositories {
         mavenCentral()
+        jcenter()
     }
 
     dependencies {
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.4'
         classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.0.1'
     }
-}
-
-plugins {
-    id "com.jfrog.bintray" version "1.4"
 }
 
 apply plugin: 'java'
@@ -17,6 +15,7 @@ apply plugin: 'idea'
 apply plugin: 'jacoco'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
 apply plugin: 'com.github.kt3k.coveralls'
 
 version = '0.1.1'
@@ -80,8 +79,10 @@ bintray {
     user = System.getenv('BINTRAY_USER')
     key = System.getenv('BINTRAY_KEY')
     dryRun = false
+    publish = false
+    publications = ['nlmtPublication']
     pkg {
-        repo = 'maven'
+        repo = 'nlp-tools'
         name = rootProject.name
         desc = project.description
         websiteUrl = 'https://github.com/craigthomas/NLMT'
@@ -100,8 +101,10 @@ bintray {
 
 publishing {
     publications {
-        nlmt1(MavenPublication) {
+        nlmtPublication(MavenPublication) {
             from components.java
+            artifact sourcesJar
+            artifact javadocJar
             groupId project.group
             artifactId rootProject.name
             version project.version
