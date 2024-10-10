@@ -1,0 +1,21 @@
+name: Build Test Coverage
+on: [push, pull_request]
+jobs:
+  run:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Setup JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'adopt'
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+    - name: Build with Gradle
+      run: ./gradlew build
+    - name: Codecov
+      uses: codecov/codecov-action@v4.2.0
+      env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
