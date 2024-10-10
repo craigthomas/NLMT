@@ -1,11 +1,10 @@
 # Natural Language Modeling Toolkit (NLMT)
 
-[![Build Status](https://travis-ci.org/craigthomas/NLMT.svg?branch=master)](https://travis-ci.org/craigthomas/NLMT) 
-[![Coverage Status](http://coveralls.io/repos/craigthomas/NLMT/badge.svg?branch=master)](http://coveralls.io/r/craigthomas/NLMT?branch=master) 
-[![Codacy Badge](https://api.codacy.com/project/badge/669b4ba9c6fe47e4b767e3abc309b7a8)](https://www.codacy.com/app/craig-thomas/NLMT) 
-[![Dependency Status](https://www.versioneye.com/user/projects/55d83bc18d9c4b001b000008/badge.svg)](https://www.versioneye.com/user/projects/55d83bc18d9c4b001b000008)
-[![Apache 2 License](https://img.shields.io/badge/license-apache_2-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.txt)
-[![GitHub version](https://badge.fury.io/gh/craigthomas%2Fnlmt.svg)](https://bintray.com/craigthomas/maven/nlmt/view)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/craigthomas/NLMT/gradle.yml?style=flat-square&branch=main)](https://github.com/craigthomas/NLMT/actions)
+[![Coverage Status](https://img.shields.io/codecov/c/gh/craigthomas/NLMT?style=flat-square)](https://codecov.io/gh/craigthomas/NLMT)
+[![Dependencies](https://img.shields.io/librariesio/github/craigthomas/NLMT?style=flat-square)](https://libraries.io/github/craigthomas/NLMT)
+[![Releases](https://img.shields.io/github/release/craigthomas/NLMT?style=flat-square)](https://github.com/craigthomas/NLMT/releases)
+[![License: Apache 2](https://img.shields.io/badge/license-apache_2-blue.svg?style=flat-square)](https://opensource.org/license/apache-2-0)
 
 # What is it?
 
